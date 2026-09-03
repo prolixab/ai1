@@ -1,0 +1,1467 @@
+<title>Assembler-Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap">
+
+<style>
+/* ── tokens ── */
+:root {
+  --bg:           #0D1117;
+  --surface:      #141926;
+  --surface-hi:   #1C2235;
+  --surface-hhi:  #232A42;
+  --border:       #252D48;
+  --border-hi:    #343D60;
+  --text:         #C8D3EA;
+  --text-muted:   #5A6480;
+  --text-dim:     #3A425A;
+  --data:         #3FFFA0;
+  --data-dim:     #0E3020;
+  --data-mid:     #1A5038;
+  --accent:       #3FFFA0;
+  --accent-glow:  rgba(63,255,160,0.15);
+  --pc-bg:        #2B1A00;
+  --pc-text:      #FFB627;
+  --pc-border:    #7A4D00;
+  --halt:         #FF5F5F;
+  --halt-dim:     #3A1010;
+  --run-col:      #3FFFA0;
+  --step-col:     #4DB8FF;
+  --mono:         'JetBrains Mono', 'Fira Mono', monospace;
+  --ui:           'Inter', system-ui, sans-serif;
+  --r:            5px;
+}
+
+:root[data-theme="light"] {
+  --bg:           #EEF1FB;
+  --surface:      #FFFFFF;
+  --surface-hi:   #E5EAFB;
+  --surface-hhi:  #D8DFF5;
+  --border:       #C0C9E8;
+  --border-hi:    #9BA8D0;
+  --text:         #1A1E32;
+  --text-muted:   #5A6282;
+  --text-dim:     #9BA8C8;
+  --data:         #0A6E48;
+  --data-dim:     #D8F5E8;
+  --data-mid:     #A8DFC8;
+  --accent:       #0A8F5C;
+  --accent-glow:  rgba(10,143,92,0.10);
+  --pc-bg:        #FFF3D0;
+  --pc-text:      #9B6200;
+  --pc-border:    #D4A020;
+  --halt:         #D43030;
+  --halt-dim:     #FFE8E8;
+  --run-col:      #0A7A48;
+  --step-col:     #1A68C0;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg:           #EEF1FB;
+    --surface:      #FFFFFF;
+    --surface-hi:   #E5EAFB;
+    --surface-hhi:  #D8DFF5;
+    --border:       #C0C9E8;
+    --border-hi:    #9BA8D0;
+    --text:         #1A1E32;
+    --text-muted:   #5A6282;
+    --text-dim:     #9BA8C8;
+    --data:         #0A6E48;
+    --data-dim:     #D8F5E8;
+    --data-mid:     #A8DFC8;
+    --accent:       #0A8F5C;
+    --accent-glow:  rgba(10,143,92,0.10);
+    --pc-bg:        #FFF3D0;
+    --pc-text:      #9B6200;
+    --pc-border:    #D4A020;
+    --halt:         #D43030;
+    --halt-dim:     #FFE8E8;
+    --run-col:      #0A7A48;
+    --step-col:     #1A68C0;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--ui);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ── APP SHELL ── */
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  min-height: 100vh;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 12px 12px;
+}
+
+/* ── HEADER ── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cpu-icon {
+  width: 32px; height: 32px;
+  background: var(--accent-glow);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.cpu-icon svg { width: 18px; height: 18px; }
+
+.header-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.header-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--mono);
+}
+
+.header-status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+
+.status-badge.ready .dot { background: var(--text-dim); }
+.status-badge.running { color: var(--run-col); border-color: var(--run-col); background: var(--accent-glow); }
+.status-badge.running .dot { background: var(--run-col); box-shadow: 0 0 6px var(--run-col); animation: pulse 1s infinite; }
+.status-badge.halted { color: var(--halt); border-color: var(--halt); background: var(--halt-dim); }
+.status-badge.halted .dot { background: var(--halt); }
+
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+.theme-btn {
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 5px 8px;
+  font-size: 13px;
+  transition: border-color 0.15s;
+}
+.theme-btn:hover { border-color: var(--border-hi); color: var(--text); }
+
+/* ── MAIN AREA ── */
+.main {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+/* ── PANEL ── */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.panel-head {
+  background: var(--surface-hi);
+  border-bottom: 1px solid var(--border);
+  padding: 7px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.panel-sublabel {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+/* ── CPU PANEL ── */
+.cpu-layout {
+  display: grid;
+  grid-template-rows: auto auto auto;
+}
+
+/* Registers section */
+.reg-section {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.reg-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.reg-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 5px;
+  transition: border-color 0.15s;
+}
+
+.reg-item:focus-within {
+  border-color: var(--border-hi);
+}
+
+.reg-item.highlight-reg {
+  background: var(--data-dim);
+  border-color: var(--data-mid);
+}
+
+.reg-num {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  min-width: 10px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.reg-input {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--data);
+  background: transparent;
+  border: none;
+  outline: none;
+  width: 100%;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.reg-input::selection { background: var(--border-hi); }
+
+/* Control Unit section */
+.cu-section {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.cu-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cu-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.cu-input-wrap {
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cu-input-wrap.pc-active {
+  background: var(--pc-bg);
+  border-color: var(--pc-border);
+}
+
+.cu-input-wrap.ir-active {
+  background: var(--surface-hhi);
+  border-color: var(--border-hi);
+}
+
+.cu-input {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--data);
+  background: transparent;
+  border: none;
+  outline: none;
+  width: 100%;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cu-input-wrap.pc-active .cu-input { color: var(--pc-text); }
+.cu-input-wrap.ir-active .cu-input { font-size: 13px; letter-spacing: 0.08em; color: var(--text); }
+
+/* ALU section */
+.alu-section {
+  padding: 10px 12px;
+}
+
+.alu-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 10px;
+}
+
+.alu-label-text {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.alu-ops {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.alu-op {
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  background: var(--surface);
+  letter-spacing: 0.03em;
+}
+
+/* ── MEMORY PANEL ── */
+.memory-outer {
+  overflow-x: auto;
+}
+
+.mem-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mem-table th {
+  background: var(--surface-hi);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  padding: 5px 0;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.mem-table th.row-head {
+  width: 28px;
+  min-width: 28px;
+  border-right: 1px solid var(--border);
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--surface-hi);
+}
+
+.mem-table .col-head {
+  min-width: 42px;
+}
+
+.mem-table .row-header {
+  background: var(--surface-hi);
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 10px;
+  font-weight: 500;
+  border-right: 1px solid var(--border);
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  padding: 0 4px;
+  letter-spacing: 0.05em;
+}
+
+.mem-table td {
+  padding: 0;
+  border: 1px solid transparent;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.mem-table tr:last-child td { border-bottom: none; }
+.mem-table td:last-child { border-right: none; }
+
+.mem-cell {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-dim);
+  background: transparent;
+  border: none;
+  outline: none;
+  width: 100%;
+  height: 22px;
+  text-align: center;
+  text-transform: uppercase;
+  padding: 0;
+  display: block;
+  transition: color 0.1s, background 0.1s;
+  cursor: text;
+}
+
+.mem-cell.nonzero {
+  color: var(--data);
+  font-weight: 500;
+}
+
+.mem-table td:focus-within {
+  background: var(--surface-hhi);
+  border: 1px solid var(--border-hi) !important;
+}
+
+.mem-cell:focus {
+  color: var(--text);
+}
+
+.mem-table td.pc-cell {
+  background: var(--pc-bg);
+  border: 1px solid var(--pc-border) !important;
+}
+
+.mem-table td.pc-cell .mem-cell {
+  color: var(--pc-text);
+  font-weight: 600;
+}
+
+/* ── BOTTOM ROW ── */
+.bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* Log panel */
+.log-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.log-body {
+  flex: 1;
+  height: 140px;
+  overflow-y: auto;
+  padding: 8px 10px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 1.65;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.log-entry {
+  display: flex;
+  gap: 8px;
+  padding: 1px 0;
+  border-bottom: 1px solid transparent;
+}
+
+.log-entry:hover { background: var(--surface-hi); }
+
+.log-addr {
+  color: var(--text-dim);
+  flex-shrink: 0;
+  min-width: 28px;
+}
+
+.log-ir {
+  color: var(--pc-text);
+  flex-shrink: 0;
+}
+
+.log-desc {
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.log-entry.halt .log-desc { color: var(--halt); }
+.log-empty { color: var(--text-dim); font-size: 10px; padding-top: 4px; }
+
+/* Reference panel */
+.ref-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.ref-body {
+  height: 140px;
+  overflow-y: auto;
+  padding: 6px 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.ref-row {
+  display: grid;
+  grid-template-columns: 32px 52px 1fr;
+  gap: 0 8px;
+  padding: 3px 10px;
+  font-size: 11px;
+  border-bottom: 1px solid transparent;
+}
+
+.ref-row:hover { background: var(--surface-hi); }
+
+.ref-op {
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--data);
+}
+
+.ref-operand {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.ref-desc {
+  color: var(--text-muted);
+  font-size: 10.5px;
+}
+
+/* ── BUTTON BAR ── */
+.button-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 0 0;
+  border-top: 1px solid var(--border);
+  margin-top: 10px;
+}
+
+.btn {
+  font-family: var(--ui);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: var(--r);
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface-hi);
+  color: var(--text-muted);
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn:hover { border-color: var(--border-hi); color: var(--text); background: var(--surface-hhi); }
+.btn:active { opacity: 0.8; transform: translateY(1px); }
+
+.btn-run {
+  background: var(--data-dim);
+  border-color: var(--data-mid);
+  color: var(--run-col);
+  font-weight: 600;
+}
+.btn-run:hover { background: var(--data-mid); border-color: var(--accent); color: var(--accent); }
+
+.btn-step {
+  background: rgba(77,184,255,0.07);
+  border-color: rgba(77,184,255,0.25);
+  color: var(--step-col);
+}
+.btn-step:hover { background: rgba(77,184,255,0.15); border-color: rgba(77,184,255,0.5); }
+
+.btn-halt {
+  margin-left: auto;
+  color: var(--halt);
+  border-color: var(--halt-dim);
+  background: var(--halt-dim);
+}
+.btn-halt:hover { border-color: var(--halt); }
+
+.kbd {
+  font-family: var(--mono);
+  font-size: 9px;
+  opacity: 0.6;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0 3px;
+}
+
+.spacer { flex: 1; }
+
+/* File controls */
+.file-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+/* ── Scrollbar styling ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-hi); }
+
+/* Notification toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--surface-hhi);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r);
+  padding: 8px 14px;
+  font-size: 12px;
+  color: var(--text);
+  font-family: var(--mono);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.2s;
+  pointer-events: none;
+  z-index: 100;
+  max-width: 320px;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.ok { border-color: var(--data-mid); color: var(--data); }
+.toast.err { border-color: var(--halt); color: var(--halt); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+</style>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-logo">
+      <div class="cpu-icon" aria-hidden="true">
+        <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="4" width="10" height="10" rx="1" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="1" y1="6" x2="4" y2="6" stroke="currentColor" stroke-width="1"/>
+          <line x1="1" y1="9" x2="4" y2="9" stroke="currentColor" stroke-width="1"/>
+          <line x1="1" y1="12" x2="4" y2="12" stroke="currentColor" stroke-width="1"/>
+          <line x1="14" y1="6" x2="17" y2="6" stroke="currentColor" stroke-width="1"/>
+          <line x1="14" y1="9" x2="17" y2="9" stroke="currentColor" stroke-width="1"/>
+          <line x1="14" y1="12" x2="17" y2="12" stroke="currentColor" stroke-width="1"/>
+          <line x1="6" y1="1" x2="6" y2="4" stroke="currentColor" stroke-width="1"/>
+          <line x1="9" y1="1" x2="9" y2="4" stroke="currentColor" stroke-width="1"/>
+          <line x1="12" y1="1" x2="12" y2="4" stroke="currentColor" stroke-width="1"/>
+          <line x1="6" y1="14" x2="6" y2="17" stroke="currentColor" stroke-width="1"/>
+          <line x1="9" y1="14" x2="9" y2="17" stroke="currentColor" stroke-width="1"/>
+          <line x1="12" y1="14" x2="12" y2="17" stroke="currentColor" stroke-width="1"/>
+          <rect x="6.5" y="6.5" width="5" height="5" rx="0.5" fill="currentColor" opacity="0.4"/>
+        </svg>
+      </div>
+      <div>
+        <div class="header-title">Assembler-Simulator</div>
+        <div class="header-sub">Maskinspråk · 8-bitars · 256 minnesceller</div>
+      </div>
+    </div>
+    <div class="header-status">
+      <div class="status-badge ready" id="status-badge">
+        <div class="dot"></div>
+        <span id="status-text">REDO</span>
+      </div>
+      <button class="theme-btn" onclick="toggleTheme()" title="Byt tema" aria-label="Byt ljust/mörkt tema">☀</button>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- CPU PANEL -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-label">CPU</span>
+        <span class="panel-sublabel">Kontrollenhet + ALU</span>
+      </div>
+      <div class="cpu-layout">
+
+        <!-- Registers -->
+        <div class="reg-section">
+          <div class="section-label">Register</div>
+          <div class="reg-grid" id="reg-grid"></div>
+        </div>
+
+        <!-- Control Unit: PC + IR -->
+        <div class="cu-section">
+          <div class="cu-field">
+            <div class="cu-label">Programräknare</div>
+            <div class="cu-input-wrap pc-active">
+              <input class="cu-input" id="pc-input" value="00" maxlength="2"
+                     title="Program Counter — adress för nästa instruktion"
+                     oninput="onPCInput()" onblur="onPCBlur()">
+            </div>
+          </div>
+          <div class="cu-field">
+            <div class="cu-label">Instruktionsregister</div>
+            <div class="cu-input-wrap ir-active">
+              <input class="cu-input" id="ir-input" value="0000" maxlength="4"
+                     title="Instruction Register — aktuell instruktion" readonly>
+            </div>
+          </div>
+        </div>
+
+        <!-- ALU -->
+        <div class="alu-section">
+          <div class="section-label">ALU — Räkneenhet</div>
+          <div class="alu-display">
+            <span class="alu-label-text">Aritmetisk-logisk enhet</span>
+            <div class="alu-ops">
+              <span class="alu-op">ADD</span>
+              <span class="alu-op">OR</span>
+              <span class="alu-op">AND</span>
+              <span class="alu-op">XOR</span>
+              <span class="alu-op">ROT</span>
+              <span class="alu-op">SFT</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- MEMORY PANEL -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-label">Minne (RAM)</span>
+        <span class="panel-sublabel">256 × 8 bit — hexadecimalt</span>
+      </div>
+      <div class="memory-outer">
+        <table class="mem-table" id="mem-table" aria-label="Minnesceller">
+          <thead>
+            <tr id="mem-header"></tr>
+          </thead>
+          <tbody id="mem-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- BOTTOM -->
+  <div class="bottom">
+    <!-- Execution log -->
+    <div class="log-panel">
+      <div class="panel-head">
+        <span class="panel-label">Körningslogg</span>
+        <button class="theme-btn" style="font-size:11px;padding:2px 6px" onclick="clearLog()">Rensa</button>
+      </div>
+      <div class="log-body" id="log-body">
+        <div class="log-empty">Loggen är tom. Starta programmet med Kör eller Steg.</div>
+      </div>
+    </div>
+
+    <!-- Instruction reference -->
+    <div class="ref-panel">
+      <div class="panel-head">
+        <span class="panel-label">Instruktionstabell</span>
+        <span class="panel-sublabel">Op-kod · Operand · Funktion</span>
+      </div>
+      <div class="ref-body" id="ref-body"></div>
+    </div>
+  </div>
+
+  <!-- BUTTON BAR -->
+  <div class="button-bar">
+    <button class="btn btn-run" onclick="runProgram()" id="btn-run" title="Kör hela programmet (F9)">
+      ▶ Kör <span class="kbd">F9</span>
+    </button>
+    <button class="btn btn-step" onclick="singleStep()" id="btn-step" title="Kör en instruktion (F8)">
+      ⏭ Steg <span class="kbd">F8</span>
+    </button>
+    <button class="btn" onclick="clearCPU()" title="Nollställ CPU-register och PC">
+      Rensa CPU
+    </button>
+    <button class="btn" onclick="clearMemory()" title="Nollställ allt minne">
+      Rensa minne
+    </button>
+    <button class="btn" onclick="clearAll()" title="Rensa allt">
+      Rensa allt
+    </button>
+    <div class="spacer"></div>
+    <div class="file-controls">
+      <button class="btn" onclick="saveFile()" title="Spara program som .sim-fil (Ctrl+S)">
+        ↓ Spara
+      </button>
+      <button class="btn" onclick="document.getElementById('file-input').click()" title="Öppna .sim-fil (Ctrl+O)">
+        ↑ Öppna
+      </button>
+    </div>
+    <button class="btn btn-halt" onclick="haltProgram()" id="btn-halt" title="Stoppa körning">
+      ⏹ Stoppa
+    </button>
+  </div>
+
+</div>
+
+<!-- Hidden file input -->
+<input type="file" id="file-input" accept=".sim,.txt" style="display:none" onchange="loadFile(event)">
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// SIMULATOR STATE
+// ═══════════════════════════════════════════════════════
+const MEM = new Uint8Array(256);
+const REG = new Uint8Array(16);
+let PC = 0;
+let IR = 0;
+let halted = false;
+let stepCount = 0;
+let runHandle = null;
+
+// ═══════════════════════════════════════════════════════
+// UI INIT
+// ═══════════════════════════════════════════════════════
+function initRegisters() {
+  const grid = document.getElementById('reg-grid');
+  for (let i = 0; i < 16; i++) {
+    const item = document.createElement('div');
+    item.className = 'reg-item' + (i === 0 ? ' highlight-reg' : '');
+    item.title = i === 0 ? 'Register 0 — används som jämförelseregister vid JUMP (B)' : `Register ${i.toString(16).toUpperCase()}`;
+
+    const lbl = document.createElement('span');
+    lbl.className = 'reg-num';
+    lbl.textContent = i.toString(16).toUpperCase();
+
+    const inp = document.createElement('input');
+    inp.className = 'reg-input';
+    inp.id = `reg${i}`;
+    inp.value = '00';
+    inp.maxLength = 2;
+    inp.setAttribute('aria-label', `Register ${i.toString(16).toUpperCase()}`);
+    inp.addEventListener('input', () => filterHex(inp, 2));
+    inp.addEventListener('blur', () => {
+      const v = clamp8(parseInt(inp.value || '0', 16));
+      REG[i] = v;
+      inp.value = h2(v);
+      updateRegHighlight();
+    });
+
+    item.appendChild(lbl);
+    item.appendChild(inp);
+    grid.appendChild(item);
+  }
+}
+
+function initMemory() {
+  const header = document.getElementById('mem-header');
+  const th0 = document.createElement('th');
+  th0.className = 'row-head';
+  th0.textContent = '';
+  header.appendChild(th0);
+  for (let c = 0; c < 16; c++) {
+    const th = document.createElement('th');
+    th.className = 'col-head';
+    th.textContent = c.toString(16).toUpperCase();
+    header.appendChild(th);
+  }
+
+  const tbody = document.getElementById('mem-body');
+  for (let r = 0; r < 16; r++) {
+    const tr = document.createElement('tr');
+    const rhTd = document.createElement('td');
+    rhTd.className = 'row-header';
+    rhTd.textContent = r.toString(16).toUpperCase();
+    tr.appendChild(rhTd);
+
+    for (let c = 0; c < 16; c++) {
+      const addr = r * 16 + c;
+      const td = document.createElement('td');
+      td.id = `td${h2(addr)}`;
+
+      const inp = document.createElement('input');
+      inp.className = 'mem-cell';
+      inp.id = `mc${h2(addr)}`;
+      inp.value = '00';
+      inp.maxLength = 2;
+      inp.setAttribute('aria-label', `Minne ${h2(addr)}`);
+      inp.addEventListener('input', () => filterHex(inp, 2));
+      inp.addEventListener('blur', () => {
+        const v = clamp8(parseInt(inp.value || '0', 16));
+        MEM[addr] = v;
+        inp.value = h2(v);
+        styleCell(addr);
+      });
+      inp.addEventListener('focus', () => {
+        setStatus(`Adress ${h2(addr)} | Dec: ${addr}`);
+      });
+      // Tab-navigation wraps in grid
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const next = document.getElementById(`mc${h2((addr + 1) & 0xFF)}`);
+          if (next) { e.preventDefault(); next.focus(); }
+        }
+      });
+
+      td.appendChild(inp);
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+}
+
+function initRefTable() {
+  const opcodes = [
+    ['1','RXY','LOAD R ← MEM[XY]'],
+    ['2','RXY','LOAD R ← XY  (omedelbart värde)'],
+    ['3','RXY','STORE MEM[XY] ← R'],
+    ['4','0RS','MOVE S ← R'],
+    ['5','RST','ADD R ← S + T  (2-komplement)'],
+    ['6','RST','ADD R ← S + T  (8-bitars flyttal)'],
+    ['7','RST','OR  R ← S | T'],
+    ['8','RST','AND R ← S & T'],
+    ['9','RST','XOR R ← S ^ T'],
+    ['A','R0X','ROTATE R höger X steg (cirkulärt)'],
+    ['B','RXY','JUMP → XY  om R == R0'],
+    ['C','000','HALT — stoppa programmet'],
+    ['D','R0X','SHIFT vänster X steg (MSB bevaras)'],
+    ['E','R0X','SHIFT höger X steg (MSB bevaras)'],
+  ];
+  const body = document.getElementById('ref-body');
+  for (const [op, operand, desc] of opcodes) {
+    const row = document.createElement('div');
+    row.className = 'ref-row';
+    row.innerHTML = `<span class="ref-op">${op}</span><span class="ref-operand">${operand}</span><span class="ref-desc">${desc}</span>`;
+    body.appendChild(row);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════
+function h2(v) { return (v & 0xFF).toString(16).toUpperCase().padStart(2,'0'); }
+function h4(v) { return (v & 0xFFFF).toString(16).toUpperCase().padStart(4,'0'); }
+function clamp8(v) { return isNaN(v) ? 0 : v & 0xFF; }
+
+function filterHex(inp, maxLen) {
+  inp.value = inp.value.replace(/[^0-9a-fA-F]/g,'').toUpperCase().slice(0, maxLen);
+}
+
+function styleCell(addr) {
+  const inp = document.getElementById(`mc${h2(addr)}`);
+  if (!inp) return;
+  if (MEM[addr] !== 0) inp.classList.add('nonzero');
+  else inp.classList.remove('nonzero');
+}
+
+function updatePCHighlight() {
+  // clear all
+  document.querySelectorAll('.pc-cell').forEach(el => el.classList.remove('pc-cell'));
+  // mark new
+  [PC, (PC + 1) & 0xFF].forEach(a => {
+    const td = document.getElementById(`td${h2(a)}`);
+    if (td) td.classList.add('pc-cell');
+  });
+}
+
+function updateRegHighlight() {
+  // Register 0 always highlighted. Others: show if non-zero
+  for (let i = 0; i < 16; i++) {
+    const item = document.getElementById(`reg${i}`)?.parentElement;
+    if (!item) continue;
+    if (i === 0) {
+      item.className = 'reg-item highlight-reg';
+    } else if (REG[i] !== 0) {
+      item.className = 'reg-item highlight-reg';
+    } else {
+      item.className = 'reg-item';
+    }
+  }
+}
+
+function syncStateFromUI() {
+  for (let i = 0; i < 16; i++) {
+    const inp = document.getElementById(`reg${i}`);
+    if (inp) REG[i] = clamp8(parseInt(inp.value || '0', 16));
+  }
+  for (let a = 0; a < 256; a++) {
+    const inp = document.getElementById(`mc${h2(a)}`);
+    if (inp) MEM[a] = clamp8(parseInt(inp.value || '0', 16));
+  }
+  const pc = document.getElementById('pc-input');
+  if (pc) PC = clamp8(parseInt(pc.value || '0', 16));
+}
+
+function updateUI() {
+  for (let i = 0; i < 16; i++) {
+    const inp = document.getElementById(`reg${i}`);
+    if (inp) inp.value = h2(REG[i]);
+  }
+  for (let a = 0; a < 256; a++) {
+    const inp = document.getElementById(`mc${h2(a)}`);
+    if (inp) {
+      inp.value = h2(MEM[a]);
+      styleCell(a);
+    }
+  }
+  document.getElementById('pc-input').value = h2(PC);
+  document.getElementById('ir-input').value = h4(IR);
+  updatePCHighlight();
+  updateRegHighlight();
+}
+
+function setStatus(msg, state) {
+  const badge = document.getElementById('status-badge');
+  const text = document.getElementById('status-text');
+  badge.className = 'status-badge ' + (state || 'ready');
+  text.textContent = msg;
+}
+
+function showToast(msg, kind) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + (kind || '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ═══════════════════════════════════════════════════════
+// LOGGING
+// ═══════════════════════════════════════════════════════
+function log(addr, ir, desc, isHalt) {
+  const body = document.getElementById('log-body');
+  // Remove placeholder
+  const empty = body.querySelector('.log-empty');
+  if (empty) empty.remove();
+
+  const entry = document.createElement('div');
+  entry.className = 'log-entry' + (isHalt ? ' halt' : '');
+  entry.innerHTML =
+    `<span class="log-addr">${h2(addr)}</span>` +
+    `<span class="log-ir">${h4(ir)}</span>` +
+    `<span class="log-desc">${desc}</span>`;
+  body.appendChild(entry);
+  body.scrollTop = body.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('log-body').innerHTML =
+    '<div class="log-empty">Loggen rensad.</div>';
+}
+
+// ═══════════════════════════════════════════════════════
+// FLOATING POINT (Brookshear 8-bit: seeemmmm)
+// ═══════════════════════════════════════════════════════
+function fpToFloat(b) {
+  if (b === 0) return 0;
+  const sign = (b >> 7) ? -1 : 1;
+  const exp = ((b >> 4) & 0x7) - 4;
+  const mant = (b & 0xF) / 16.0;
+  return sign * mant * Math.pow(2, exp);
+}
+
+function floatToFp(v) {
+  if (!isFinite(v) || v === 0) return 0;
+  const sign = v < 0 ? 1 : 0;
+  let abs = Math.abs(v);
+  let exp = 0;
+  while (abs >= 1.0) { abs /= 2; exp++; }
+  while (abs > 0 && abs < 0.5) { abs *= 2; exp--; }
+  const se = exp + 4;
+  if (se < 0) return 0;
+  if (se > 7) return (sign << 7) | (7 << 4) | 0xF;
+  const mantBits = Math.min(15, Math.floor(abs * 16)) & 0xF;
+  return ((sign << 7) | (se << 4) | mantBits) & 0xFF;
+}
+
+// ═══════════════════════════════════════════════════════
+// BIT OPERATIONS
+// ═══════════════════════════════════════════════════════
+function rotateRight(val, x) {
+  x = ((x & 7) + 8) % 8;
+  return ((val >>> x) | (val << (8 - x))) & 0xFF;
+}
+
+function shiftLeftArith(val, x) {
+  const msb = val & 0x80;
+  for (let i = 0; i < (x & 0xFF); i++) {
+    val = ((val << 1) & 0x7F) | msb;
+  }
+  return val & 0xFF;
+}
+
+function shiftRightArith(val, x) {
+  const msb = val & 0x80;
+  for (let i = 0; i < (x & 0xFF); i++) {
+    val = ((val >>> 1) & 0x7F) | msb;
+  }
+  return val & 0xFF;
+}
+
+// ═══════════════════════════════════════════════════════
+// INSTRUCTION EXECUTION
+// ═══════════════════════════════════════════════════════
+function executeOne() {
+  if (halted) {
+    setStatus('HALT', 'halted');
+    return false;
+  }
+
+  const instrAddr = PC;
+  const b1 = MEM[PC & 0xFF];
+  const b2 = MEM[(PC + 1) & 0xFF];
+  IR = (b1 << 8) | b2;
+  PC = (PC + 2) & 0xFF;
+
+  const op = (b1 >> 4) & 0xF;
+  const r  = b1 & 0xF;
+  const s  = (b2 >> 4) & 0xF;
+  const t  = b2 & 0xF;
+  const xy = b2;
+
+  let desc = '';
+  let cont = true;
+
+  switch (op) {
+    case 0x1: { // LOAD R ← [XY]
+      REG[r] = MEM[xy];
+      desc = `LOAD R${r.toString(16).toUpperCase()} ← MEM[${h2(xy)}] = ${h2(MEM[xy])}`;
+      break;
+    }
+    case 0x2: { // LOAD R ← XY
+      REG[r] = xy;
+      desc = `LOAD R${r.toString(16).toUpperCase()} ← ${h2(xy)}`;
+      break;
+    }
+    case 0x3: { // STORE [XY] ← R
+      MEM[xy] = REG[r];
+      desc = `STORE MEM[${h2(xy)}] ← R${r.toString(16).toUpperCase()} = ${h2(REG[r])}`;
+      break;
+    }
+    case 0x4: { // MOVE S ← R  (format: 40RS)
+      REG[t] = REG[s];
+      desc = `MOVE R${t.toString(16).toUpperCase()} ← R${s.toString(16).toUpperCase()} = ${h2(REG[s])}`;
+      break;
+    }
+    case 0x5: { // ADD (2-komplement)
+      const sum = (REG[s] + REG[t]) & 0xFF;
+      REG[r] = sum;
+      desc = `ADD R${r.toString(16).toUpperCase()} ← ${h2(REG[s])} + ${h2(REG[t])} = ${h2(sum)}  (2-kompl)`;
+      break;
+    }
+    case 0x6: { // ADD (flyttal)
+      const fa = fpToFloat(REG[s]);
+      const fb = fpToFloat(REG[t]);
+      const fc = fa + fb;
+      REG[r] = floatToFp(fc);
+      desc = `FADD R${r.toString(16).toUpperCase()} ← ${fa.toFixed(4)} + ${fb.toFixed(4)} = ${fc.toFixed(4)} → ${h2(REG[r])}`;
+      break;
+    }
+    case 0x7: { // OR
+      REG[r] = REG[s] | REG[t];
+      desc = `OR R${r.toString(16).toUpperCase()} ← ${h2(REG[s])} | ${h2(REG[t])} = ${h2(REG[r])}`;
+      break;
+    }
+    case 0x8: { // AND
+      REG[r] = REG[s] & REG[t];
+      desc = `AND R${r.toString(16).toUpperCase()} ← ${h2(REG[s])} & ${h2(REG[t])} = ${h2(REG[r])}`;
+      break;
+    }
+    case 0x9: { // XOR
+      REG[r] = REG[s] ^ REG[t];
+      desc = `XOR R${r.toString(16).toUpperCase()} ← ${h2(REG[s])} ^ ${h2(REG[t])} = ${h2(REG[r])}`;
+      break;
+    }
+    case 0xA: { // ROTATE right
+      REG[r] = rotateRight(REG[r], t);
+      desc = `ROT R${r.toString(16).toUpperCase()} >> ${t} (cirk.) = ${h2(REG[r])}`;
+      break;
+    }
+    case 0xB: { // JUMP om R == R0
+      if (REG[r] === REG[0]) {
+        PC = xy;
+        desc = `JUMP → ${h2(xy)}  (R${r.toString(16).toUpperCase()}=${h2(REG[r])} == R0=${h2(REG[0])}) ✓`;
+      } else {
+        desc = `JUMP skippas  (R${r.toString(16).toUpperCase()}=${h2(REG[r])} ≠ R0=${h2(REG[0])})`;
+      }
+      break;
+    }
+    case 0xC: { // HALT
+      halted = true;
+      cont = false;
+      desc = 'HALT — program avslutat';
+      break;
+    }
+    case 0xD: { // SHIFT LEFT (arith)
+      REG[r] = shiftLeftArith(REG[r], t);
+      desc = `SHL R${r.toString(16).toUpperCase()} << ${t} (aritm.) = ${h2(REG[r])}`;
+      break;
+    }
+    case 0xE: { // SHIFT RIGHT (arith)
+      REG[r] = shiftRightArith(REG[r], t);
+      desc = `SHR R${r.toString(16).toUpperCase()} >> ${t} (aritm.) = ${h2(REG[r])}`;
+      break;
+    }
+    default: {
+      desc = `OKÄND op-kod ${op.toString(16).toUpperCase()} — HALT`;
+      halted = true;
+      cont = false;
+    }
+  }
+
+  log(instrAddr, IR, desc, !cont);
+  return cont;
+}
+
+// ═══════════════════════════════════════════════════════
+// CONTROLS
+// ═══════════════════════════════════════════════════════
+function singleStep() {
+  if (halted) {
+    showToast('HALT — ändra Programräknaren för att fortsätta', 'err');
+    return;
+  }
+  syncStateFromUI();
+  const cont = executeOne();
+  updateUI();
+  if (!cont) {
+    setStatus('HALT', 'halted');
+  } else {
+    stepCount++;
+    setStatus(`Steg ${stepCount}  PC→${h2(PC)}`, 'ready');
+  }
+}
+
+function runProgram() {
+  if (halted) {
+    showToast('HALT — ändra Programräknaren för att fortsätta', 'err');
+    return;
+  }
+  syncStateFromUI();
+  setStatus('KÖR', 'running');
+
+  const MAX = 100000;
+  let steps = 0;
+
+  // Use a chunked loop to keep UI responsive
+  function chunk() {
+    const CHUNK = 500;
+    for (let i = 0; i < CHUNK && !halted && steps < MAX; i++, steps++) {
+      if (!executeOne()) break;
+    }
+    updateUI();
+    if (halted || steps >= MAX) {
+      if (steps >= MAX && !halted) {
+        log(PC, IR, '⚠ Avbruten efter 100 000 steg — möjlig oändlig loop', true);
+        setStatus('TIMEOUT', 'halted');
+      } else {
+        setStatus('HALT', 'halted');
+      }
+      runHandle = null;
+      return;
+    }
+    runHandle = requestAnimationFrame(chunk);
+  }
+  runHandle = requestAnimationFrame(chunk);
+}
+
+function haltProgram() {
+  if (runHandle) {
+    cancelAnimationFrame(runHandle);
+    runHandle = null;
+  }
+  halted = true;
+  updateUI();
+  setStatus('HALT', 'halted');
+  log(PC, IR, '⏹ Manuellt stopp', true);
+}
+
+function clearCPU() {
+  REG.fill(0);
+  PC = 0; IR = 0;
+  halted = false; stepCount = 0;
+  updateUI();
+  setStatus('CPU rensad', 'ready');
+  showToast('CPU rensad', 'ok');
+}
+
+function clearMemory() {
+  MEM.fill(0);
+  updateUI();
+  setStatus('Minnet rensat', 'ready');
+  showToast('Minnet rensat', 'ok');
+}
+
+function clearAll() {
+  REG.fill(0); MEM.fill(0);
+  PC = 0; IR = 0; halted = false; stepCount = 0;
+  updateUI(); clearLog();
+  setStatus('Redo', 'ready');
+  showToast('Allt rensat', 'ok');
+}
+
+// ═══════════════════════════════════════════════════════
+// PC INPUT
+// ═══════════════════════════════════════════════════════
+function onPCInput() {
+  filterHex(document.getElementById('pc-input'), 2);
+}
+function onPCBlur() {
+  const inp = document.getElementById('pc-input');
+  PC = clamp8(parseInt(inp.value || '0', 16));
+  inp.value = h2(PC);
+  halted = false;
+  updatePCHighlight();
+  setStatus(`PC → ${h2(PC)}`, 'ready');
+}
+
+// ═══════════════════════════════════════════════════════
+// FILE SAVE / LOAD
+// ═══════════════════════════════════════════════════════
+function saveFile() {
+  syncStateFromUI();
+  let lines = [];
+  for (let r = 0; r < 16; r++) {
+    const row = [];
+    for (let c = 0; c < 16; c++) row.push(h2(MEM[r*16+c]));
+    lines.push(row.join(' '));
+  }
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'program.sim';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('Sparad som program.sim', 'ok');
+}
+
+function loadFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const pairs = e.target.result.match(/[0-9a-fA-F]{2}/g);
+    if (!pairs || pairs.length < 1) {
+      showToast('Kunde inte tolka filen', 'err');
+      return;
+    }
+    MEM.fill(0);
+    for (let i = 0; i < Math.min(pairs.length, 256); i++) {
+      MEM[i] = parseInt(pairs[i], 16) & 0xFF;
+    }
+    updateUI();
+    showToast(`Laddad: ${file.name}`, 'ok');
+    setStatus('Fil laddad', 'ready');
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ═══════════════════════════════════════════════════════
+// THEME TOGGLE
+// ═══════════════════════════════════════════════════════
+function toggleTheme() {
+  const root = document.documentElement;
+  const current = root.getAttribute('data-theme');
+  const next = current === 'light' ? 'dark' : 'light';
+  root.setAttribute('data-theme', next);
+  document.querySelector('.theme-btn').textContent = next === 'dark' ? '☀' : '🌙';
+}
+
+// ═══════════════════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return; // don't intercept input focus
+  if (e.key === 'F8') { e.preventDefault(); singleStep(); }
+  if (e.key === 'F9') { e.preventDefault(); runProgram(); }
+  if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveFile(); }
+  if (e.ctrlKey && e.key === 'o') { e.preventDefault(); document.getElementById('file-input').click(); }
+});
+
+// ═══════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════
+initRegisters();
+initMemory();
+initRefTable();
+updateUI();
+setStatus('Redo', 'ready');
+</script>

@@ -1,0 +1,1588 @@
+<title>Perceptronen</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* ── Tokens ─────────────────────────────────────── */
+:root {
+  --bg:#0D1117; --surface:#161B22; --surface2:#21262D; --border:#30363D;
+  --text:#E6EDF3; --muted:#8B949E;
+  --green:#3FFFA0; --green-dim:rgba(63,255,160,.12);
+  --amber:#FFB627; --amber-dim:rgba(255,182,39,.12);
+  --blue:#4DB8FF;  --blue-dim:rgba(77,184,255,.12);
+  --red:#FF6B6B;   --red-dim:rgba(255,107,107,.12);
+  --fh:'Space Grotesk',system-ui,sans-serif;
+  --fb:'Inter',system-ui,sans-serif;
+  --fm:'JetBrains Mono',monospace;
+  --r:8px;
+}
+@media (prefers-color-scheme:light){ :root:not([data-theme="dark"]){
+  --bg:#F5F7FF; --surface:#FFF; --surface2:#EEF1FA; --border:#D1D9E6;
+  --text:#111827; --muted:#6B7280;
+  --green:#0A7848; --green-dim:rgba(10,120,72,.10);
+  --amber:#92600A; --amber-dim:rgba(146,96,10,.10);
+  --blue:#1A65A3;  --blue-dim:rgba(26,101,163,.10);
+  --red:#DC2626;   --red-dim:rgba(220,38,38,.10);
+}}
+:root[data-theme="light"]{
+  --bg:#F5F7FF; --surface:#FFF; --surface2:#EEF1FA; --border:#D1D9E6;
+  --text:#111827; --muted:#6B7280;
+  --green:#0A7848; --green-dim:rgba(10,120,72,.10);
+  --amber:#92600A; --amber-dim:rgba(146,96,10,.10);
+  --blue:#1A65A3;  --blue-dim:rgba(26,101,163,.10);
+  --red:#DC2626;   --red-dim:rgba(220,38,38,.10);
+}
+:root[data-theme="dark"]{
+  --bg:#0D1117; --surface:#161B22; --surface2:#21262D; --border:#30363D;
+  --text:#E6EDF3; --muted:#8B949E;
+  --green:#3FFFA0; --green-dim:rgba(63,255,160,.12);
+  --amber:#FFB627; --amber-dim:rgba(255,182,39,.12);
+  --blue:#4DB8FF;  --blue-dim:rgba(77,184,255,.12);
+  --red:#FF6B6B;   --red-dim:rgba(255,107,107,.12);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--fb);background:var(--bg);color:var(--text);line-height:1.65;min-height:100vh;}
+
+/* ── Header ─────────────────────────────────────── */
+header{
+  position:sticky;top:0;z-index:50;
+  background:var(--surface);border-bottom:1px solid var(--border);
+}
+.hbar{display:flex;align-items:center;gap:12px;padding:0 24px;max-width:1200px;margin:0 auto;}
+.back-link{display:flex;align-items:center;gap:6px;color:var(--muted);
+           text-decoration:none;font-size:.82rem;padding:14px 0;transition:color .15s;white-space:nowrap;}
+.back-link:hover{color:var(--text);}
+.hbar-title{font-family:var(--fh);font-weight:700;font-size:.95rem;color:var(--text);
+            padding:14px 0;margin-right:auto;}
+
+/* ── Tabs ────────────────────────────────────────── */
+.tabs-nav{display:flex;gap:0;overflow-x:auto;}
+.tab-btn{
+  padding:14px 22px;border:none;background:none;
+  font-family:var(--fb);font-size:.88rem;font-weight:500;
+  color:var(--muted);cursor:pointer;white-space:nowrap;
+  border-bottom:2px solid transparent;transition:color .15s,border-color .15s;
+}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--green);border-bottom-color:var(--green);}
+
+.theme-btn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;
+           color:var(--muted);cursor:pointer;padding:6px 10px;font-size:1rem;
+           transition:color .15s,background .15s;flex-shrink:0;}
+.theme-btn:hover{color:var(--text);}
+
+/* ── Tab panels ──────────────────────────────────── */
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.container{max-width:1100px;margin:0 auto;padding:0 24px;}
+.section{padding:52px 0;}
+.section+.section{border-top:1px solid var(--border);}
+
+/* ── Prose ───────────────────────────────────────── */
+.prose h2{font-family:var(--fh);font-size:clamp(1.5rem,3vw,2rem);font-weight:700;
+          margin-bottom:16px;text-wrap:balance;}
+.prose h3{font-family:var(--fh);font-size:1.1rem;font-weight:600;
+          margin:24px 0 8px;color:var(--text);}
+.prose p{color:var(--muted);margin-bottom:14px;font-size:.97rem;}
+.prose .hl{color:var(--text);}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:40px;}
+@media(max-width:680px){.two-col{grid-template-columns:1fr;}}
+
+/* ── Neuron SVG ──────────────────────────────────── */
+.diag-wrap{display:flex;gap:36px;align-items:flex-start;flex-wrap:wrap;margin-top:28px;}
+.diag-box{background:var(--surface);border:1px solid var(--border);
+          border-radius:var(--r);padding:20px;flex:0 0 auto;}
+.neuron-svg{width:420px;max-width:100%;display:block;}
+.ni{fill:var(--blue-dim);stroke:var(--blue);stroke-width:2;}
+.ns{fill:var(--surface2);stroke:var(--green);stroke-width:2;}
+.no{fill:var(--green-dim);stroke:var(--green);stroke-width:2;}
+.nstep{fill:var(--surface2);stroke:var(--amber);stroke-width:1.5;}
+.wl{stroke:var(--amber);stroke-width:2;fill:none;}
+.tl{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:4 3;}
+.svg-lbl{font-family:var(--fm);font-size:13px;fill:var(--text);text-anchor:middle;dominant-baseline:central;}
+.svg-w{font-family:var(--fm);font-size:11px;fill:var(--amber);text-anchor:middle;}
+.svg-sm{font-family:var(--fm);font-size:10px;fill:var(--muted);}
+
+/* ── Formula boxes ───────────────────────────────── */
+.fbox{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+      padding:18px 22px;margin:16px 0;display:inline-block;}
+.fbox code{display:block;font-family:var(--fm);font-size:.92rem;line-height:2;white-space:pre;}
+.fbox .kw{color:var(--green);} .fbox .w{color:var(--amber);} .fbox .th{color:var(--muted);}
+.rule-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 22px;margin:16px 0;}
+.rule-box code{display:block;font-family:var(--fm);font-size:.88rem;line-height:2;}
+.rule-box .kw{color:var(--amber);} .rule-box .cm{color:var(--muted);font-style:italic;} .rule-box .gr{color:var(--green);}
+
+/* ── History cards ───────────────────────────────── */
+.hcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;}
+.hcard h3{font-family:var(--fh);font-weight:600;font-size:1rem;margin-bottom:10px;}
+.hcard p{font-size:.88rem;color:var(--muted);margin-bottom:8px;}
+.mark1-grid{display:grid;grid-template-columns:repeat(20,1fr);gap:2px;
+            max-width:160px;margin:12px 0;}
+.m1c{border-radius:2px;background:var(--surface2);border:1px solid var(--border);aspect-ratio:1;}
+.m1c.on{background:var(--green);border-color:var(--green);}
+
+/* ═══════════════════════════════════════════════════
+   2D DEMO TAB
+   ═══════════════════════════════════════════════════ */
+/* Problem card */
+.problem-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:24px 28px;margin-bottom:28px;
+  display:grid;grid-template-columns:1fr auto;gap:24px;align-items:start;
+}
+@media(max-width:600px){.problem-card{grid-template-columns:1fr;}}
+.problem-card h3{font-family:var(--fh);font-weight:700;font-size:1.1rem;margin-bottom:8px;}
+.problem-card p{color:var(--muted);font-size:.9rem;margin-bottom:0;}
+.steps-list{list-style:none;counter-reset:steps;display:flex;flex-direction:column;gap:6px;min-width:200px;}
+.steps-list li{counter-increment:steps;display:flex;align-items:flex-start;gap:10px;font-size:.82rem;color:var(--muted);}
+.steps-list li::before{
+  content:counter(steps);flex-shrink:0;
+  width:20px;height:20px;border-radius:50%;
+  background:var(--green-dim);border:1px solid var(--green);
+  color:var(--green);font-family:var(--fm);font-size:.72rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;margin-top:1px;
+}
+
+/* Demo layout */
+.demo-grid{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:start;}
+@media(max-width:720px){.demo-grid{grid-template-columns:1fr;}}
+#plot{display:block;border-radius:var(--r);border:1px solid var(--border);
+      cursor:crosshair;max-width:100%;}
+.cls-toggle{display:flex;gap:8px;margin-top:10px;}
+.cls-btn{flex:1;padding:7px;border-radius:var(--r);border:2px solid;cursor:pointer;
+         font-family:var(--fb);font-size:.82rem;font-weight:600;transition:all .15s;}
+.cls-btn.c0{border-color:var(--red);color:var(--red);background:var(--red-dim);}
+.cls-btn.c1{border-color:var(--blue);color:var(--blue);background:var(--blue-dim);}
+.cls-btn.active{opacity:1;} .cls-btn:not(.active){opacity:.38;}
+.preset-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center;}
+.pre-btn{font-size:.77rem;padding:5px 10px;border-radius:6px;border:1px solid var(--border);
+         background:var(--surface2);color:var(--text);cursor:pointer;white-space:nowrap;
+         transition:border-color .15s,color .15s;}
+.pre-btn:hover{border-color:var(--amber);color:var(--amber);}
+
+/* Control panel */
+.ctrl{display:flex;flex-direction:column;gap:14px;}
+.sg label{display:flex;justify-content:space-between;font-size:.83rem;font-family:var(--fm);margin-bottom:4px;}
+.sg label .val{color:var(--amber);font-weight:600;min-width:40px;text-align:right;}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:4px;
+  border-radius:2px;background:var(--border);outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+  background:var(--amber);border:2px solid var(--surface);box-shadow:0 0 0 2px var(--amber);
+}
+input[type=range]::-moz-range-thumb{
+  width:15px;height:15px;border-radius:50%;
+  background:var(--amber);border:2px solid var(--surface);
+}
+.fml-panel{background:var(--surface2);border-radius:var(--r);padding:12px 14px;border:1px solid var(--border);}
+.fml-panel h4{font-family:var(--fh);font-size:.75rem;font-weight:600;color:var(--muted);
+              text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+.fml-line{font-family:var(--fm);font-size:.82rem;line-height:1.9;}
+.fml-line .vw{color:var(--amber);} .fml-line .vx{color:var(--blue);}
+.fml-line .vt{color:var(--muted);} .fml-out{font-weight:700;font-size:.95rem;
+  margin-top:4px;padding-top:6px;border-top:1px solid var(--border);}
+.stats-row{display:flex;gap:10px;}
+.stat-chip{flex:1;background:var(--surface2);border:1px solid var(--border);
+           border-radius:6px;padding:7px 10px;text-align:center;}
+.stat-chip .sv{font-family:var(--fm);font-size:1rem;font-weight:700;color:var(--green);}
+.stat-chip .sl{font-size:.7rem;color:var(--muted);margin-top:1px;}
+.btn-row{display:flex;gap:7px;flex-wrap:wrap;}
+.btn{padding:7px 13px;border-radius:var(--r);border:1px solid;cursor:pointer;
+     font-family:var(--fb);font-size:.82rem;font-weight:600;transition:all .15s;}
+.btn-p{background:var(--green-dim);border-color:var(--green);color:var(--green);}
+.btn-p:hover{background:var(--green);color:var(--bg);}
+.btn-s{background:transparent;border-color:var(--border);color:var(--muted);}
+.btn-s:hover{border-color:var(--text);color:var(--text);}
+.btn-a{background:var(--amber-dim);border-color:var(--amber);color:var(--amber);}
+.btn-a:hover,.btn-a.running{background:var(--amber);color:var(--bg);border-color:var(--amber);}
+.btn-d{background:var(--red-dim);border-color:var(--red);color:var(--red);}
+.btn-d:hover{background:var(--red);color:#fff;}
+#status2{font-family:var(--fm);font-size:.8rem;min-height:1.3em;}
+#status2.ok{color:var(--green);} #status2.err{color:var(--red);} #status2.warn{color:var(--amber);}
+
+/* Log */
+.log-wrap{margin-top:22px;}
+.log-wrap h3{font-family:var(--fh);font-size:.92rem;font-weight:600;color:var(--muted);margin-bottom:8px;}
+.log-tbl{width:100%;border-collapse:collapse;font-family:var(--fm);font-size:.76rem;overflow-x:auto;display:block;}
+.log-tbl th{text-align:left;padding:5px 9px;background:var(--surface2);color:var(--muted);
+            font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap;}
+.log-tbl td{padding:4px 9px;border-bottom:1px solid var(--border);white-space:nowrap;}
+.log-tbl tr:last-child td{border-bottom:none;}
+.pos{color:var(--green);} .neg{color:var(--red);} .neu{color:var(--muted);}
+
+/* ═══════════════════════════════════════════════════
+   IMAGE TAB
+   ═══════════════════════════════════════════════════ */
+.img-grid{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:start;}
+@media(max-width:720px){.img-grid{grid-template-columns:1fr;}}
+.draw-col{display:flex;flex-direction:column;gap:12px;}
+#pxCanvas{
+  display:block;border-radius:var(--r);border:1px solid var(--border);
+  cursor:crosshair;touch-action:none;
+}
+.draw-label{font-family:var(--fm);font-size:.78rem;color:var(--muted);text-align:center;}
+.draw-actions{display:flex;gap:7px;flex-wrap:wrap;}
+.example-gallery{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;min-height:60px;align-items:flex-start;}
+.ex-thumb{position:relative;cursor:pointer;border-radius:4px;overflow:hidden;
+          border:2px solid var(--border);transition:border-color .15s;}
+.ex-thumb:hover{border-color:var(--red);}
+.ex-thumb canvas{display:block;}
+.ex-thumb .ex-cls{position:absolute;bottom:0;left:0;right:0;height:4px;}
+.ex-thumb .ex-cls.c0{background:var(--red);}
+.ex-thumb .ex-cls.c1{background:var(--blue);}
+
+.right-col{display:flex;flex-direction:column;gap:18px;}
+.panel-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;}
+.panel-box h3{font-family:var(--fh);font-size:.9rem;font-weight:700;margin-bottom:10px;color:var(--muted);
+              text-transform:uppercase;letter-spacing:.05em;}
+.gallery-label{font-size:.8rem;color:var(--muted);margin-bottom:8px;}
+.gallery-sec{margin-bottom:12px;}
+.gallery-sec-title{font-family:var(--fm);font-size:.74rem;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.dot-c0{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0;}
+.dot-c1{width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0;}
+
+/* weight heatmap */
+#wCanvas{display:block;border-radius:var(--r);border:1px solid var(--border);}
+.hmap-legend{display:flex;gap:12px;margin-top:8px;font-family:var(--fm);font-size:.72rem;color:var(--muted);}
+.hmap-legend span{display:flex;align-items:center;gap:5px;}
+.swatch{width:12px;height:12px;border-radius:2px;}
+
+/* result display */
+.result-display{
+  padding:16px;border-radius:var(--r);border:2px solid var(--border);text-align:center;
+  font-family:var(--fh);font-size:1.1rem;font-weight:700;transition:all .2s;
+}
+.result-display.c0{border-color:var(--red);color:var(--red);background:var(--red-dim);}
+.result-display.c1{border-color:var(--blue);color:var(--blue);background:var(--blue-dim);}
+.result-display.none{color:var(--muted);font-size:.85rem;font-weight:400;}
+
+#statusImg{font-family:var(--fm);font-size:.8rem;min-height:1.3em;}
+#statusImg.ok{color:var(--green);} #statusImg.err{color:var(--red);} #statusImg.warn{color:var(--amber);}
+
+/* ═══════════════════════════════════════════════════
+   SPAM TAB
+   ═══════════════════════════════════════════════════ */
+.spam-layout{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:start;}
+@media(max-width:740px){.spam-layout{grid-template-columns:1fr;}}
+#spam-canvas{display:block;border-radius:var(--r);border:1px solid var(--border);cursor:crosshair;max-width:100%;}
+.spam-right{display:flex;flex-direction:column;gap:18px;}
+.intro-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:22px 26px;}
+.intro-card h3{font-family:var(--fh);font-size:1.15rem;font-weight:700;margin-bottom:10px;}
+.intro-card p{color:var(--muted);font-size:.9rem;margin-bottom:10px;}
+.intro-card p:last-child{margin-bottom:0;}
+.var-table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.86rem;}
+.var-table th{text-align:left;padding:6px 10px;background:var(--surface2);color:var(--muted);
+              font-weight:600;border-bottom:1px solid var(--border);font-family:var(--fm);font-size:.78rem;}
+.var-table td{padding:6px 10px;border-bottom:1px solid var(--border);}
+.var-table tr:last-child td{border-bottom:none;}
+.var-table .vn{font-family:var(--fm);color:var(--amber);}
+.verdict-box{border-radius:var(--r);padding:14px 18px;text-align:center;border:2px solid;
+             font-family:var(--fh);font-size:1rem;font-weight:700;transition:all .2s;}
+.verdict-box.spam{border-color:var(--red);color:var(--red);background:var(--red-dim);}
+.verdict-box.legit{border-color:var(--green);color:var(--green);background:var(--green-dim);}
+.verdict-box.none{border-color:var(--border);color:var(--muted);font-size:.85rem;font-weight:400;}
+.rule-natural{background:var(--surface2);border-radius:var(--r);padding:12px 16px;
+              font-family:var(--fm);font-size:.8rem;line-height:1.8;border:1px solid var(--border);}
+.rule-natural .rk{color:var(--amber);font-weight:600;}
+.rule-natural .rv{color:var(--blue);}
+#spam-status{font-family:var(--fm);font-size:.8rem;min-height:1.3em;}
+#spam-status.ok{color:var(--green);} #spam-status.err{color:var(--red);} #spam-status.warn{color:var(--amber);}
+.cls-pair{display:flex;gap:8px;margin-top:8px;}
+.cls-pair .cp{flex:1;padding:7px;border-radius:var(--r);border:2px solid;cursor:pointer;
+              font-family:var(--fb);font-size:.82rem;font-weight:600;transition:all .15s;}
+.cls-pair .cp.c0{border-color:var(--red);color:var(--red);background:var(--red-dim);}
+.cls-pair .cp.c1{border-color:var(--green);color:var(--green);background:var(--green-dim);}
+.cls-pair .cp.active{opacity:1;} .cls-pair .cp:not(.active){opacity:.38;}
+
+/* ── Footer ──────────────────────────────────────── */
+footer{text-align:center;padding:28px;color:var(--muted);font-size:.82rem;
+       border-top:1px solid var(--border);}
+footer a{color:var(--muted);text-decoration:none;}
+footer a:hover{color:var(--text);}
+</style>
+
+<!-- ═══════════════════════════════════════════════════
+     HEADER
+     ═══════════════════════════════════════════════════ -->
+<header>
+  <div class="hbar">
+    <a class="back-link" href="../index.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      AI 1-kursen
+    </a>
+    <span class="hbar-title">Perceptronen</span>
+    <nav class="tabs-nav">
+      <button class="tab-btn active" data-tab="teori">📖 Teori</button>
+      <button class="tab-btn" data-tab="spam">📧 Verkligt exempel</button>
+      <button class="tab-btn" data-tab="demo2d">⬤ Prova själv</button>
+      <button class="tab-btn" data-tab="bild">🖼 Bildklassificering</button>
+    </nav>
+    <button class="theme-btn" id="theme-toggle">☀</button>
+  </div>
+</header>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════════
+     TAB 1: TEORI
+     ═══════════════════════════════════════════════════ -->
+<div id="tab-teori" class="tab-panel active">
+
+  <!-- Hero -->
+  <div class="section container prose">
+    <div style="display:inline-flex;align-items:center;gap:8px;font-family:var(--fm);font-size:.73rem;
+                color:var(--green);background:var(--green-dim);border:1px solid var(--green);
+                border-radius:20px;padding:3px 12px;margin-bottom:20px;">
+      Frank Rosenblatt · Cornell Aeronautical Laboratory · 1957
+    </div>
+    <h2>Den första konstgjorda neuronen</h2>
+    <p>Perceptronen var den algoritm som startade allt. Inspirerad av nervceller i hjärnan konstruerade Frank Rosenblatt 1957 en modell som faktiskt <span class="hl">lärde sig från data</span> — inte bara beräknade ett fast svar. Den lade grunden för allt vi idag kallar maskininlärning och neurala nätverk.</p>
+
+    <div class="diag-wrap">
+      <div class="diag-box">
+        <svg class="neuron-svg" viewBox="0 0 440 160" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="none" stroke="var(--green)" stroke-width="1"/>
+            </marker>
+          </defs>
+          <circle cx="38" cy="52" r="20" class="ni"/>
+          <text x="38" y="52" class="svg-lbl">x₁</text>
+          <circle cx="38" cy="118" r="20" class="ni"/>
+          <text x="38" y="118" class="svg-lbl">x₂</text>
+          <line x1="58" y1="52" x2="175" y2="76" class="wl"/>
+          <line x1="58" y1="118" x2="175" y2="92" class="wl"/>
+          <text x="100" y="50" class="svg-w">w₁</text>
+          <text x="100" y="128" class="svg-w">w₂</text>
+          <line x1="215" y1="10" x2="215" y2="60" class="tl"/>
+          <text x="226" y="28" class="svg-sm" font-family="monospace" fill="var(--muted)">θ</text>
+          <circle cx="215" cy="85" r="24" class="ns"/>
+          <text x="215" y="85" class="svg-lbl" font-size="18">Σ</text>
+          <rect x="260" y="64" width="70" height="42" rx="8" class="nstep"/>
+          <text x="295" y="81" class="svg-lbl" font-size="11" fill="var(--amber)">step</text>
+          <text x="295" y="96" class="svg-lbl" font-size="10" fill="var(--muted)">(·−θ)</text>
+          <line x1="330" y1="85" x2="376" y2="85" stroke="var(--green)" stroke-width="2.5" marker-end="url(#arr)"/>
+          <circle cx="398" cy="85" r="20" class="no"/>
+          <text x="398" y="85" class="svg-lbl">y</text>
+          <text x="38" y="148" class="svg-sm" text-anchor="middle" fill="var(--blue)">indata</text>
+          <text x="295" y="148" class="svg-sm" text-anchor="middle" fill="var(--amber)">aktivering</text>
+          <text x="398" y="148" class="svg-sm" text-anchor="middle" fill="var(--green)">output</text>
+        </svg>
+      </div>
+      <div style="flex:1;min-width:240px">
+        <h3>Formeln</h3>
+        <p>Perceptronen beräknar en <span class="hl">viktad summa</span> av indata och jämför med ett <span class="hl">tröskelvärde θ</span>:</p>
+        <div class="fbox">
+          <code><span class="w">net</span> = <span class="w">w₁</span>·x₁ + <span class="w">w₂</span>·x₂ + … + <span class="w">wₙ</span>·xₙ
+<span class="kw">output</span> = <span class="th">1  om  net ≥ θ
+       0  annars</span></code>
+        </div>
+        <p>Vikterna <span class="hl">w</span> avgör hur mycket varje ingång spelar roll. Tröskeln <span class="hl">θ</span> bestämmer hur aktiv perceptronen måste vara för att svara 1.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Learning rule -->
+  <div class="section container prose">
+    <div class="two-col">
+      <div>
+        <h2>Inlärningsregeln</h2>
+        <p>Det revolutionära var inte formeln — det var att perceptronen <span class="hl">justerar sina vikter automatiskt</span> varje gång den gör fel. Upprepat tillräckligt många gånger hittar den rätt vikter på egen hand.</p>
+        <div class="rule-box">
+          <code><span class="kw">För varje träningsexempel (x, t):</span>
+  y    = predict(x)          <span class="cm">beräkna svar</span>
+  err  = t − y               <span class="cm">0, +1 eller −1</span>
+  <span class="gr">wᵢ</span> ← wᵢ + η·err·xᵢ     <span class="cm">uppdatera vikter</span>
+  <span class="gr">θ</span>  ← θ  − η·err         <span class="cm">uppdatera tröskel</span></code>
+        </div>
+        <p><span class="hl">η</span> (eta) är inlärningshastigheten — hur stora steg vi tar. Rosenblatt bevisade att om problemet är linjärseparabelt, hittar perceptronen alltid rätt vikter till slut — det kallas <em>konvergensteoremets</em>.</p>
+      </div>
+      <div>
+        <h2>Begränsningen: XOR</h2>
+        <p>Perceptronen kan bara separera klasser med en <span class="hl">rät linje</span>. Det kallas linjär separabilitet. OR och AND fungerar — men XOR gör det inte.</p>
+        <p>Minsky och Papert visade detta 1969 i boken <em>Perceptrons</em> — det ledde till det första AI-vintret. Lösningen kom 1986 med flerlagersnätverk och backpropagation.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;max-width:220px;margin:20px auto;">
+          <div style="aspect-ratio:1;border-radius:8px;background:var(--blue-dim);border:2px solid var(--blue);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--fm);font-size:.75rem;color:var(--blue);">
+            <div style="font-size:.62rem;color:var(--muted);margin-bottom:2px">(−1,+1)</div>XOR=1</div>
+          <div style="aspect-ratio:1;border-radius:8px;background:var(--red-dim);border:2px solid var(--red);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--fm);font-size:.75rem;color:var(--red);">
+            <div style="font-size:.62rem;color:var(--muted);margin-bottom:2px">(+1,+1)</div>XOR=0</div>
+          <div style="aspect-ratio:1;border-radius:8px;background:var(--red-dim);border:2px solid var(--red);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--fm);font-size:.75rem;color:var(--red);">
+            <div style="font-size:.62rem;color:var(--muted);margin-bottom:2px">(−1,−1)</div>XOR=0</div>
+          <div style="aspect-ratio:1;border-radius:8px;background:var(--blue-dim);border:2px solid var(--blue);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--fm);font-size:.75rem;color:var(--blue);">
+            <div style="font-size:.62rem;color:var(--muted);margin-bottom:2px">(+1,−1)</div>XOR=1</div>
+        </div>
+        <p style="text-align:center;font-size:.78rem">Ingen rät linje kan skilja blå från röd.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mark I History -->
+  <div class="section container prose">
+    <h2>Mark I Perceptron (1958)</h2>
+    <div class="two-col">
+      <div>
+        <p>Rosenblatts perceptron var ingen mjukvara — det var en <span class="hl">fysisk maskin</span> på flera hundra kilo. Mark I bestod av ett 20×20 rutnät av fotoceller, kopplade till motordrivna potentiometrar som fungerade som justerbara vikter.</p>
+        <div class="hcard" style="margin-top:16px">
+          <h3>Tidslinje</h3>
+          <p>1943 · McCulloch &amp; Pitts — matematisk nervcellsmodell</p>
+          <p>1949 · Donald Hebb — biologisk inlärningsregel</p>
+          <p>1957 · Rosenblatt — perceptronalgoritmen</p>
+          <p>1958 · Mark I — den fysiska maskinen</p>
+          <p>1969 · Minsky &amp; Papert — visar XOR-begränsningen</p>
+          <p>1986 · Backpropagation — flerlagersnätverk löser XOR</p>
+        </div>
+      </div>
+      <div>
+        <p>20×20 fotocellsrutnät (stiliserat — celler lyser slumpmässigt):</p>
+        <div class="mark1-grid" id="mark1-grid"></div>
+        <p style="font-size:.85rem;color:var(--muted);margin-top:12px">Varje cell tar emot ljus och skickar en signal vidare. Signalerna viktas, summeras och jämförs med ett tröskelvärde — exakt samma princip som i perceptronformeln. Mark I tränade att känna igen bokstäver och geometriska former.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     TAB 2: VERKLIGT EXEMPEL — SPAMFILTER
+     ═══════════════════════════════════════════════════ -->
+<div id="tab-spam" class="tab-panel">
+<div class="section container">
+
+  <!-- Intro -->
+  <div class="intro-card" style="margin-bottom:28px">
+    <h3>📧 Spamfilter — ett verkligt problem</h3>
+    <p>Innan djupinlärning och LLM:er löste enkel maskininlärning vardagliga problem — som att skilja spam från legitima e-postmeddelanden. Perceptronen kan lära sig göra det med <strong>bara två egenskaper</strong> (features) ur varje e-post:</p>
+    <table class="var-table">
+      <thead><tr><th>Variabel</th><th>Vad den mäter</th><th>Skala</th></tr></thead>
+      <tbody>
+        <tr><td class="vn">x₁ → "Nyckelord"</td><td>Antal misstänkta ord (t.ex. "Gratis!", "Vinnare", "Klicka nu")</td><td>0 – 10</td></tr>
+        <tr><td class="vn">x₂ → "Länkar"</td><td>Antal externa länkar i meddelandet</td><td>0 – 10</td></tr>
+        <tr><td style="color:var(--red)">Klass 0 = Spam</td><td colspan="2">Många nyckelord och/eller många länkar</td></tr>
+        <tr><td style="color:var(--green)">Klass 1 = Legitim</td><td colspan="2">Få nyckelord och få externa länkar</td></tr>
+      </tbody>
+    </table>
+    <p>Koordinatsystemet nedan visar ett urval e-postmeddelanden. <strong>Klicka</strong> i diagrammet för att testa ett eget meddelande — välj vilken klass det faktiskt tillhör och lägg till det som träningsexempel. Tryck sedan <em>Träna</em> för att se perceptronen lära sig gränsen.</p>
+  </div>
+
+  <div class="spam-layout">
+    <!-- Canvas -->
+    <div>
+      <canvas id="spam-canvas" width="360" height="360"></canvas>
+      <div style="text-align:center;margin-top:4px;">
+        <span style="font-family:var(--fm);font-size:.72rem;color:var(--muted)">x₁ = Misstänkta nyckelord (0–10) →</span>
+      </div>
+      <div class="cls-pair" style="margin-top:10px">
+        <button class="cp c1 active" id="spam-cls1" onclick="setSpamCls(1)">✓ Legitim (klass 1)</button>
+        <button class="cp c0" id="spam-cls0" onclick="setSpamCls(0)">✗ Spam (klass 0)</button>
+      </div>
+      <div class="preset-row" style="margin-top:8px">
+        <span style="font-size:.75rem;color:var(--muted)">Lägg till:</span>
+        <button class="pre-btn" onclick="loadSpamPreset()">Exempeldata</button>
+        <button class="pre-btn" onclick="clearSpamPts()">Rensa</button>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="spam-right">
+      <!-- Verdict for clicked point -->
+      <div class="panel-box" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;">
+        <h3 style="font-family:var(--fh);font-size:.9rem;font-weight:700;margin-bottom:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Klassificering av markerad punkt</h3>
+        <div id="spam-verdict" class="verdict-box none">Klicka i diagrammet för att testa ett e-postmeddelande</div>
+        <div id="spam-values" style="margin-top:10px;font-family:var(--fm);font-size:.8rem;color:var(--muted)"></div>
+        <button class="btn btn-s" id="spam-add-btn" onclick="addSpamClicked()" style="margin-top:10px;width:100%;display:none">
+          + Lägg till som träningsexempel
+        </button>
+      </div>
+
+      <!-- Train -->
+      <div class="panel-box" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;">
+        <h3 style="font-family:var(--fh);font-size:.9rem;font-weight:700;margin-bottom:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Träna perceptronen</h3>
+        <div class="btn-row">
+          <button class="btn btn-p" onclick="spamTrainOne()">1 epok</button>
+          <button class="btn btn-a" id="spam-auto-btn" onclick="toggleSpamAuto()">Auto-träna</button>
+          <button class="btn btn-s" onclick="resetSpam()">Återställ</button>
+        </div>
+        <div id="spam-status" style="margin-top:8px"></div>
+        <div class="stats-row" style="margin-top:10px">
+          <div class="stat-chip"><div class="sv" id="spam-acc">—</div><div class="sl">rätt / totalt</div></div>
+          <div class="stat-chip"><div class="sv" id="spam-ep">0</div><div class="sl">epoker</div></div>
+        </div>
+      </div>
+
+      <!-- Learned rule in natural language -->
+      <div class="panel-box" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;">
+        <h3 style="font-family:var(--fh);font-size:.9rem;font-weight:700;margin-bottom:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Vad har perceptronen lärt sig?</h3>
+        <div class="rule-natural" id="spam-rule">Träna modellen för att se den inlärda regeln.</div>
+        <p style="font-size:.77rem;color:var(--muted);margin-top:10px">Den gröna linjen visar beslutsytan — perceptronens "gräns" mellan spam och legitima meddelanden.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     TAB 3: PROVA SJÄLV (2D)
+     ═══════════════════════════════════════════════════ -->
+<div id="tab-demo2d" class="tab-panel">
+<div class="section container">
+
+  <!-- Problem explanation -->
+  <div class="problem-card">
+    <div>
+      <h3>Uppgiften: lär perceptronen att skilja på två klasser</h3>
+      <p>Vi har ett 2D-plan med punkter märkta som <span style="color:var(--red);font-weight:600">klass 0</span> (röda fyrkanter) eller <span style="color:var(--blue);font-weight:600">klass 1</span> (blå cirklar). Perceptronen har två ingångar — x₁ och x₂ — och ska hitta vikter w₁, w₂ och ett tröskelvärde θ så att linjen <strong style="color:var(--amber)">w₁·x₁ + w₂·x₂ = θ</strong> separerar klasserna. Den gröna linjen i diagrammet är denna beslutsyta. Vikterna justeras automatiskt under träning.</p>
+    </div>
+    <ol class="steps-list">
+      <li>Välj ett förval — eller klicka i diagrammet</li>
+      <li>Välj vilken klass du ritar (0 eller 1)</li>
+      <li>Tryck "Träna automatiskt"</li>
+      <li>Prova XOR — se vad som händer</li>
+    </ol>
+  </div>
+
+  <!-- Demo -->
+  <div class="demo-grid">
+    <div>
+      <canvas id="plot" width="380" height="380"></canvas>
+      <div style="display:flex;gap:16px;margin-top:6px;font-size:.78rem;color:var(--muted);font-family:var(--fm)">
+        <span><span style="color:var(--red);font-size:.9rem">■</span> Klass 0 — fyrkant (röd)</span>
+        <span><span style="color:var(--blue);font-size:.9rem">●</span> Klass 1 — cirkel (blå)</span>
+        <span style="margin-left:auto;font-size:.73rem">Klicka i diagrammet för att lägga till punkter</span>
+      </div>
+      <div class="cls-toggle">
+        <button class="cls-btn c0 active" id="cls0-btn" onclick="setClass2(0)">■ Klass 0 (röd)</button>
+        <button class="cls-btn c1" id="cls1-btn" onclick="setClass2(1)">● Klass 1 (blå)</button>
+      </div>
+      <div style="margin-top:12px">
+        <div style="font-size:.76rem;color:var(--muted);margin-bottom:6px">Ladda ett exempelproblem:</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <button class="pre-btn" onclick="loadPreset2('or')" title="Klass 1 om x₁ > 0 ELLER x₂ > 0" style="display:flex;flex-direction:column;align-items:flex-start;padding:7px 12px">
+            <span style="font-weight:600">Minst ett positivt</span>
+            <span style="font-size:.72rem;color:var(--muted)">x₁ > 0 ELLER x₂ > 0</span>
+          </button>
+          <button class="pre-btn" onclick="loadPreset2('and')" title="Klass 1 bara om BÅDA x₁ > 0 och x₂ > 0" style="display:flex;flex-direction:column;align-items:flex-start;padding:7px 12px">
+            <span style="font-weight:600">Båda positiva</span>
+            <span style="font-size:.72rem;color:var(--muted)">x₁ > 0 OCH x₂ > 0</span>
+          </button>
+          <button class="pre-btn" onclick="loadPreset2('xor')" title="Inte linjärt separerbart — perceptronen klarar det inte!" style="display:flex;flex-direction:column;align-items:flex-start;padding:7px 12px;border-color:var(--amber);color:var(--amber)">
+            <span style="font-weight:600">⚠ Omöjligt fall</span>
+            <span style="font-size:.72rem;color:var(--muted)">Kan ej lösas med en rät linje</span>
+          </button>
+          <button class="pre-btn btn-d" onclick="clearAll2()" style="margin-left:auto;align-self:flex-start;padding:7px 12px">Rensa</button>
+        </div>
+      </div>
+      </div>
+    </div>
+    <div class="ctrl">
+      <div class="sg"><label>w₁ <span class="val" id="v-w1">0.30</span></label>
+        <input type="range" id="sl-w1" min="-3" max="3" step="0.01" value="0.30" oninput="onSlider2()"></div>
+      <div class="sg"><label>w₂ <span class="val" id="v-w2">0.30</span></label>
+        <input type="range" id="sl-w2" min="-3" max="3" step="0.01" value="0.30" oninput="onSlider2()"></div>
+      <div class="sg"><label>θ (tröskel) <span class="val" id="v-th">0.00</span></label>
+        <input type="range" id="sl-th" min="-3" max="3" step="0.01" value="0.00" oninput="onSlider2()"></div>
+      <div class="sg"><label>η (inlärningsh.) <span class="val" id="v-eta">0.10</span></label>
+        <input type="range" id="sl-eta" min="0.01" max="1" step="0.01" value="0.10" oninput="onSlider2()"></div>
+
+      <div class="fml-panel">
+        <h4>Beräkning</h4>
+        <div class="fml-line" id="fml-net">net = <span class="vw">?</span>·x₁ + <span class="vw">?</span>·x₂</div>
+        <div class="fml-line" id="fml-net2" style="color:var(--muted);font-size:.78rem"></div>
+        <div class="fml-line fml-out" id="fml-out">output = ?</div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-chip"><div class="sv" id="stat-acc">—</div><div class="sl">rätt / totalt</div></div>
+        <div class="stat-chip"><div class="sv" id="stat-ep">0</div><div class="sl">epoker</div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-p" onclick="trainOne2()">Träna 1 epok</button>
+        <button class="btn btn-a" id="btn-auto2" onclick="toggleAuto2()">Träna automatiskt</button>
+        <button class="btn btn-s" onclick="resetWeights2()">Återställ vikter</button>
+      </div>
+      <div id="status2"></div>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div class="log-wrap">
+    <h3>Inlärningslogg — vikterna uppdateras bara när perceptronen gör fel</h3>
+    <div style="overflow-x:auto">
+      <table class="log-tbl">
+        <thead><tr><th>Epok</th><th>Punkt</th><th>Kl.</th><th>Nät</th><th>Pred.</th><th>Fel</th><th>Δw₁</th><th>Δw₂</th><th>Δθ</th></tr></thead>
+        <tbody id="log-body2"><tr><td colspan="9" style="color:var(--muted);text-align:center;padding:14px">Lägg till punkter och träna för att se uppdateringar</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     TAB 3: BILDKLASSIFICERING
+     ═══════════════════════════════════════════════════ -->
+<div id="tab-bild" class="tab-panel">
+<div class="section container">
+
+  <div class="problem-card" style="margin-bottom:28px">
+    <div>
+      <h3>Mönsterigenkänning — precis som Mark I Perceptron</h3>
+      <p>Nu har perceptronen <span style="color:var(--green);font-weight:600">100 ingångar</span> — en per pixel i ett 10×10 rutnät. Varje pixels ljusstyrka (0 eller 1) är ett x<sub>i</sub>. Uppgiften: lär perceptronen att skilja på <span style="color:var(--red);font-weight:600">vänster-tunga mönster</span> (klass 0) från <span style="color:var(--blue);font-weight:600">höger-tunga mönster</span> (klass 1). Rita ett testmönster och se hur perceptronen klassificerar det. Viktkartan visar vilka pixlar den lärt sig titta på.</p>
+    </div>
+    <ol class="steps-list">
+      <li>Ladda träningsdata med "Läs in förval"</li>
+      <li>Träna perceptronen</li>
+      <li>Rita ett eget mönster och testa</li>
+      <li>Studera viktkartan — vad har den lärt sig?</li>
+    </ol>
+  </div>
+
+  <div class="img-grid">
+    <!-- Left: drawing canvas -->
+    <div class="draw-col">
+      <div style="font-family:var(--fh);font-weight:600;font-size:.95rem">Rita ett mönster</div>
+      <canvas id="pxCanvas" width="280" height="280"></canvas>
+      <div class="draw-label">Klicka eller dra för att rita · Högerklicka för att sudda</div>
+      <div style="display:flex;gap:8px;margin-top:2px">
+        <button class="btn btn-s" onclick="clearPixels()" style="flex:1">Rensa</button>
+        <button class="btn btn-s" onclick="invertPixels()" style="flex:1">Invertera</button>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:12px">
+        <div style="font-family:var(--fh);font-weight:600;font-size:.9rem;margin-bottom:8px">Lägg till som träningsexempel</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn" style="flex:1;background:var(--red-dim);border-color:var(--red);color:var(--red)" onclick="addImgExample(0)">+ Klass 0 (vänster)</button>
+          <button class="btn" style="flex:1;background:var(--blue-dim);border-color:var(--blue);color:var(--blue)" onclick="addImgExample(1)">+ Klass 1 (höger)</button>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:12px">
+        <div style="font-family:var(--fh);font-weight:600;font-size:.9rem;margin-bottom:8px">Träning</div>
+        <div class="btn-row">
+          <button class="btn btn-s" onclick="loadImgPreset()">Läs in förval</button>
+          <button class="btn btn-p" onclick="trainImg()">Träna 1 epok</button>
+          <button class="btn btn-a" id="btn-aimg" onclick="toggleAutoImg()">Träna auto</button>
+        </div>
+        <div class="btn-row" style="margin-top:6px">
+          <button class="btn btn-s" onclick="resetImgWeights()">Återställ vikter</button>
+          <button class="btn btn-d" onclick="clearImgExamples()">Rensa exempel</button>
+        </div>
+        <div id="statusImg" style="margin-top:6px"></div>
+        <div class="stats-row" style="margin-top:10px">
+          <div class="stat-chip"><div class="sv" id="img-acc">—</div><div class="sl">rätt / totalt</div></div>
+          <div class="stat-chip"><div class="sv" id="img-ep">0</div><div class="sl">epoker</div></div>
+        </div>
+        <div style="margin-top:12px">
+          <button class="btn btn-p" onclick="classifyDrawing()" style="width:100%;padding:10px;font-size:.9rem">
+            Klassificera mitt mönster →
+          </button>
+          <div id="img-result" class="result-display none" style="margin-top:10px">
+            Rita något och klicka Klassificera
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: gallery + heatmap -->
+    <div class="right-col">
+      <div class="panel-box">
+        <h3>Träningsexempel</h3>
+        <div class="gallery-sec">
+          <div class="gallery-sec-title"><span class="dot-c0"></span> Klass 0 — vänster-tunga mönster</div>
+          <div class="example-gallery" id="gallery-c0"></div>
+        </div>
+        <div class="gallery-sec">
+          <div class="gallery-sec-title"><span class="dot-c1"></span> Klass 1 — höger-tunga mönster</div>
+          <div class="example-gallery" id="gallery-c1"></div>
+        </div>
+        <p style="font-size:.75rem;color:var(--muted);margin:0">Klicka på ett exempel för att ta bort det.</p>
+      </div>
+
+      <div class="panel-box">
+        <h3>Viktkarta — vad har perceptronen lärt sig?</h3>
+        <canvas id="wCanvas" width="280" height="280"></canvas>
+        <div class="hmap-legend">
+          <span><span class="swatch" style="background:#FF6B6B"></span> Negativ vikt → klass 0</span>
+          <span><span class="swatch" style="background:#8B949E"></span> Noll</span>
+          <span><span class="swatch" style="background:#4DB8FF"></span> Positiv vikt → klass 1</span>
+        </div>
+        <p style="font-size:.75rem;color:var(--muted);margin-top:8px">Starka blå pixlar röstar för klass 1, röda för klass 0. Träna perceptronen för att se mönstret.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</main>
+
+<footer>
+  <p>AI 1 · Erik Dahlbergsgymnasiet · Teknikprogrammet</p>
+  <p style="margin-top:4px"><a href="../index.html">← Tillbaka till kurssidan</a></p>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   THEME
+   ═══════════════════════════════════════════════════ */
+function gcss(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+function isDark(){
+  const t=document.documentElement.getAttribute('data-theme');
+  return t==='dark'||(t!=='light'&&window.matchMedia('(prefers-color-scheme:dark)').matches);
+}
+(function initTheme(){
+  const s=localStorage.getItem('ai1-theme');
+  if(s) document.documentElement.setAttribute('data-theme',s);
+  updateThemeBtn();
+})();
+function toggleTheme(){
+  const cur=document.documentElement.getAttribute('data-theme');
+  const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+  const next=cur==='dark'?'light':cur==='light'?'dark':dark?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  localStorage.setItem('ai1-theme',next);
+  updateThemeBtn();
+  draw2d(); drawSpam(); drawWeightMap();
+}
+function updateThemeBtn(){
+  document.getElementById('theme-toggle').textContent=isDark()?'☀':'☽';
+}
+document.getElementById('theme-toggle').addEventListener('click',toggleTheme);
+
+/* ═══════════════════════════════════════════════════
+   TABS
+   ═══════════════════════════════════════════════════ */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const id=btn.dataset.tab;
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('tab-'+id).classList.add('active');
+    btn.classList.add('active');
+    if(id==='spam') drawSpam();
+    if(id==='demo2d') draw2d();
+    if(id==='bild'){drawPixelCanvas();drawWeightMap();}
+  });
+});
+
+/* ═══════════════════════════════════════════════════
+   MARK I ANIMATION
+   ═══════════════════════════════════════════════════ */
+(function(){
+  const g=document.getElementById('mark1-grid');
+  for(let i=0;i<400;i++){const c=document.createElement('div');c.className='m1c';g.appendChild(c);}
+  function anim(){
+    const cells=g.querySelectorAll('.m1c');
+    cells.forEach(c=>c.classList.remove('on'));
+    const n=Math.floor(Math.random()*12)+4;
+    const s=new Set();while(s.size<n)s.add(Math.floor(Math.random()*400));
+    s.forEach(i=>cells[i].classList.add('on'));
+    setTimeout(anim,800);
+  }
+  anim();
+})();
+
+/* ═══════════════════════════════════════════════════
+   PERCEPTRON CLASS (shared)
+   ═══════════════════════════════════════════════════ */
+class Perceptron{
+  constructor(n){
+    this.n=n;
+    this.w=new Float64Array(n);
+    this.theta=0;
+    this.eta=0.1;
+  }
+  predict(x){
+    let net=-this.theta;
+    for(let i=0;i<this.n;i++) net+=this.w[i]*x[i];
+    return net>=0?1:0;
+  }
+  trainOne(x,target){
+    const pred=this.predict(x);
+    const err=target-pred;
+    if(err!==0){
+      for(let i=0;i<this.n;i++) this.w[i]+=this.eta*err*x[i];
+      this.theta-=this.eta*err;
+    }
+    return err;
+  }
+  trainEpoch(examples){
+    let updates=0;
+    const idx=[...Array(examples.length).keys()].sort(()=>Math.random()-.5);
+    for(const i of idx) if(this.trainOne(examples[i].x,examples[i].y)!==0) updates++;
+    return updates;
+  }
+  reset(){this.w.fill(0);this.theta=0;}
+  randomize(s=0.15){for(let i=0;i<this.n;i++) this.w[i]=(Math.random()-.5)*s; this.theta=0;}
+}
+
+/* ═══════════════════════════════════════════════════
+   2D DEMO
+   ═══════════════════════════════════════════════════ */
+const CW=380,CH=380,PAD=36,DMIN=-1.5,DMAX=1.5,DRNG=3,PRNG=CW-2*PAD;
+const p2=new Perceptron(2);
+let pts2=[],curCls2=0,epoch2=0,logRows2=[],autoOn2=false;
+
+function toPixel2(dx,dy){
+  return[PAD+(dx-DMIN)/DRNG*PRNG, PAD+(DMAX-dy)/DRNG*PRNG];
+}
+function toData2(px,py){
+  return[DMIN+(px-PAD)/PRNG*DRNG, DMAX-(py-PAD)/PRNG*DRNG];
+}
+
+const canvas2=document.getElementById('plot');
+const ctx2=canvas2.getContext('2d');
+const offCv=document.createElement('canvas'); offCv.width=CW; offCv.height=CH;
+const offCtx=offCv.getContext('2d');
+
+function drawRegions2(){
+  const img=offCtx.createImageData(CW,CH);
+  const d=img.data;
+  const dark=isDark();
+  const c0=dark?[255,107,107]:[220,38,38];
+  const c1=dark?[77,184,255]:[26,101,163];
+  const w1=p2.w[0],w2=p2.w[1],th=p2.theta;
+  for(let py=0;py<CH;py++){
+    for(let px=0;px<CW;px++){
+      const[x,y]=toData2(px,py);
+      const cls=(-th+w1*x+w2*y>=0)?1:0;
+      const col=cls?c1:c0;
+      const i=(py*CW+px)*4;
+      d[i]=col[0];d[i+1]=col[1];d[i+2]=col[2];d[i+3]=26;
+    }
+  }
+  offCtx.putImageData(img,0,0);
+  ctx2.drawImage(offCv,0,0);
+}
+
+function draw2d(){
+  ctx2.clearRect(0,0,CW,CH);
+  ctx2.fillStyle=gcss('--surface'); ctx2.fillRect(0,0,CW,CH);
+  drawRegions2();
+  // grid
+  ctx2.strokeStyle=gcss('--border'); ctx2.lineWidth=.5;
+  for(let v=-1;v<=1;v+=.5){
+    const[gx]=toPixel2(v,0);const[,gy]=toPixel2(0,v);
+    ctx2.beginPath();ctx2.moveTo(gx,PAD-4);ctx2.lineTo(gx,CH-PAD+4);ctx2.stroke();
+    ctx2.beginPath();ctx2.moveTo(PAD-4,gy);ctx2.lineTo(CW-PAD+4,gy);ctx2.stroke();
+  }
+  // axes
+  ctx2.strokeStyle=gcss('--muted');ctx2.lineWidth=1.2;
+  const[ax0,ay]=toPixel2(DMIN,0);const[ax1]=toPixel2(DMAX,0);
+  const[,ay0]=toPixel2(0,DMAX);const[,ay1]=toPixel2(0,DMIN);
+  ctx2.beginPath();ctx2.moveTo(ax0,ay);ctx2.lineTo(ax1,ay);ctx2.stroke();
+  ctx2.beginPath();ctx2.moveTo(toPixel2(0,0)[0],ay0);ctx2.lineTo(toPixel2(0,0)[0],ay1);ctx2.stroke();
+  // axis labels
+  ctx2.fillStyle=gcss('--muted');ctx2.font=`10px ${gcss('--fm')}`;ctx2.textAlign='center';ctx2.textBaseline='top';
+  [-1,-.5,.5,1].forEach(v=>{const[px]=toPixel2(v,0);ctx2.fillText(v.toFixed(1),px,ay+3);});
+  ctx2.textAlign='right';ctx2.textBaseline='middle';
+  [-1,-.5,.5,1].forEach(v=>{const[,py]=toPixel2(0,v);ctx2.fillText(v.toFixed(1),toPixel2(0,0)[0]-4,py);});
+  ctx2.font=`bold 11px ${gcss('--fb')}`;
+  ctx2.fillStyle=gcss('--blue');ctx2.textAlign='center';ctx2.textBaseline='middle';
+  ctx2.fillText('x₁',CW-PAD+14,ay);
+  ctx2.fillText('x₂',toPixel2(0,0)[0]+4,PAD-12);
+  // decision boundary
+  const w1=p2.w[0],w2=p2.w[1],th=p2.theta;
+  ctx2.save();ctx2.shadowColor=gcss('--green');ctx2.shadowBlur=10;
+  ctx2.strokeStyle=gcss('--green');ctx2.lineWidth=2;
+  if(Math.abs(w2)>.01){
+    const y0=(th-w1*DMIN)/w2,y1=(th-w1*DMAX)/w2;
+    const[px0,py0]=toPixel2(DMIN,y0),[px1,py1]=toPixel2(DMAX,y1);
+    ctx2.beginPath();ctx2.moveTo(px0,py0);ctx2.lineTo(px1,py1);ctx2.stroke();
+  } else if(Math.abs(w1)>.01){
+    const x=th/w1;const[px]=toPixel2(x,0);
+    ctx2.beginPath();ctx2.moveTo(px,PAD);ctx2.lineTo(px,CH-PAD);ctx2.stroke();
+  }
+  ctx2.restore();
+  // points
+  for(const p of pts2){
+    const[px,py]=toPixel2(p.x,p.y);
+    const correct=p2.predict([p.x,p.y])===p.cls;
+    const col=p.cls===1?gcss('--blue'):gcss('--red');
+    ctx2.save();
+    if(!correct){ctx2.shadowColor='#FFD700';ctx2.shadowBlur=14;}
+    ctx2.strokeStyle=col;ctx2.lineWidth=2;
+    if(p.cls===1){
+      ctx2.beginPath();ctx2.arc(px,py,7,0,2*Math.PI);
+      ctx2.fillStyle=col+'44';ctx2.fill();ctx2.stroke();
+    } else {
+      ctx2.beginPath();ctx2.rect(px-6,py-6,12,12);
+      ctx2.fillStyle=col+'44';ctx2.fill();ctx2.stroke();
+    }
+    ctx2.restore();
+  }
+}
+
+canvas2.addEventListener('click',e=>{
+  const r=canvas2.getBoundingClientRect();
+  const sx=CW/r.width,sy=CH/r.height;
+  const px=(e.clientX-r.left)*sx,py=(e.clientY-r.top)*sy;
+  if(px<PAD-12||px>CW-PAD+12||py<PAD-12||py>CH-PAD+12) return;
+  const[x,y]=toData2(px,py);
+  pts2.push({x,y,cls:curCls2});
+  draw2d();updateStats2();updateFormula2(x,y);
+});
+canvas2.addEventListener('mousemove',e=>{
+  if(!pts2.length) return;
+  const r=canvas2.getBoundingClientRect();
+  const[x,y]=toData2((e.clientX-r.left)*CW/r.width,(e.clientY-r.top)*CH/r.height);
+  updateFormula2(x,y);
+});
+
+function setClass2(c){
+  curCls2=c;
+  document.getElementById('cls0-btn').classList.toggle('active',c===0);
+  document.getElementById('cls1-btn').classList.toggle('active',c===1);
+}
+
+function onSlider2(){
+  p2.w[0]=+document.getElementById('sl-w1').value;
+  p2.w[1]=+document.getElementById('sl-w2').value;
+  p2.theta=+document.getElementById('sl-th').value;
+  p2.eta=+document.getElementById('sl-eta').value;
+  document.getElementById('v-w1').textContent=p2.w[0].toFixed(2);
+  document.getElementById('v-w2').textContent=p2.w[1].toFixed(2);
+  document.getElementById('v-th').textContent=p2.theta.toFixed(2);
+  document.getElementById('v-eta').textContent=p2.eta.toFixed(2);
+  draw2d();updateStats2();updateFormula2();
+}
+
+function syncSliders2(){
+  const cl=(v,mn,mx)=>Math.max(mn,Math.min(mx,v));
+  document.getElementById('sl-w1').value=cl(p2.w[0],-3,3);
+  document.getElementById('sl-w2').value=cl(p2.w[1],-3,3);
+  document.getElementById('sl-th').value=cl(p2.theta,-3,3);
+  document.getElementById('v-w1').textContent=p2.w[0].toFixed(2);
+  document.getElementById('v-w2').textContent=p2.w[1].toFixed(2);
+  document.getElementById('v-th').textContent=p2.theta.toFixed(2);
+}
+
+function updateFormula2(hx,hy){
+  const x=hx??(pts2.length?pts2[pts2.length-1].x:0.5);
+  const y=hy??(pts2.length?pts2[pts2.length-1].y:0.5);
+  const net=p2.w[0]*x+p2.w[1]*y-p2.theta;
+  const out=net>=0?1:0;
+  const s=p2.w[1]>=0?'+':'−';
+  document.getElementById('fml-net').innerHTML=
+    `net = <span class="vw">${p2.w[0].toFixed(2)}</span>·x₁ ${s} <span class="vw">${Math.abs(p2.w[1]).toFixed(2)}</span>·x₂ − θ`;
+  document.getElementById('fml-net2').innerHTML=
+    `= <span class="vw">${net.toFixed(3)}</span> (θ = <span class="vt">${p2.theta.toFixed(2)}</span>)`;
+  const outEl=document.getElementById('fml-out');
+  outEl.innerHTML=`output = <span style="color:${out?gcss('--green'):gcss('--red')}">${out}</span> (net ${net>=0?'≥':'<'} 0)`;
+}
+
+function updateStats2(){
+  const n=pts2.length,ok=pts2.filter(p=>p2.predict([p.x,p.y])===p.cls).length;
+  document.getElementById('stat-acc').textContent=n?`${ok}/${n}`:'—';
+  document.getElementById('stat-ep').textContent=epoch2;
+}
+
+function setStatus2(m,c=''){
+  const el=document.getElementById('status2');el.textContent=m;el.className=c;
+}
+
+function renderLog2(){
+  const tb=document.getElementById('log-body2');
+  if(!logRows2.length){
+    tb.innerHTML='<tr><td colspan="9" style="color:var(--muted);text-align:center;padding:14px">Ingen inlärning ännu</td></tr>';return;
+  }
+  tb.innerHTML=logRows2.map(r=>{
+    const dc=v=>(+v>0?`<span class="pos">+${v}</span>`:`<span class="${+v<0?'neg':'neu'}">${v}</span>`);
+    return`<tr><td>${r.ep}</td><td>(${r.px},${r.py})</td><td class="${r.cls?'pos':'neg'}">${r.cls}</td>
+      <td>${r.net}</td><td class="${r.pred?'pos':'neg'}">${r.pred}</td><td class="${r.err>0?'pos':r.err<0?'neg':'neu'}">${r.err>0?'+':''}${r.err}</td>
+      <td>${dc(r.dw1)}</td><td>${dc(r.dw2)}</td><td>${dc(r.dth)}</td></tr>`;
+  }).join('');
+}
+
+function trainOne2(){
+  if(!pts2.length){setStatus2('Inga punkter!','warn');return false;}
+  let upd=0;
+  const shuf=[...pts2].sort(()=>Math.random()-.5);
+  for(const p of shuf){
+    const prev_w1=p2.w[0],prev_w2=p2.w[1],prev_th=p2.theta;
+    const err=p2.trainOne([p.x,p.y],p.cls);
+    if(err!==0){
+      logRows2.unshift({ep:epoch2,px:p.x.toFixed(2),py:p.y.toFixed(2),cls:p.cls,
+        net:(p2.w[0]*p.x+p2.w[1]*p.y-prev_th).toFixed(2),
+        pred:err===1?0:1,err,
+        dw1:(p2.w[0]-prev_w1).toFixed(3),
+        dw2:(p2.w[1]-prev_w2).toFixed(3),
+        dth:(p2.theta-prev_th).toFixed(3)});
+      if(logRows2.length>10) logRows2.pop();
+      upd++;
+    }
+  }
+  epoch2++;
+  syncSliders2();draw2d();updateStats2();updateFormula2();renderLog2();
+  if(!upd){setStatus2(`✓ Konvergerat efter ${epoch2} epoker!`,'ok');return true;}
+  setStatus2(`Epok ${epoch2}: ${upd} uppdateringar`,'');
+  return false;
+}
+
+function toggleAuto2(){
+  autoOn2=!autoOn2;
+  const b=document.getElementById('btn-auto2');
+  b.textContent=autoOn2?'Stoppa träning':'Träna automatiskt';
+  b.classList.toggle('running',autoOn2);
+  if(autoOn2) autoStep2();
+}
+function autoStep2(){
+  if(!autoOn2) return;
+  const done=trainOne2();
+  if(done||epoch2>=500){
+    autoOn2=false;
+    const b=document.getElementById('btn-auto2');
+    b.textContent='Träna automatiskt';b.classList.remove('running');
+    if(epoch2>=500&&!done) setStatus2('Ej konvergent — troligen inte linjärseparabelt!','err');
+  } else {
+    setTimeout(()=>requestAnimationFrame(autoStep2),80);
+  }
+}
+function resetWeights2(){
+  p2.randomize(.3);epoch2=0;logRows2=[];
+  syncSliders2();draw2d();updateStats2();updateFormula2();renderLog2();
+  setStatus2('Vikter återställda','');
+}
+function clearAll2(){
+  pts2=[];epoch2=0;logRows2=[];
+  p2.randomize(.3);
+  syncSliders2();draw2d();updateStats2();updateFormula2();renderLog2();
+  setStatus2('Allt rensat','');
+}
+
+const PRESETS2={
+  or:[{x:-.7,y:-.7,cls:0},{x:-.7,y:.7,cls:1},{x:.7,y:-.7,cls:1},{x:.7,y:.7,cls:1}],
+  and:[{x:-.7,y:-.7,cls:0},{x:-.7,y:.7,cls:0},{x:.7,y:-.7,cls:0},{x:.7,y:.7,cls:1}],
+  xor:[{x:-.7,y:-.7,cls:0},{x:-.7,y:.7,cls:1},{x:.7,y:-.7,cls:1},{x:.7,y:.7,cls:0}],
+};
+function loadPreset2(n){
+  pts2=PRESETS2[n].map(p=>({...p}));
+  p2.randomize(.2);epoch2=0;logRows2=[];
+  syncSliders2();draw2d();updateStats2();updateFormula2();renderLog2();
+  const msg={or:'OR-grind laddad',and:'AND-grind laddad',xor:'XOR laddad — obs: ej linjärseparabelt!'};
+  setStatus2(msg[n],n==='xor'?'warn':'');
+}
+
+draw2d(); updateStats2(); updateFormula2();
+
+/* ═══════════════════════════════════════════════════
+   SPAM DEMO
+   ═══════════════════════════════════════════════════ */
+const SCW=360,SCH=360,SPAD=44,SMIN=0,SMAX=10,SRNG=10,SPRNG=SCW-2*SPAD;
+const pSpam=new Perceptron(2);
+let spamPts=[],curSpamCls=1,spamEpoch=0,spamAutoOn=false,spamAutoTimer=null;
+let spamClicked=null; // {x,y} in data coords
+
+const spamCanvas=document.getElementById('spam-canvas');
+const sCtx=spamCanvas.getContext('2d');
+const offSpam=document.createElement('canvas'); offSpam.width=SCW; offSpam.height=SCH;
+const offSCtx=offSpam.getContext('2d');
+
+function toPixelS(dx,dy){
+  return[SPAD+(dx-SMIN)/SRNG*SPRNG, SPAD+(SMAX-dy)/SRNG*SPRNG];
+}
+function toDataS(px,py){
+  return[SMIN+(px-SPAD)/SPRNG*SRNG, SMAX-(py-SPAD)/SPRNG*SRNG];
+}
+
+function drawSpamRegions(){
+  const img=offSCtx.createImageData(SCW,SCH);
+  const d=img.data;
+  const dark=isDark();
+  // class 1 (legit) = green tint, class 0 (spam) = red tint
+  const c0=dark?[255,107,107]:[220,38,38];
+  const c1=dark?[63,220,120]:[10,120,72];
+  const w1=pSpam.w[0],w2=pSpam.w[1],th=pSpam.theta;
+  const hasWeights=Math.abs(w1)+Math.abs(w2)+Math.abs(th)>0.001;
+  if(!hasWeights){offSCtx.putImageData(img,0,0);sCtx.drawImage(offSpam,0,0);return;}
+  for(let py=0;py<SCH;py++){
+    for(let px=0;px<SCW;px++){
+      const[x,y]=toDataS(px,py);
+      if(x<SMIN||x>SMAX||y<SMIN||y>SMAX) continue;
+      const cls=(-th+w1*x+w2*y>=0)?1:0;
+      const col=cls?c1:c0;
+      const i=(py*SCW+px)*4;
+      d[i]=col[0];d[i+1]=col[1];d[i+2]=col[2];d[i+3]=22;
+    }
+  }
+  offSCtx.putImageData(img,0,0);
+  sCtx.drawImage(offSpam,0,0);
+}
+
+function drawSpam(){
+  const dark=isDark();
+  const bg=dark?'#161B22':'#ffffff';
+  const grid=dark?'#30363D':'#D1D9E6';
+  const textCol=dark?'#8B949E':'#6B7280';
+  const textPrimary=dark?'#E6EDF3':'#111827';
+  sCtx.clearRect(0,0,SCW,SCH);
+  sCtx.fillStyle=bg; sCtx.fillRect(0,0,SCW,SCH);
+
+  // grid lines
+  sCtx.strokeStyle=grid; sCtx.lineWidth=1;
+  for(let v=0;v<=10;v+=2){
+    const[gx]=toPixelS(v,0); const[,gy]=toPixelS(0,v);
+    sCtx.beginPath(); sCtx.moveTo(gx,SPAD); sCtx.lineTo(gx,SCH-SPAD); sCtx.stroke();
+    sCtx.beginPath(); sCtx.moveTo(SPAD,gy); sCtx.lineTo(SCW-SPAD,gy); sCtx.stroke();
+  }
+
+  // region fill
+  drawSpamRegions();
+
+  // decision boundary
+  const w1=pSpam.w[0],w2=pSpam.w[1],th=pSpam.theta;
+  if(Math.abs(w2)>0.001){
+    // line: w1*x + w2*y = th  →  y=(th-w1*x)/w2
+    const x0=SMIN, y0=(th-w1*x0)/w2;
+    const x1=SMAX, y1=(th-w1*x1)/w2;
+    const[px0,py0]=toPixelS(x0,y0);
+    const[px1,py1]=toPixelS(x1,y1);
+    sCtx.save();
+    sCtx.strokeStyle=dark?'#3FFFA0':'#0A7848';
+    sCtx.lineWidth=2.5; sCtx.setLineDash([6,4]);
+    sCtx.beginPath(); sCtx.moveTo(px0,py0); sCtx.lineTo(px1,py1); sCtx.stroke();
+    sCtx.restore();
+  } else if(Math.abs(w1)>0.001){
+    const x0=th/w1;
+    const[px0]=toPixelS(x0,0);
+    sCtx.save();
+    sCtx.strokeStyle=dark?'#3FFFA0':'#0A7848';
+    sCtx.lineWidth=2.5; sCtx.setLineDash([6,4]);
+    sCtx.beginPath(); sCtx.moveTo(px0,SPAD); sCtx.lineTo(px0,SCH-SPAD); sCtx.stroke();
+    sCtx.restore();
+  }
+
+  // axis lines
+  sCtx.strokeStyle=dark?'#30363D':'#D1D9E6'; sCtx.lineWidth=1.5; sCtx.setLineDash([]);
+  sCtx.strokeRect(SPAD,SPAD,SPRNG,SPRNG);
+
+  // axis tick labels
+  sCtx.fillStyle=textCol; sCtx.font='11px JetBrains Mono,monospace'; sCtx.textAlign='center';
+  for(let v=0;v<=10;v+=2){
+    const[gx]=toPixelS(v,0); const[,gy]=toPixelS(0,v);
+    sCtx.fillText(v,gx,SCH-SPAD+14);
+    sCtx.textAlign='right'; sCtx.fillText(v,SPAD-8,gy+4); sCtx.textAlign='center';
+  }
+
+  // Y axis label (rotated)
+  sCtx.save();
+  sCtx.fillStyle=textCol; sCtx.font='11px Inter,sans-serif';
+  sCtx.translate(12,SCH/2); sCtx.rotate(-Math.PI/2);
+  sCtx.textAlign='center'; sCtx.fillText('x₂ = Externa länkar',0,0);
+  sCtx.restore();
+
+  // points
+  spamPts.forEach(pt=>{
+    const[px,py]=toPixelS(pt.x[0],pt.x[1]);
+    const spam=pt.y===0;
+    sCtx.beginPath(); sCtx.arc(px,py,6,0,Math.PI*2);
+    sCtx.fillStyle=spam?(dark?'#FF6B6B':'#DC2626'):(dark?'#3FFFA0':'#0A7848');
+    sCtx.fill();
+    sCtx.strokeStyle=dark?'#161B22':'#ffffff'; sCtx.lineWidth=1.5;
+    sCtx.stroke();
+  });
+
+  // clicked test point
+  if(spamClicked){
+    const[px,py]=toPixelS(spamClicked[0],spamClicked[1]);
+    sCtx.beginPath(); sCtx.arc(px,py,8,0,Math.PI*2);
+    sCtx.strokeStyle=dark?'#FFB627':'#92600A'; sCtx.lineWidth=2.5; sCtx.setLineDash([]);
+    sCtx.stroke();
+    sCtx.beginPath(); sCtx.arc(px,py,3,0,Math.PI*2);
+    sCtx.fillStyle=dark?'#FFB627':'#92600A'; sCtx.fill();
+  }
+
+  // legend
+  sCtx.font='11px Inter,sans-serif'; sCtx.textAlign='left';
+  sCtx.fillStyle=dark?'#FF6B6B':'#DC2626';
+  sCtx.beginPath(); sCtx.arc(SPAD+8,SPAD-18,5,0,Math.PI*2); sCtx.fill();
+  sCtx.fillStyle=textCol; sCtx.fillText('Spam',SPAD+17,SPAD-14);
+  sCtx.fillStyle=dark?'#3FFFA0':'#0A7848';
+  sCtx.beginPath(); sCtx.arc(SPAD+75,SPAD-18,5,0,Math.PI*2); sCtx.fill();
+  sCtx.fillStyle=textCol; sCtx.fillText('Legitim',SPAD+84,SPAD-14);
+
+  updateSpamRule();
+}
+
+function updateSpamRule(){
+  const w1=pSpam.w[0],w2=pSpam.w[1],th=pSpam.theta;
+  const rEl=document.getElementById('spam-rule');
+  if(spamEpoch===0){
+    rEl.innerHTML='Träna modellen för att se den inlärda regeln.';
+    return;
+  }
+  const s=v=>v>=0?'+'+v.toFixed(3):v.toFixed(3);
+  rEl.innerHTML=
+    `<span class="rk">Om</span>  <span class="rv">${w1.toFixed(3)}</span> × nyckelord`+
+    `  <span class="rk">${w2>=0?'+':''}</span>  <span class="rv">${w2.toFixed(3)}</span> × länkar`+
+    `  <span class="rk">≥</span>  <span class="rv">${th.toFixed(3)}</span>`+
+    `\n→ <span class="rk">Klassas som</span> legitim e-post (klass 1)\n`+
+    `→ Annars: spam (klass 0)`;
+}
+
+function updateSpamStats(){
+  if(!spamPts.length){
+    document.getElementById('spam-acc').textContent='—';
+    return;
+  }
+  let ok=0;
+  spamPts.forEach(p=>{if(pSpam.predict(p.x)===p.y)ok++;});
+  document.getElementById('spam-acc').textContent=`${ok}/${spamPts.length}`;
+  document.getElementById('spam-ep').textContent=spamEpoch;
+}
+
+function spamTrainOne(){
+  if(!spamPts.length){
+    setSpamStatus('Lägg till träningsexempel först.','warn'); return;
+  }
+  const updates=pSpam.trainEpoch(spamPts);
+  spamEpoch++;
+  updateSpamStats();
+  if(updates===0){
+    setSpamStatus(`Epok ${spamEpoch}: konvergerat! ✓`,'ok');
+    if(spamAutoOn) stopSpamAuto();
+  } else {
+    setSpamStatus(`Epok ${spamEpoch}: ${updates} uppdatering${updates>1?'ar':''}`, '');
+  }
+  drawSpam();
+}
+
+function setSpamStatus(msg,cls){
+  const el=document.getElementById('spam-status');
+  el.textContent=msg; el.className=''; if(cls) el.classList.add(cls);
+}
+
+function toggleSpamAuto(){
+  if(spamAutoOn) stopSpamAuto();
+  else {
+    spamAutoOn=true;
+    document.getElementById('spam-auto-btn').classList.add('running');
+    spamAutoTimer=setInterval(()=>{
+      spamTrainOne();
+      if(!spamAutoOn) clearInterval(spamAutoTimer);
+    },120);
+  }
+}
+function stopSpamAuto(){
+  spamAutoOn=false;
+  clearInterval(spamAutoTimer);
+  document.getElementById('spam-auto-btn').classList.remove('running');
+}
+
+function resetSpam(){
+  stopSpamAuto();
+  pSpam.reset(); spamEpoch=0; spamClicked=null;
+  document.getElementById('spam-verdict').className='verdict-box none';
+  document.getElementById('spam-verdict').textContent='Klicka i diagrammet för att testa ett e-postmeddelande';
+  document.getElementById('spam-values').textContent='';
+  document.getElementById('spam-add-btn').style.display='none';
+  setSpamStatus('','');
+  updateSpamStats();
+  drawSpam();
+}
+
+function clearSpamPts(){
+  stopSpamAuto();
+  spamPts=[]; spamEpoch=0; pSpam.reset(); spamClicked=null;
+  document.getElementById('spam-verdict').className='verdict-box none';
+  document.getElementById('spam-verdict').textContent='Klicka i diagrammet för att testa ett e-postmeddelande';
+  document.getElementById('spam-values').textContent='';
+  document.getElementById('spam-add-btn').style.display='none';
+  setSpamStatus('','');
+  updateSpamStats();
+  drawSpam();
+}
+
+function setSpamCls(c){
+  curSpamCls=c;
+  document.getElementById('spam-cls0').classList.toggle('active',c===0);
+  document.getElementById('spam-cls1').classList.toggle('active',c===1);
+}
+
+function loadSpamPreset(){
+  // Legitimaemails: few keywords, few links
+  const legit=[[1,0],[0,1],[2,1],[1,2],[0,3],[3,0],[2,2],[3,1],[1,4],[0,2]];
+  // Spam: many keywords and/or many links
+  const spam=[[8,7],[7,9],[9,6],[6,8],[8,5],[9,9],[7,7],[6,9],[8,8],[9,5]];
+  legit.forEach(([a,b])=>spamPts.push({x:[a,b],y:1}));
+  spam.forEach(([a,b])=>spamPts.push({x:[a,b],y:0}));
+  setSpamStatus(`${spamPts.length} exempel laddade.`,'ok');
+  updateSpamStats();
+  drawSpam();
+}
+
+spamCanvas.addEventListener('click',e=>{
+  const r=spamCanvas.getBoundingClientRect();
+  const px=(e.clientX-r.left)*(SCW/r.width);
+  const py=(e.clientY-r.top)*(SCH/r.height);
+  const[dx,dy]=toDataS(px,py);
+  const cx=Math.max(0,Math.min(10,Math.round(dx*10)/10));
+  const cy=Math.max(0,Math.min(10,Math.round(dy*10)/10));
+  spamClicked=[cx,cy];
+
+  // Classify
+  const pred=pSpam.predict([cx,cy]);
+  const vEl=document.getElementById('spam-verdict');
+  const vv=document.getElementById('spam-values');
+  const addBtn=document.getElementById('spam-add-btn');
+  vv.textContent=`Nyckelord: ${cx.toFixed(1)}  ·  Länkar: ${cy.toFixed(1)}`;
+  addBtn.style.display='block';
+  addBtn.textContent=`+ Lägg till som ${curSpamCls===1?'legitim':'spam'}`;
+  if(spamEpoch===0){
+    vEl.className='verdict-box none'; vEl.textContent='Träna modellen för att se klassificering.';
+  } else if(pred===0){
+    vEl.className='verdict-box spam'; vEl.textContent='→ SPAM';
+  } else {
+    vEl.className='verdict-box legit'; vEl.textContent='→ Legitim e-post';
+  }
+  drawSpam();
+});
+
+function addSpamClicked(){
+  if(!spamClicked) return;
+  spamPts.push({x:[spamClicked[0],spamClicked[1]],y:curSpamCls});
+  setSpamStatus(`Punkt (${spamClicked[0].toFixed(1)}, ${spamClicked[1].toFixed(1)}) tillagd som ${curSpamCls===1?'legitim':'spam'}.`,'ok');
+  document.getElementById('spam-add-btn').style.display='none';
+  spamClicked=null;
+  updateSpamStats(); drawSpam();
+}
+
+spamCanvas.addEventListener('contextmenu',e=>{
+  e.preventDefault();
+  if(!spamClicked) return;
+  spamPts.push({x:[spamClicked[0],spamClicked[1]],y:curSpamCls});
+  setSpamStatus(`Punkt (${spamClicked[0].toFixed(1)}, ${spamClicked[1].toFixed(1)}) tillagd som ${curSpamCls===1?'legitim':'spam'}.`,'ok');
+  updateSpamStats(); drawSpam();
+});
+
+// Shift+click to add point
+spamCanvas.addEventListener('click',e=>{
+  if(!e.shiftKey||!spamClicked) return;
+  spamPts.push({x:[spamClicked[0],spamClicked[1]],y:curSpamCls});
+  setSpamStatus(`Punkt tillagd som ${curSpamCls===1?'legitim':'spam'}.`,'ok');
+  updateSpamStats(); drawSpam();
+});
+
+/* ═══════════════════════════════════════════════════
+   IMAGE DEMO
+   ═══════════════════════════════════════════════════ */
+const IMG_N=10, CELL_PX=28;
+const pImg=new Perceptron(IMG_N*IMG_N);
+let curPx=new Array(IMG_N*IMG_N).fill(0);
+let imgExamples=[],imgEpoch=0,imgAutoOn=false;
+
+const pxCv=document.getElementById('pxCanvas');
+const pxCtx=pxCv.getContext('2d');
+const wCv=document.getElementById('wCanvas');
+const wCtx=wCv.getContext('2d');
+
+function drawPixelCanvas(){
+  pxCtx.clearRect(0,0,280,280);
+  const dark=isDark();
+  const bgCol=dark?'#21262D':'#EEF1FA';
+  const onCol=dark?'#E6EDF3':'#111827';
+  const gridCol=dark?'#30363D':'#D1D9E6';
+  pxCtx.fillStyle=bgCol; pxCtx.fillRect(0,0,280,280);
+  for(let r=0;r<IMG_N;r++) for(let c=0;c<IMG_N;c++){
+    const x=c*CELL_PX,y=r*CELL_PX;
+    if(curPx[r*IMG_N+c]){
+      pxCtx.fillStyle=onCol;
+      pxCtx.fillRect(x+1,y+1,CELL_PX-2,CELL_PX-2);
+    }
+    pxCtx.strokeStyle=gridCol; pxCtx.lineWidth=.5;
+    pxCtx.strokeRect(x,y,CELL_PX,CELL_PX);
+  }
+}
+
+function drawWeightMap(){
+  wCtx.clearRect(0,0,280,280);
+  const dark=isDark();
+  const bgCol=dark?'#21262D':'#EEF1FA';
+  wCtx.fillStyle=bgCol; wCtx.fillRect(0,0,280,280);
+  const ws=pImg.w;
+  let maxW=0;
+  for(let i=0;i<ws.length;i++) if(Math.abs(ws[i])>maxW) maxW=Math.abs(ws[i]);
+  const scale=maxW>0?1/maxW:1;
+  for(let r=0;r<IMG_N;r++) for(let c=0;c<IMG_N;c++){
+    const w=ws[r*IMG_N+c]*scale; // -1 to 1
+    const x=c*CELL_PX,y=r*CELL_PX;
+    let col;
+    if(w>0){
+      const a=Math.round(w*200);
+      col=dark?`rgba(77,184,255,${w.toFixed(2)})`:`rgba(26,101,163,${w.toFixed(2)})`;
+    } else if(w<0){
+      col=dark?`rgba(255,107,107,${(-w).toFixed(2)})`:`rgba(220,38,38,${(-w).toFixed(2)})`;
+    } else {
+      col='transparent';
+    }
+    wCtx.fillStyle=col;
+    wCtx.fillRect(x+1,y+1,CELL_PX-2,CELL_PX-2);
+    const gridCol=dark?'#30363D':'#D1D9E6';
+    wCtx.strokeStyle=gridCol; wCtx.lineWidth=.5;
+    wCtx.strokeRect(x,y,CELL_PX,CELL_PX);
+  }
+}
+
+// Drawing on pixel canvas
+let pxDrawing=false, pxDrawVal=1;
+function pxPos(e){
+  const r=pxCv.getBoundingClientRect();
+  const sx=280/r.width,sy=280/r.height;
+  const px=(e.clientX-r.left)*sx,py=(e.clientY-r.top)*sy;
+  return[Math.floor(py/CELL_PX),Math.floor(px/CELL_PX)];
+}
+function setPx(r,c,v){if(r>=0&&r<IMG_N&&c>=0&&c<IMG_N) curPx[r*IMG_N+c]=v;}
+pxCv.addEventListener('mousedown',e=>{
+  e.preventDefault();
+  const[r,c]=pxPos(e);
+  pxDrawing=true;
+  pxDrawVal=e.button===2?0:(curPx[r*IMG_N+c]?0:1);
+  setPx(r,c,pxDrawVal); drawPixelCanvas();
+});
+pxCv.addEventListener('mousemove',e=>{
+  if(!pxDrawing) return;
+  const[r,c]=pxPos(e); setPx(r,c,pxDrawVal); drawPixelCanvas();
+});
+pxCv.addEventListener('contextmenu',e=>e.preventDefault());
+window.addEventListener('mouseup',()=>pxDrawing=false);
+
+// Touch support
+pxCv.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  const t=e.touches[0];
+  const[r,c]=pxPos(t);
+  pxDrawing=true; pxDrawVal=curPx[r*IMG_N+c]?0:1;
+  setPx(r,c,pxDrawVal); drawPixelCanvas();
+},{passive:false});
+pxCv.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  const t=e.touches[0];
+  const[r,c]=pxPos(t); setPx(r,c,pxDrawVal); drawPixelCanvas();
+},{passive:false});
+pxCv.addEventListener('touchend',()=>pxDrawing=false);
+
+function clearPixels(){curPx.fill(0); drawPixelCanvas();}
+function invertPixels(){curPx=curPx.map(v=>v?0:1); drawPixelCanvas();}
+
+// Thumbnail rendering
+function renderThumb(pixels, cls){
+  const cv=document.createElement('canvas'); cv.width=40; cv.height=40;
+  const ctx=cv.getContext('2d');
+  const dark=isDark();
+  ctx.fillStyle=dark?'#21262D':'#EEF1FA'; ctx.fillRect(0,0,40,40);
+  const onCol=dark?'#E6EDF3':'#111827';
+  const cell=4;
+  for(let r=0;r<IMG_N;r++) for(let c=0;c<IMG_N;c++){
+    if(pixels[r*IMG_N+c]){ctx.fillStyle=onCol; ctx.fillRect(c*cell,r*cell,cell,cell);}
+  }
+  const wrap=document.createElement('div'); wrap.className='ex-thumb';
+  wrap.appendChild(cv);
+  const bar=document.createElement('div'); bar.className=`ex-cls c${cls}`; wrap.appendChild(bar);
+  return wrap;
+}
+
+function addImgExample(cls){
+  const px=[...curPx];
+  imgExamples.push({x:px.map(Number),y:cls});
+  renderGalleries();
+  setImgStatus(`Lade till ett klass-${cls}-exempel (totalt ${imgExamples.filter(e=>e.y===cls).length})`,cls===0?'warn':'');
+}
+
+function renderGalleries(){
+  ['c0','c1'].forEach((id,cls)=>{
+    const g=document.getElementById('gallery-'+id);
+    g.innerHTML='';
+    imgExamples.filter(e=>e.y===cls).forEach((ex,i)=>{
+      const idx=imgExamples.indexOf(ex);
+      const thumb=renderThumb(ex.x,cls);
+      thumb.title='Klicka för att ta bort';
+      thumb.addEventListener('click',()=>{imgExamples.splice(idx,1);renderGalleries();});
+      g.appendChild(thumb);
+    });
+    if(!imgExamples.filter(e=>e.y===cls).length){
+      g.innerHTML=`<span style="font-size:.75rem;color:var(--muted);align-self:center">Inga exempel ännu</span>`;
+    }
+  });
+}
+
+// Preset: left-heavy vs right-heavy patterns
+function makeLeftPattern(variant=0){
+  const px=new Array(100).fill(0);
+  const boundary=4+variant; // cols 0..boundary filled
+  for(let r=0;r<10;r++) for(let c=0;c<10;c++) if(c<=boundary) px[r*10+c]=1;
+  return px;
+}
+function makeRightPattern(variant=0){
+  const px=new Array(100).fill(0);
+  const start=5-variant; // cols start..9 filled
+  for(let r=0;r<10;r++) for(let c=0;c<10;c++) if(c>=start) px[r*10+c]=1;
+  return px;
+}
+function addNoise(px, n=3){
+  const p=[...px];
+  for(let i=0;i<n;i++){const idx=Math.floor(Math.random()*100); p[idx]=p[idx]?0:1;}
+  return p;
+}
+
+function loadImgPreset(){
+  imgExamples=[];
+  // Klass 0: vänster-tunga
+  [0,1,-1,2].forEach(v=>imgExamples.push({x:addNoise(makeLeftPattern(v),2).map(Number),y:0}));
+  // Klass 1: höger-tunga
+  [0,1,-1,2].forEach(v=>imgExamples.push({x:addNoise(makeRightPattern(v),2).map(Number),y:1}));
+  renderGalleries();
+  setImgStatus('8 träningsexempel inlästa (4 per klass)','');
+}
+
+function trainImg(){
+  if(!imgExamples.length){setImgStatus('Inga träningsexempel! Använd "Läs in förval".','warn');return false;}
+  const upd=pImg.trainEpoch(imgExamples);
+  imgEpoch++;
+  updateImgStats();drawWeightMap();
+  if(!upd){setImgStatus(`✓ Konvergerat efter ${imgEpoch} epoker!`,'ok');return true;}
+  setImgStatus(`Epok ${imgEpoch}: ${upd} uppdateringar`,'');
+  return false;
+}
+
+function toggleAutoImg(){
+  imgAutoOn=!imgAutoOn;
+  const b=document.getElementById('btn-aimg');
+  b.textContent=imgAutoOn?'Stoppa':'Träna auto';
+  b.classList.toggle('running',imgAutoOn);
+  if(imgAutoOn) autoImgStep();
+}
+function autoImgStep(){
+  if(!imgAutoOn) return;
+  const done=trainImg();
+  if(done||imgEpoch>=500){
+    imgAutoOn=false;
+    const b=document.getElementById('btn-aimg');
+    b.textContent='Träna auto';b.classList.remove('running');
+  } else {
+    setTimeout(()=>requestAnimationFrame(autoImgStep),80);
+  }
+}
+function resetImgWeights(){pImg.reset();imgEpoch=0;updateImgStats();drawWeightMap();setImgStatus('Vikter återställda','');}
+function clearImgExamples(){imgExamples=[];imgEpoch=0;pImg.reset();renderGalleries();updateImgStats();drawWeightMap();setImgStatus('Allt rensat','');}
+
+function updateImgStats(){
+  const n=imgExamples.length;
+  const ok=imgExamples.filter(e=>pImg.predict(e.x)===e.y).length;
+  document.getElementById('img-acc').textContent=n?`${ok}/${n}`:'—';
+  document.getElementById('img-ep').textContent=imgEpoch;
+}
+
+function setImgStatus(m,c=''){const el=document.getElementById('statusImg');el.textContent=m;el.className=c;}
+
+function classifyDrawing(){
+  const pred=pImg.predict(curPx.map(Number));
+  const net=pImg.w.reduce((s,w,i)=>s+w*curPx[i],0)-pImg.theta;
+  const el=document.getElementById('img-result');
+  el.className=`result-display c${pred}`;
+  el.textContent=pred===0
+    ?' Klass 0 — vänster-tung' + ` (net=${net.toFixed(2)})`
+    :' Klass 1 — höger-tung'  + ` (net=${net.toFixed(2)})`;
+}
+
+// Init image tab
+renderGalleries();
+drawPixelCanvas();
+drawWeightMap();
+
+// Init spam tab (canvas not visible yet, call once to set background)
+drawSpam();
+</script>

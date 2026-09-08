@@ -389,14 +389,59 @@ footer a:hover{color:var(--text);}
       <div>
         <h2>Inlärningsregeln</h2>
         <p>Det revolutionära var inte formeln — det var att perceptronen <span class="hl">justerar sina vikter automatiskt</span> varje gång den gör fel. Upprepat tillräckligt många gånger hittar den rätt vikter på egen hand.</p>
-        <div class="rule-box">
-          <code><span class="kw">För varje träningsexempel (x, t):</span>
-  y    = predict(x)          <span class="cm">beräkna svar</span>
-  err  = t − y               <span class="cm">0, +1 eller −1</span>
-  <span class="gr">wᵢ</span> ← wᵢ + η·err·xᵢ     <span class="cm">uppdatera vikter</span>
-  <span class="gr">θ</span>  ← θ  − η·err         <span class="cm">uppdatera tröskel</span></code>
+        <div class="rule-box" style="padding:20px 22px;display:flex;flex-direction:column;gap:0;">
+          <div style="font-size:.72rem;font-family:var(--fm);color:var(--muted);letter-spacing:.06em;margin-bottom:14px;text-transform:uppercase">Upprepa för varje träningsexempel</div>
+
+          <div style="display:grid;grid-template-columns:1.4rem 1fr auto;gap:6px 14px;align-items:start;">
+
+            <!-- Step 1 -->
+            <div style="font-family:var(--fm);font-weight:600;color:var(--blue);font-size:.85rem;padding-top:2px">1</div>
+            <div>
+              <div style="font-size:.8rem;color:var(--muted);margin-bottom:2px">Gissa ett svar</div>
+              <code style="font-size:.9rem;background:none;padding:0;color:var(--text)">y = predict(x)</code>
+            </div>
+            <div style="font-size:.75rem;color:var(--muted);text-align:right;padding-top:3px;white-space:nowrap">y = 0 eller 1</div>
+
+            <!-- divider -->
+            <div style="grid-column:1/-1;height:1px;background:var(--border);margin:8px 0;"></div>
+
+            <!-- Step 2 -->
+            <div style="font-family:var(--fm);font-weight:600;color:var(--blue);font-size:.85rem;padding-top:2px">2</div>
+            <div>
+              <div style="font-size:.8rem;color:var(--muted);margin-bottom:2px">Räkna ut felet</div>
+              <code style="font-size:.9rem;background:none;padding:0;color:var(--text)">err = t − y</code>
+            </div>
+            <div style="font-size:.75rem;color:var(--muted);text-align:right;padding-top:3px;white-space:nowrap">−1, 0 eller +1</div>
+
+            <!-- divider -->
+            <div style="grid-column:1/-1;height:1px;background:var(--border);margin:8px 0;"></div>
+
+            <!-- Step 3 -->
+            <div style="font-family:var(--fm);font-weight:600;color:var(--blue);font-size:.85rem;padding-top:2px">3</div>
+            <div>
+              <div style="font-size:.8rem;color:var(--muted);margin-bottom:2px">Justera vikterna — bara om fel</div>
+              <code style="font-size:.9rem;background:none;padding:0;color:var(--green)">wᵢ ← wᵢ + η · err · xᵢ</code>
+            </div>
+            <div style="font-size:.75rem;color:var(--muted);text-align:right;padding-top:3px;white-space:nowrap">err = 0 → ingen ändring</div>
+
+            <!-- divider -->
+            <div style="grid-column:1/-1;height:1px;background:var(--border);margin:8px 0;"></div>
+
+            <!-- Step 4 -->
+            <div style="font-family:var(--fm);font-weight:600;color:var(--blue);font-size:.85rem;padding-top:2px">4</div>
+            <div>
+              <div style="font-size:.8rem;color:var(--muted);margin-bottom:2px">Justera tröskeln — bara om fel</div>
+              <code style="font-size:.9rem;background:none;padding:0;color:var(--green)">θ ← θ − η · err</code>
+            </div>
+            <div style="font-size:.75rem;color:var(--muted);text-align:right;padding-top:3px;white-space:nowrap">flyttar gränsen</div>
+
+          </div>
         </div>
-        <p><span class="hl">η</span> (eta) är inlärningshastigheten — hur stora steg vi tar. Rosenblatt bevisade att om problemet är linjärseparabelt, hittar perceptronen alltid rätt vikter till slut — det kallas <em>konvergensteoremets</em>.</p>
+        <p style="font-size:.82rem;color:var(--muted);margin-top:10px;line-height:1.5">
+          <span class="hl">t</span> = rätt svar &nbsp;·&nbsp; <span class="hl">y</span> = gissat svar &nbsp;·&nbsp;
+          <span class="hl">η</span> (eta) = inlärningshastighet — hur stora steg vikterna ändras.<br>
+          Rosenblatt bevisade att om problemet är linjärseparabelt hittar perceptronen alltid rätt vikter till slut — <em>konvergensteoremet</em>.
+        </p>
       </div>
       <div>
         <h2>Begränsningen: XOR</h2>
@@ -471,6 +516,27 @@ footer a:hover{color:var(--text);}
       <div style="text-align:center;margin-top:4px;">
         <span style="font-family:var(--fm);font-size:.72rem;color:var(--muted)">x₁ = Misstänkta nyckelord (0–10) →</span>
       </div>
+
+      <!-- Line explanation -->
+      <details style="margin-top:14px;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;">
+        <summary style="cursor:pointer;padding:10px 14px;font-size:.8rem;font-weight:600;font-family:var(--fh);background:var(--surface2);user-select:none;list-style:none;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:.9rem">📐</span> Var kommer linjen ifrån?
+          <span style="margin-left:auto;font-size:.7rem;color:var(--muted);font-weight:400">klicka för förklaring</span>
+        </summary>
+        <div style="padding:16px 18px;font-size:.82rem;line-height:1.7;display:flex;flex-direction:column;gap:10px;">
+          <p>Perceptronen fattar sitt beslut utifrån:</p>
+          <div style="font-family:var(--fm);font-size:.85rem;background:var(--surface2);border-radius:6px;padding:10px 14px;border-left:3px solid var(--blue);">
+            <span style="color:var(--blue)">net</span> = w₁·x₁ + w₂·x₂ − θ
+          </div>
+          <p>Om net ≥ 0 → <span style="color:var(--red);font-weight:600">Spam</span> &nbsp;|&nbsp; Om net &lt; 0 → <span style="color:var(--green);font-weight:600">Legitim</span></p>
+          <p>Beslutslinjen är de punkter där perceptronen är <em>helt osäker</em> — alltså där net = 0:</p>
+          <div style="font-family:var(--fm);font-size:.85rem;background:var(--surface2);border-radius:6px;padding:10px 14px;border-left:3px solid var(--amber);">
+            w₁·x₁ + w₂·x₂ − θ = 0 &nbsp;→&nbsp; <span style="color:var(--green)">x₂ = (θ − w₁·x₁) / w₂</span>
+          </div>
+          <p>Det är en rät linje vars <strong>lutning</strong> bestäms av −w₁/w₂ och <strong>position</strong> av θ/w₂. Värdena på w₁, w₂ och θ är de vikter perceptronen lärde sig under träning — linjen är alltså det geometriska avtrycket av inlärningen, inte en formel vi valde i förväg.</p>
+        </div>
+      </details>
+
       <div class="cls-pair" style="margin-top:10px">
         <button class="cp c1 active" id="spam-cls1" onclick="setSpamCls(1)">✓ Legitim (klass 1)</button>
         <button class="cp c0" id="spam-cls0" onclick="setSpamCls(0)">✗ Spam (klass 0)</button>

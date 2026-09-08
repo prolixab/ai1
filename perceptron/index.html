@@ -690,7 +690,7 @@ footer a:hover{color:var(--text);}
   <div class="problem-card" style="margin-bottom:28px">
     <div>
       <h3>Mönsterigenkänning — precis som Mark I Perceptron</h3>
-      <p>Nu har perceptronen <span style="color:var(--green);font-weight:600">100 ingångar</span> — en per pixel i ett 10×10 rutnät. Varje pixels ljusstyrka (0 eller 1) är ett x<sub>i</sub>. Uppgiften: lär perceptronen att skilja på <span style="color:var(--red);font-weight:600">vänster-tunga mönster</span> (klass 0) från <span style="color:var(--blue);font-weight:600">höger-tunga mönster</span> (klass 1). Rita ett testmönster och se hur perceptronen klassificerar det. Viktkartan visar vilka pixlar den lärt sig titta på.</p>
+      <p>Nu har perceptronen <span style="color:var(--green);font-weight:600">100 ingångar</span> — en per pixel i ett 10×10 rutnät. Varje pixels ljusstyrka (0 eller 1) är ett x<sub>i</sub>. Uppgiften: lär perceptronen att skilja på <span style="color:var(--red);font-weight:600">kvadrater</span> (klass 0) från <span style="color:var(--blue);font-weight:600">cirklar</span> (klass 1). Rita ett testmönster och se hur perceptronen klassificerar det. Viktkartan visar vilka pixlar den lärt sig titta på — troligtvis hörnen, där kvadrat och cirkel skiljer sig mest.</p>
     </div>
     <ol class="steps-list">
       <li>Ladda träningsdata med "Läs in förval"</li>
@@ -713,8 +713,8 @@ footer a:hover{color:var(--text);}
       <div style="border-top:1px solid var(--border);padding-top:12px">
         <div style="font-family:var(--fh);font-weight:600;font-size:.9rem;margin-bottom:8px">Lägg till som träningsexempel</div>
         <div style="display:flex;gap:8px;">
-          <button class="btn" style="flex:1;background:var(--red-dim);border-color:var(--red);color:var(--red)" onclick="addImgExample(0)">+ Klass 0 (vänster)</button>
-          <button class="btn" style="flex:1;background:var(--blue-dim);border-color:var(--blue);color:var(--blue)" onclick="addImgExample(1)">+ Klass 1 (höger)</button>
+          <button class="btn" style="flex:1;background:var(--red-dim);border-color:var(--red);color:var(--red)" onclick="addImgExample(0)">+ Klass 0 — Kvadrat ■</button>
+          <button class="btn" style="flex:1;background:var(--blue-dim);border-color:var(--blue);color:var(--blue)" onclick="addImgExample(1)">+ Klass 1 — Cirkel ●</button>
         </div>
       </div>
       <div style="border-top:1px solid var(--border);padding-top:12px">
@@ -749,11 +749,11 @@ footer a:hover{color:var(--text);}
       <div class="panel-box">
         <h3>Träningsexempel</h3>
         <div class="gallery-sec">
-          <div class="gallery-sec-title"><span class="dot-c0"></span> Klass 0 — vänster-tunga mönster</div>
+          <div class="gallery-sec-title"><span class="dot-c0"></span> Klass 0 — Kvadrater ■</div>
           <div class="example-gallery" id="gallery-c0"></div>
         </div>
         <div class="gallery-sec">
-          <div class="gallery-sec-title"><span class="dot-c1"></span> Klass 1 — höger-tunga mönster</div>
+          <div class="gallery-sec-title"><span class="dot-c1"></span> Klass 1 — Cirklar ●</div>
           <div class="example-gallery" id="gallery-c1"></div>
         </div>
         <p style="font-size:.75rem;color:var(--muted);margin:0">Klicka på ett exempel för att ta bort det.</p>
@@ -767,7 +767,7 @@ footer a:hover{color:var(--text);}
           <span><span class="swatch" style="background:#8B949E"></span> Noll</span>
           <span><span class="swatch" style="background:#4DB8FF"></span> Positiv vikt → klass 1</span>
         </div>
-        <p style="font-size:.75rem;color:var(--muted);margin-top:8px">Starka blå pixlar röstar för klass 1, röda för klass 0. Träna perceptronen för att se mönstret.</p>
+        <p style="font-size:.75rem;color:var(--muted);margin-top:8px">Blå pixlar röstar för cirkel (klass 1), röda för kvadrat (klass 0). Hörnen borde bli röda — det är där formerna skiljer sig mest.</p>
       </div>
     </div>
   </div>
@@ -1565,17 +1565,22 @@ function renderGalleries(){
   });
 }
 
-// Preset: left-heavy vs right-heavy patterns
-function makeLeftPattern(variant=0){
+// Preset: square vs circle patterns
+function makeSquarePattern(variant=0){
   const px=new Array(100).fill(0);
-  const boundary=4+variant; // cols 0..boundary filled
-  for(let r=0;r<10;r++) for(let c=0;c<10;c++) if(c<=boundary) px[r*10+c]=1;
+  // Solid filled square, variant controls size/position
+  const m=[2,1,3,2][variant+1]??2; // margin from edge
+  const sh=variant===2?1:0;        // slight shift to add variety
+  for(let r=0;r<10;r++) for(let c=0;c<10;c++)
+    if(r>=m&&r<10-m&&c>=m+sh&&c<10-m+sh) px[r*10+c]=1;
   return px;
 }
-function makeRightPattern(variant=0){
+function makeCirclePattern(variant=0){
   const px=new Array(100).fill(0);
-  const start=5-variant; // cols start..9 filled
-  for(let r=0;r<10;r++) for(let c=0;c<10;c++) if(c>=start) px[r*10+c]=1;
+  const cy=4.5, cx=4.5+(variant===2?0.6:0);
+  const radius=3.0+(variant===1?0.8:variant===-1?-0.8:0);
+  for(let r=0;r<10;r++) for(let c=0;c<10;c++)
+    if(Math.sqrt((r-cy)**2+(c-cx)**2)<=radius) px[r*10+c]=1;
   return px;
 }
 function addNoise(px, n=3){
@@ -1586,12 +1591,12 @@ function addNoise(px, n=3){
 
 function loadImgPreset(){
   imgExamples=[];
-  // Klass 0: vänster-tunga
-  [0,1,-1,2].forEach(v=>imgExamples.push({x:addNoise(makeLeftPattern(v),2).map(Number),y:0}));
-  // Klass 1: höger-tunga
-  [0,1,-1,2].forEach(v=>imgExamples.push({x:addNoise(makeRightPattern(v),2).map(Number),y:1}));
+  // Klass 0: kvadrater
+  [0,1,-1,2].forEach(v=>imgExamples.push({x:addNoise(makeSquarePattern(v),2).map(Number),y:0}));
+  // Klass 1: cirklar
+  [0,1,-1,2].forEach(v=>imgExamples.push({x:addNoise(makeCirclePattern(v),2).map(Number),y:1}));
   renderGalleries();
-  setImgStatus('8 träningsexempel inlästa (4 per klass)','');
+  setImgStatus('8 träningsexempel inlästa (4 kvadrater, 4 cirklar)','');
 }
 
 function trainImg(){
@@ -1640,8 +1645,8 @@ function classifyDrawing(){
   const el=document.getElementById('img-result');
   el.className=`result-display c${pred}`;
   el.textContent=pred===0
-    ?' Klass 0 — vänster-tung' + ` (net=${net.toFixed(2)})`
-    :' Klass 1 — höger-tung'  + ` (net=${net.toFixed(2)})`;
+    ?`■ Klass 0 — Kvadrat (net=${net.toFixed(2)})`
+    :`● Klass 1 — Cirkel (net=${net.toFixed(2)})`;
 }
 
 // Init image tab

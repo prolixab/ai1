@@ -1,0 +1,828 @@
+<title>Räta linjens ekvation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+
+<style>
+/* === TOKENS === */
+:root {
+  --bg:    #F4F6FC;
+  --surf:  #FFFFFF;
+  --surf2: #EEF2FB;
+  --bdr:   #D8E0F0;
+  --k:     #1D4ED8;
+  --k-bg:  #EFF6FF;
+  --m:     #059669;
+  --m-bg:  #ECFDF5;
+  --txt:   #18212E;
+  --muted: #5E718A;
+  --faint: #99AABF;
+  --red:   #DC2626;
+  --sh:    0 1px 4px rgba(15,30,60,.07), 0 4px 14px rgba(15,30,60,.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:    #0B1120; --surf:  #131C30; --surf2: #192438; --bdr: #233048;
+    --k:     #60A5FA; --k-bg:  #13274A; --m: #34D399;    --m-bg:#0A2F20;
+    --txt:   #DDE6F5; --muted: #8B9BB8; --faint: #4A5870;
+    --red:   #F87171; --sh: 0 1px 4px rgba(0,0,0,.25), 0 4px 14px rgba(0,0,0,.15);
+  }
+}
+:root[data-theme="dark"] {
+  --bg:    #0B1120; --surf:  #131C30; --surf2: #192438; --bdr: #233048;
+  --k:     #60A5FA; --k-bg:  #13274A; --m: #34D399;    --m-bg:#0A2F20;
+  --txt:   #DDE6F5; --muted: #8B9BB8; --faint: #4A5870;
+  --red:   #F87171; --sh: 0 1px 4px rgba(0,0,0,.25), 0 4px 14px rgba(0,0,0,.15);
+}
+
+/* === RESET === */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--txt); line-height:1.65; font-size:15px; }
+canvas { display:block; }
+button { font-family:inherit; cursor:pointer; }
+
+/* === NAV === */
+nav {
+  position:sticky; top:0; z-index:50;
+  background:var(--surf); border-bottom:1px solid var(--bdr);
+  display:flex; align-items:stretch; justify-content:space-between;
+  box-shadow:var(--sh);
+}
+.nav-brand {
+  padding:.7rem 2rem;
+  font-family:'JetBrains Mono',monospace; font-size:.68rem;
+  color:var(--faint); letter-spacing:.05em;
+  display:flex; align-items:center;
+}
+.main-tabs { display:flex; }
+.mtab {
+  padding:.7rem 1.5rem; border:none; background:none;
+  font-size:.85rem; font-weight:500; color:var(--muted);
+  cursor:pointer; position:relative; transition:color .12s;
+  border-left:1px solid var(--bdr);
+}
+.mtab:hover { color:var(--txt); background:var(--surf2); }
+.mtab.active { color:var(--k); }
+.mtab.active::after {
+  content:''; position:absolute; bottom:0; left:0; right:0;
+  height:2px; background:var(--k);
+}
+
+/* === MAIN PANELS === */
+.mpanel { display:none; }
+.mpanel.active { display:block; }
+
+/* === HERO === */
+.hero {
+  max-width:1040px; margin:0 auto;
+  padding:3.5rem 2rem 3rem;
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:3rem; align-items:center;
+}
+.hero-eyebrow { font-family:'JetBrains Mono',monospace; font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin-bottom:.8rem; }
+.hero h1 { font-family:'Playfair Display',Georgia,serif; font-size:clamp(2rem,3.5vw,3rem); font-weight:700; line-height:1.15; text-wrap:balance; margin-bottom:1.8rem; }
+.hero-formula {
+  display:inline-flex; align-items:baseline; gap:.05em;
+  background:var(--surf); border:1px solid var(--bdr);
+  border-radius:14px; padding:1rem 1.8rem; box-shadow:var(--sh);
+  margin-bottom:1.4rem;
+  font-family:'Playfair Display',serif; font-size:2.8rem; line-height:1;
+}
+.hero-formula .fy  { font-style:italic; }
+.hero-formula .feq { color:var(--muted); margin:0 .1em; }
+.hero-formula .fk  { font-style:italic; color:var(--k); font-weight:700; }
+.hero-formula .fx  { font-style:italic; }
+.hero-formula .fpl { color:var(--muted); margin:0 .1em; }
+.hero-formula .fm  { font-style:italic; color:var(--m); font-weight:700; }
+.hero-legend { display:flex; flex-direction:column; gap:.5rem; }
+.legend-row { display:flex; align-items:baseline; gap:.6rem; font-size:.875rem; }
+.legend-sym { font-family:'JetBrains Mono',monospace; font-weight:600; font-size:.9rem; }
+.legend-sym.k { color:var(--k); } .legend-sym.m { color:var(--m); }
+.legend-desc { color:var(--muted); }
+
+/* Canvas panel (hero) */
+.canvas-panel { background:var(--surf); border:1px solid var(--bdr); border-radius:16px; padding:1.25rem; box-shadow:var(--sh); }
+.live-eq { font-family:'JetBrains Mono',monospace; font-size:1rem; font-weight:600; text-align:center; padding:.55rem; background:var(--surf2); border-radius:8px; margin-bottom:.9rem; }
+.live-eq .eq-k { color:var(--k); } .live-eq .eq-m { color:var(--m); }
+.canvas-wrap canvas { width:100%; border-radius:6px; }
+.canvas-controls { display:flex; flex-direction:column; gap:.7rem; margin-top:.9rem; }
+.ctrl-row { display:flex; align-items:center; gap:.75rem; }
+.ctrl-label { font-family:'JetBrains Mono',monospace; font-weight:600; font-size:.875rem; width:1.4rem; flex-shrink:0; }
+.ctrl-label.k { color:var(--k); } .ctrl-label.m { color:var(--m); }
+.ctrl-slider { flex:1; height:4px; border-radius:2px; appearance:none; -webkit-appearance:none; background:var(--bdr); outline:none; }
+.ctrl-slider::-webkit-slider-thumb { appearance:none; -webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:var(--k); cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.2); }
+.ctrl-slider.ms::-webkit-slider-thumb { background:var(--m); }
+.ctrl-slider::-moz-range-thumb { width:16px; height:16px; border-radius:50%; background:var(--k); border:none; cursor:pointer; }
+.ctrl-slider.ms::-moz-range-thumb { background:var(--m); }
+.ctrl-val { font-family:'JetBrains Mono',monospace; font-size:.8rem; color:var(--muted); width:3.5rem; text-align:right; flex-shrink:0; }
+
+/* === DIVIDER === */
+.rule { border:none; border-top:1px solid var(--bdr); margin:0 2rem; }
+
+/* === SECTION === */
+.section { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+.section-tag { font-family:'JetBrains Mono',monospace; font-size:.65rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin-bottom:.4rem; }
+.section-h { font-family:'Playfair Display',serif; font-size:clamp(1.5rem,2.5vw,2rem); font-weight:700; margin-bottom:.6rem; text-wrap:balance; }
+.section-sub { color:var(--muted); font-size:.9rem; margin-bottom:2rem; max-width:58ch; }
+.hl-k { color:var(--k); font-weight:600; } .hl-m { color:var(--m); font-weight:600; }
+
+/* === THEORY CARDS === */
+.theory-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.25rem; margin-bottom:2rem; }
+.tcard { background:var(--surf); border:1px solid var(--bdr); border-radius:12px; padding:1.4rem; box-shadow:var(--sh); }
+.tcard-label { font-size:.7rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); margin-bottom:.75rem; }
+.tcard-main { font-family:'Playfair Display',serif; font-size:1.75rem; font-style:italic; margin-bottom:.75rem; }
+.tcard-main.k { color:var(--k); } .tcard-main.m { color:var(--m); }
+.tcard p { font-size:.875rem; color:var(--muted); line-height:1.6; }
+.tcard p + p { margin-top:.5rem; }
+.tcard code { font-family:'JetBrains Mono',monospace; font-size:.82rem; background:var(--surf2); padding:.1em .4em; border-radius:4px; color:var(--txt); }
+.tcard.wide { grid-column:1/-1; display:grid; grid-template-columns:auto 1fr; gap:2rem; align-items:start; }
+.kfrac { display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; line-height:1.1; margin:0 .2em; }
+.kfrac .num { border-bottom:2px solid var(--txt); padding:0 .4em; font-size:.95rem; line-height:1.8; }
+.kfrac .den { padding:0 .4em; font-size:.95rem; line-height:1.8; }
+.formula-row { font-family:'JetBrains Mono',monospace; font-size:1.05rem; line-height:2.4; margin-bottom:.75rem; }
+.example-pill { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:.82rem; background:var(--surf2); border:1px solid var(--bdr); border-radius:6px; padding:.25rem .7rem; color:var(--txt); }
+.steps-list { display:flex; flex-direction:column; }
+.step-row { display:flex; gap:1rem; align-items:flex-start; padding:.85rem 0; border-bottom:1px solid var(--bdr); }
+.step-row:last-child { border-bottom:none; }
+.step-badge { width:26px; height:26px; border-radius:50%; background:var(--k-bg); color:var(--k); font-family:'JetBrains Mono',monospace; font-size:.75rem; font-weight:600; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; }
+.step-txt { font-size:.875rem; color:var(--muted); line-height:1.6; }
+
+/* === PRACTICE SUB-TABS === */
+.sub-tabs { display:flex; border-bottom:2px solid var(--bdr); margin-bottom:2rem; overflow-x:auto; }
+.stab { padding:.65rem 1.3rem; border:none; background:none; font-size:.82rem; font-weight:500; color:var(--muted); cursor:pointer; position:relative; white-space:nowrap; transition:color .12s; }
+.stab:hover { color:var(--txt); }
+.stab.active { color:var(--k); }
+.stab.active::after { content:''; position:absolute; bottom:-2px; left:0; right:0; height:2px; background:var(--k); }
+.spanel { display:none; }
+.spanel.active { display:block; }
+.level-intro { font-size:.875rem; color:var(--muted); margin-bottom:1.5rem; padding:.875rem 1.1rem; background:var(--surf); border:1px solid var(--bdr); border-radius:10px; border-left:3px solid var(--k); }
+.progress-row { display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; }
+.progress-label { font-size:.8rem; color:var(--muted); white-space:nowrap; }
+.progress-dots { display:flex; gap:.4rem; }
+.dot { width:8px; height:8px; border-radius:50%; background:var(--bdr); transition:background .2s; }
+.dot.done { background:var(--m); }
+
+/* === EXERCISES === */
+.exr { background:var(--surf); border:1px solid var(--bdr); border-radius:12px; padding:1.4rem 1.5rem; margin-bottom:1rem; box-shadow:var(--sh); }
+.exr-num { font-family:'JetBrains Mono',monospace; font-size:.65rem; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); margin-bottom:.5rem; }
+.exr-q { font-size:.95rem; color:var(--muted); margin-bottom:.75rem; }
+.exr-eq { font-family:'Playfair Display',serif; font-size:1.5rem; font-style:italic; margin-bottom:1rem; }
+.exr-pts { display:flex; gap:.6rem; flex-wrap:wrap; margin-bottom:1rem; }
+.pt-badge { font-family:'JetBrains Mono',monospace; font-size:.82rem; background:var(--surf2); border:1px solid var(--bdr); border-radius:6px; padding:.25rem .65rem; }
+.exr-row { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
+.exr-label { font-family:'JetBrains Mono',monospace; font-size:.875rem; font-weight:600; color:var(--muted); }
+.exr-label.k { color:var(--k); } .exr-label.m { color:var(--m); }
+.exr-in { font-family:'JetBrains Mono',monospace; font-size:.95rem; padding:.45rem .65rem; border:2px solid var(--bdr); border-radius:8px; background:var(--bg); color:var(--txt); width:72px; text-align:center; transition:border-color .12s; }
+.exr-in:focus { outline:none; border-color:var(--k); }
+.exr-in.ok  { border-color:var(--m)  !important; background:var(--m-bg); }
+.exr-in.err { border-color:var(--red) !important; }
+.exr-serif { font-family:'Playfair Display',serif; font-style:italic; font-size:1.1rem; }
+.chk-btn { padding:.45rem 1.1rem; border:none; border-radius:8px; background:var(--k); color:#fff; font-size:.8rem; font-weight:600; letter-spacing:.02em; transition:opacity .12s; }
+.chk-btn:hover { opacity:.85; }
+.chk-btn:disabled { opacity:.4; cursor:default; }
+.exr-fb { margin-top:.7rem; font-size:.85rem; font-weight:500; display:none; }
+.exr-fb.show { display:block; }
+.exr-fb.good { color:var(--m); }
+.exr-fb.bad  { color:var(--red); }
+.exr-fb.tip  { color:var(--muted); font-weight:400; }
+
+/* === GRAPHICAL EXERCISES === */
+.graph-exr-wrap { display:grid; grid-template-columns:auto 1fr; gap:1.5rem; align-items:start; }
+.graph-canvas-box { flex-shrink:0; }
+.graph-canvas-box canvas { border-radius:8px; border:1px solid var(--bdr); display:block; }
+.graph-inputs { display:flex; flex-direction:column; gap:1rem; justify-content:center; }
+.graph-hint { font-size:.8rem; color:var(--faint); margin-top:.5rem; font-style:italic; }
+
+/* Pick-the-graph */
+.pick-row { display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1rem; }
+.pick-opt { cursor:pointer; border-radius:10px; border:2px solid var(--bdr); overflow:hidden; transition:border-color .15s; }
+.pick-opt:hover { border-color:var(--k); }
+.pick-opt canvas { display:block; border-radius:8px; }
+.pick-opt.selected-ok  { border-color:var(--m)  !important; }
+.pick-opt.selected-err { border-color:var(--red) !important; }
+.pick-label { font-size:.72rem; font-family:'JetBrains Mono',monospace; text-align:center; padding:.25rem; color:var(--muted); }
+
+/* === FOOTER === */
+footer { border-top:1px solid var(--bdr); padding:1.5rem 2rem; text-align:center; font-size:.75rem; color:var(--faint); }
+
+/* === RESPONSIVE === */
+@media (max-width:700px) {
+  .hero { grid-template-columns:1fr; gap:2rem; padding:2rem 1rem; }
+  .theory-grid { grid-template-columns:1fr; }
+  .tcard.wide { grid-template-columns:1fr; }
+  .section { padding:2rem 1rem; }
+  nav { flex-wrap:wrap; }
+  .nav-brand { padding:.6rem 1rem; }
+  .rule { margin:0 1rem; }
+  .graph-exr-wrap { grid-template-columns:1fr; }
+  .pick-row { gap:.6rem; }
+}
+</style>
+
+<!-- NAV (doubles as main tab bar) -->
+<nav>
+  <span class="nav-brand">Matematik · Repetition</span>
+  <div class="main-tabs">
+    <button class="mtab active" data-panel="panel-teori">Teori</button>
+    <button class="mtab" data-panel="panel-ova">Öva</button>
+  </div>
+</nav>
+
+<!-- ════════════ PANEL: TEORI ════════════ -->
+<div class="mpanel active" id="panel-teori">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div>
+      <p class="hero-eyebrow">Repetition</p>
+      <h1>Räta linjens ekvation</h1>
+      <div class="hero-formula" aria-label="y är lika med k gånger x plus m">
+        <span class="fy">y</span>
+        <span class="feq">=</span>
+        <span class="fk">k</span><span class="fx">x</span>
+        <span class="fpl">+</span>
+        <span class="fm">m</span>
+      </div>
+      <div class="hero-legend">
+        <div class="legend-row"><span class="legend-sym k">k</span><span class="legend-desc">= riktningskoefficient (linjens lutning)</span></div>
+        <div class="legend-row"><span class="legend-sym m">m</span><span class="legend-desc">= konstantterm (skärning med y-axeln)</span></div>
+      </div>
+    </div>
+    <div class="canvas-panel">
+      <div class="live-eq" id="liveEq" aria-live="polite">y = <span class="eq-k">x</span></div>
+      <div class="canvas-wrap"><canvas id="mainCanvas" aria-label="Koordinatsystem med rät linje"></canvas></div>
+      <div class="canvas-controls">
+        <div class="ctrl-row">
+          <span class="ctrl-label k">k</span>
+          <input type="range" id="kSlider" class="ctrl-slider" min="-3" max="3" step="0.5" value="1" aria-label="k">
+          <span class="ctrl-val" id="kDisp">1</span>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label m">m</span>
+          <input type="range" id="mSlider" class="ctrl-slider ms" min="-5" max="5" step="1" value="0" aria-label="m">
+          <span class="ctrl-val" id="mDisp">0</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- THEORY CARDS -->
+  <section class="section">
+    <p class="section-tag">Teori</p>
+    <h2 class="section-h">Vad betyder k och m?</h2>
+    <p class="section-sub">Alla räta linjer beskrivs av y&nbsp;=&nbsp;<span class="hl-k">k</span>x&nbsp;+&nbsp;<span class="hl-m">m</span>. De två konstanterna bestämmer linjens utseende helt.</p>
+
+    <div class="theory-grid">
+      <div class="tcard">
+        <p class="tcard-label">Riktningskoefficienten</p>
+        <div class="tcard-main k">k</div>
+        <p>Beskriver hur <strong>brant</strong> linjen lutar — kvoten mellan förändringen i y och förändringen i x.</p>
+        <p style="margin-top:.75rem"><strong>k &gt; 0</strong> → lutar uppåt<br><strong>k &lt; 0</strong> → lutar nedåt<br><strong>k = 0</strong> → horisontell linje</p>
+      </div>
+      <div class="tcard">
+        <p class="tcard-label">Konstanttermen</p>
+        <div class="tcard-main m">m</div>
+        <p>Anger var linjen skär <strong>y-axeln</strong> — värdet på y när x&nbsp;=&nbsp;0.</p>
+        <p style="margin-top:.75rem"><strong>m &gt; 0</strong> → ovanför origo<br><strong>m &lt; 0</strong> → nedanför origo<br><strong>m = 0</strong> → går genom origo</p>
+      </div>
+      <div class="tcard">
+        <p class="tcard-label">Att läsa av ekvationen</p>
+        <div class="tcard-main" style="font-size:1.3rem;color:var(--txt)">y = <span class="hl-k">3</span>x + <span class="hl-m">(−2)</span></div>
+        <p>Koefficienten framför x är alltid <span class="hl-k">k</span>. Det fristående talet är <span class="hl-m">m</span>.</p>
+        <p style="margin-top:.5rem">Saknas en term är dess värde 0:<br><code>y = −x</code> → <span class="hl-k">k = −1</span>, <span class="hl-m">m = 0</span><br><code>y = 4</code> → <span class="hl-k">k = 0</span>, <span class="hl-m">m = 4</span></p>
+      </div>
+      <div class="tcard wide">
+        <div>
+          <p class="tcard-label">Formel: k från två punkter</p>
+          <div class="formula-row">
+            <span class="hl-k">k</span> =
+            <span class="kfrac"><span class="num">y₂ − y₁</span><span class="den">x₂ − x₁</span></span>
+          </div>
+          <div class="example-pill">A(1,&nbsp;3) och B(3,&nbsp;7) → k = (7−3)/(3−1) = <span class="hl-k">2</span></div>
+        </div>
+        <div>
+          <p class="tcard-label" style="margin-bottom:.75rem">Beräkningssteg</p>
+          <div class="steps-list">
+            <div class="step-row"><div class="step-badge">1</div><p class="step-txt">Namnge punkterna <code>A(x₁, y₁)</code> och <code>B(x₂, y₂)</code>.</p></div>
+            <div class="step-row"><div class="step-badge">2</div><p class="step-txt">Beräkna täljaren: <code>y₂ − y₁</code> (uppgång).</p></div>
+            <div class="step-row"><div class="step-badge">3</div><p class="step-txt">Beräkna nämnaren: <code>x₂ − x₁</code> (bortgång).</p></div>
+            <div class="step-row"><div class="step-badge">4</div><p class="step-txt">Dela: <code>k = (y₂−y₁)/(x₂−x₁)</code>. Sätt sedan in k och en punkt för att hitta m.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div><!-- /panel-teori -->
+
+<!-- ════════════ PANEL: ÖVA ════════════ -->
+<div class="mpanel" id="panel-ova">
+  <section class="section">
+    <p class="section-tag">Övningar</p>
+    <h2 class="section-h">Räkna och öva</h2>
+    <p class="section-sub">Fyra nivåer — börja från nivå 1. Skriv svar med decimalpunkt eller kommatecken.</p>
+
+    <div class="sub-tabs" role="tablist">
+      <button class="stab active" role="tab" data-sp="sp1" aria-selected="true">Nivå 1 – Identifiera k och m</button>
+      <button class="stab" role="tab" data-sp="sp2" aria-selected="false">Nivå 2 – Beräkna k</button>
+      <button class="stab" role="tab" data-sp="sp3" aria-selected="false">Nivå 3 – Hitta ekvationen</button>
+      <button class="stab" role="tab" data-sp="sp4" aria-selected="false">Nivå 4 – Tolka grafen</button>
+    </div>
+
+    <div class="spanel active" id="sp1" role="tabpanel">
+      <p class="level-intro">Bestäm <span class="hl-k">k</span> och <span class="hl-m">m</span> för varje ekvation. Kom ihåg: koefficienten framför x är k, det fristående talet är m.</p>
+      <div class="progress-row"><span class="progress-label">Framsteg:</span><div class="progress-dots" id="dots1"></div></div>
+      <div id="exercises1"></div>
+    </div>
+
+    <div class="spanel" id="sp2" role="tabpanel">
+      <p class="level-intro">Beräkna <span class="hl-k">k</span> med formeln k = (y₂ − y₁) / (x₂ − x₁). Ange ett exakt värde.</p>
+      <div class="progress-row"><span class="progress-label">Framsteg:</span><div class="progress-dots" id="dots2"></div></div>
+      <div id="exercises2"></div>
+    </div>
+
+    <div class="spanel" id="sp3" role="tabpanel">
+      <p class="level-intro">Hitta hela ekvationen y = <span class="hl-k">k</span>x + <span class="hl-m">m</span>. Beräkna k först, sätt sedan in en punkt för att hitta m. Om m är negativt skriver du det negativa värdet i m-fältet.</p>
+      <div class="progress-row"><span class="progress-label">Framsteg:</span><div class="progress-dots" id="dots3"></div></div>
+      <div id="exercises3"></div>
+    </div>
+
+    <div class="spanel" id="sp4" role="tabpanel">
+      <p class="level-intro">Tolka koordinatsystemen och svara på frågorna. Använd rutnätet för att läsa av lutning och skärningspunkt med y-axeln.</p>
+      <div class="progress-row"><span class="progress-label">Framsteg:</span><div class="progress-dots" id="dots4"></div></div>
+      <div id="exercises4"></div>
+    </div>
+  </section>
+</div><!-- /panel-ova -->
+
+<footer>Räta linjens ekvation &mdash; Repetitionsmaterial</footer>
+
+<script>
+/* ═══════════════════════════════════════
+   CANVAS UTILITIES
+   ═══════════════════════════════════════ */
+
+function themeCol() {
+  const root = document.documentElement;
+  const th = root.getAttribute('data-theme');
+  const dark = th==='dark' || (th!=='light' && window.matchMedia('(prefers-color-scheme:dark)').matches);
+  return {
+    bg:   dark?'#131C30':'#FFFFFF',
+    grid: dark?'#233048':'#D8E0F0',
+    axis: dark?'#4A5870':'#94A3B8',
+    tick: dark?'#6B7D99':'#64748B',
+    line: dark?'#F87171':'#DC2626',
+    mdot: dark?'#34D399':'#059669',
+    kdot: dark?'#60A5FA':'#1D4ED8',
+  };
+}
+
+function setupCv(cv, logi) {
+  const dpr = window.devicePixelRatio || 1;
+  cv.width  = logi * dpr;
+  cv.height = logi * dpr;
+  cv.style.width  = logi + 'px';
+  cv.style.height = logi + 'px';
+  const ctx = cv.getContext('2d');
+  ctx.scale(dpr, dpr);
+}
+
+/* Generic draw — works for any logi/sc combo */
+function drawG(cv, k, m, opts={}) {
+  const { logi=320, sc=25, markPts=[], tickRange=5, dimLine=false } = opts;
+  const ctx = cv.getContext('2d');
+  const c = themeCol();
+  const cx = logi/2, cy = logi/2;
+
+  ctx.fillStyle = c.bg;
+  ctx.fillRect(0,0,logi,logi);
+
+  // Grid
+  ctx.strokeStyle = c.grid; ctx.lineWidth = .6;
+  for (let i = -Math.ceil(logi/(2*sc)); i <= Math.ceil(logi/(2*sc)); i++) {
+    const px=cx+i*sc, py=cy+i*sc;
+    ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,logi); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,py); ctx.lineTo(logi,py); ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle = c.axis; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(logi,cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx,logi); ctx.stroke();
+
+  // Arrowheads
+  ctx.fillStyle = c.axis;
+  ctx.beginPath(); ctx.moveTo(logi-2,cy); ctx.lineTo(logi-9,cy-4); ctx.lineTo(logi-9,cy+4); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(cx,2); ctx.lineTo(cx-4,9); ctx.lineTo(cx+4,9); ctx.closePath(); ctx.fill();
+
+  // Axis labels (only for larger canvases)
+  if (logi >= 240) {
+    ctx.fillStyle=c.tick; ctx.font="bold 10px 'Inter',sans-serif";
+    ctx.textAlign='left'; ctx.textBaseline='bottom'; ctx.fillText('x',logi-5,cy-4);
+    ctx.textAlign='left'; ctx.textBaseline='top';    ctx.fillText('y',cx+4,4);
+  }
+
+  // Tick labels
+  const fsize = logi>=240 ? 9 : 8;
+  ctx.font=`${fsize}px 'JetBrains Mono',monospace`; ctx.fillStyle=c.tick;
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  for (let i=-tickRange; i<=tickRange; i++) {
+    if(i===0) continue;
+    ctx.fillText(i, cx+i*sc, cy+4);
+  }
+  ctx.textAlign='right'; ctx.textBaseline='middle';
+  for (let i=-tickRange; i<=tickRange; i++) {
+    if(i===0) continue;
+    ctx.fillText(i, cx-4, cy-i*sc);
+  }
+
+  // Line
+  const xL=(0-cx)/sc, xR=(logi-cx)/sc;
+  ctx.strokeStyle = dimLine ? (themeCol().line+'99') : c.line;
+  ctx.lineWidth = logi>=240 ? 2.5 : 2;
+  ctx.lineCap='round';
+  ctx.beginPath();
+  ctx.moveTo(0,    cy-(k*xL+m)*sc);
+  ctx.lineTo(logi, cy-(k*xR+m)*sc);
+  ctx.stroke();
+
+  // m dot
+  ctx.fillStyle = c.mdot;
+  ctx.beginPath(); ctx.arc(cx, cy-m*sc, logi>=240?5:3.5, 0, Math.PI*2); ctx.fill();
+
+  // Marked reference points
+  markPts.forEach(([px,py]) => {
+    ctx.fillStyle = c.kdot;
+    ctx.beginPath(); ctx.arc(cx+px*sc, cy-py*sc, 5, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = c.bg; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(cx+px*sc, cy-py*sc, 5, 0, Math.PI*2); ctx.stroke();
+  });
+}
+
+/* Registry so we can redraw all on theme change */
+const cvReg = [];
+function regCv(cv, k, m, opts) { cvReg.push({cv,k,m,opts}); }
+function redrawAll() { cvReg.forEach(r => drawG(r.cv,r.k,r.m,r.opts)); }
+window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change', redrawAll);
+
+/* ═══════════════════════════════════════
+   HERO CANVAS
+   ═══════════════════════════════════════ */
+let kV=1, mV=0;
+
+function fmtN(n) { return (n%1===0)?String(n):n.toFixed(1).replace('.',','); }
+
+function eqHtml(k,m) {
+  let kp = k===1?`<span class="eq-k">x</span>`:k===-1?`<span class="eq-k">&minus;x</span>`:k!==0?`<span class="eq-k">${fmtN(k)}x</span>`:'';
+  let mp = '';
+  if(m>0&&kp)       mp=` + <span class="eq-m">${fmtN(m)}</span>`;
+  else if(m<0&&kp)  mp=` &minus; <span class="eq-m">${fmtN(-m)}</span>`;
+  else if(m!==0)    mp=`<span class="eq-m">${fmtN(m)}</span>`;
+  if(!kp&&!mp) return 'y = <span class="eq-m">0</span>';
+  return `y = ${kp}${mp}`;
+}
+
+function heroRefresh() {
+  const cv = document.getElementById('mainCanvas');
+  drawG(cv, kV, mV, {logi:320,sc:25,tickRange:5});
+  document.getElementById('liveEq').innerHTML = eqHtml(kV,mV);
+  document.getElementById('kDisp').textContent = fmtN(kV);
+  document.getElementById('mDisp').textContent = fmtN(mV);
+}
+
+/* ═══════════════════════════════════════
+   MAIN TABS
+   ═══════════════════════════════════════ */
+function initMainTabs() {
+  document.querySelectorAll('.mtab').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.mtab').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.mpanel').forEach(p=>p.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById(this.dataset.panel).classList.add('active');
+    });
+  });
+}
+
+/* ═══════════════════════════════════════
+   SUB-TABS (exercises)
+   ═══════════════════════════════════════ */
+function initSubTabs() {
+  document.querySelectorAll('.stab').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.stab').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-selected','false');});
+      document.querySelectorAll('.spanel').forEach(p=>p.classList.remove('active'));
+      this.classList.add('active'); this.setAttribute('aria-selected','true');
+      document.getElementById(this.dataset.sp).classList.add('active');
+    });
+  });
+}
+
+/* ═══════════════════════════════════════
+   EXERCISE HELPERS
+   ═══════════════════════════════════════ */
+function parseN(s) { return parseFloat(String(s).trim().replace(',','.')); }
+function chk(s,v)  { const n=parseN(s); return !isNaN(n)&&Math.abs(n-v)<.01; }
+
+function buildDots(id,n) {
+  const el=document.getElementById(id); el.innerHTML='';
+  for(let i=0;i<n;i++){const d=document.createElement('div');d.className='dot';d.id=id+i;el.appendChild(d);}
+}
+function markDot(id,i){const d=document.getElementById(id+i);if(d)d.classList.add('done');}
+
+function eqStr(k,m) {
+  let ks = k===1?'x':k===-1?'−x':`${fmtN(k)}x`;
+  if(k===0) return `y = ${fmtN(m)}`;
+  if(m>0)   return `y = ${ks} + ${fmtN(m)}`;
+  if(m<0)   return `y = ${ks} − ${fmtN(-m)}`;
+  return `y = ${ks}`;
+}
+
+/* ═══════════════════════════════════════
+   LEVEL 1
+   ═══════════════════════════════════════ */
+const L1=[
+  {eq:'y = 2x + 3',       k:2,   m:3,  hint:null},
+  {eq:'y = &minus;x + 1', k:-1,  m:1,  hint:'Kom ihåg: &minus;x = &minus;1·x, så k = &minus;1.'},
+  {eq:'y = 0,5x &minus; 4',k:.5, m:-4, hint:'k är koefficienten framför x.'},
+  {eq:'y = 3',             k:0,   m:3,  hint:'Ingen x-term — linjen är horisontell, k = 0.'},
+  {eq:'y = &minus;3x',     k:-3,  m:0,  hint:'Ingen konstantterm — m = 0.'},
+];
+
+function buildL1(){
+  buildDots('dots1',L1.length);
+  const cont=document.getElementById('exercises1');
+  L1.forEach((ex,i)=>{
+    const div=document.createElement('div'); div.className='exr';
+    div.innerHTML=`
+      <p class="exr-num">Uppgift ${i+1} av ${L1.length}</p>
+      <p class="exr-q">Bestäm <span class="hl-k">k</span> och <span class="hl-m">m</span>:</p>
+      <div class="exr-eq">${ex.eq}</div>
+      <div class="exr-row">
+        <span class="exr-label k">k =</span>
+        <input type="text" class="exr-in" inputmode="decimal" placeholder="?" aria-label="k">
+        <span class="exr-label m" style="margin-left:.4rem">m =</span>
+        <input type="text" class="exr-in" inputmode="decimal" placeholder="?" aria-label="m">
+        <button class="chk-btn">Kontrollera</button>
+      </div>
+      <div class="exr-fb"></div>`;
+    cont.appendChild(div);
+    const ins=div.querySelectorAll('.exr-in'),btn=div.querySelector('.chk-btn'),fb=div.querySelector('.exr-fb');
+    let tries=0;
+    btn.addEventListener('click',()=>{
+      const ko=chk(ins[0].value,ex.k),mo=chk(ins[1].value,ex.m);
+      ins[0].classList.toggle('ok',ko); ins[0].classList.toggle('err',!ko);
+      ins[1].classList.toggle('ok',mo); ins[1].classList.toggle('err',!mo);
+      if(ko&&mo){fb.className='exr-fb show good';fb.textContent=`✓ Rätt! k = ${fmtN(ex.k)} och m = ${fmtN(ex.m)}.`;btn.disabled=true;markDot('dots1',i);}
+      else{tries++;if(tries===1&&ex.hint){fb.className='exr-fb show tip';fb.innerHTML='Tips: '+ex.hint;}else if(tries>=2){fb.className='exr-fb show bad';fb.textContent=`Svaret: k = ${fmtN(ex.k)} och m = ${fmtN(ex.m)}.`;}else{fb.className='exr-fb show bad';fb.textContent='✗ Försök igen.';}}
+    });
+    ins.forEach(el=>el.addEventListener('keydown',e=>e.key==='Enter'&&btn.click()));
+  });
+}
+
+/* ═══════════════════════════════════════
+   LEVEL 2
+   ═══════════════════════════════════════ */
+const L2=[
+  {p1:[0,1],   p2:[2,5],  k:2,  hint:'k = (5&minus;1) / (2&minus;0) = 4/2'},
+  {p1:[1,3],   p2:[4,9],  k:2,  hint:'k = (9&minus;3) / (4&minus;1) = 6/3'},
+  {p1:[-1,5],  p2:[2,-1], k:-2, hint:'k = (&minus;1&minus;5) / (2&minus;(&minus;1)) = &minus;6/3'},
+  {p1:[0,-2],  p2:[3,4],  k:2,  hint:'k = (4&minus;(&minus;2)) / (3&minus;0) = 6/3'},
+];
+
+function buildL2(){
+  buildDots('dots2',L2.length);
+  const cont=document.getElementById('exercises2');
+  L2.forEach((ex,i)=>{
+    const fp=p=>`(${p[0]}, ${p[1]})`;
+    const div=document.createElement('div'); div.className='exr';
+    div.innerHTML=`
+      <p class="exr-num">Uppgift ${i+1} av ${L2.length}</p>
+      <p class="exr-q">Beräkna <span class="hl-k">k</span> för linjen genom:</p>
+      <div class="exr-pts"><span class="pt-badge">A${fp(ex.p1)}</span><span class="pt-badge">B${fp(ex.p2)}</span></div>
+      <div class="exr-row">
+        <span class="exr-label k">k =</span>
+        <input type="text" class="exr-in" inputmode="decimal" placeholder="?" aria-label="k">
+        <button class="chk-btn">Kontrollera</button>
+      </div>
+      <div class="exr-fb"></div>`;
+    cont.appendChild(div);
+    const inp=div.querySelector('.exr-in'),btn=div.querySelector('.chk-btn'),fb=div.querySelector('.exr-fb');
+    let tries=0;
+    btn.addEventListener('click',()=>{
+      if(chk(inp.value,ex.k)){inp.classList.add('ok');inp.classList.remove('err');fb.className='exr-fb show good';fb.textContent=`✓ Rätt! k = ${fmtN(ex.k)}.`;btn.disabled=true;markDot('dots2',i);}
+      else{inp.classList.add('err');inp.classList.remove('ok');tries++;if(tries===1){fb.className='exr-fb show tip';fb.innerHTML='Tips: '+ex.hint;}else{fb.className='exr-fb show bad';fb.textContent=`Svaret: k = ${fmtN(ex.k)}.`;}}
+    });
+    inp.addEventListener('keydown',e=>e.key==='Enter'&&btn.click());
+  });
+}
+
+/* ═══════════════════════════════════════
+   LEVEL 3
+   ═══════════════════════════════════════ */
+const L3=[
+  {p1:[0,2],  p2:[1,4],  k:2,  m:2,  hint:'k = (4&minus;2)/(1&minus;0) = 2. Sätt in A(0,2): 2 = 2·0 + m → m = 2.'},
+  {p1:[0,-1], p2:[2,3],  k:2,  m:-1, hint:'k = (3&minus;(&minus;1))/(2&minus;0) = 2. Sätt in A(0,&minus;1): m = &minus;1.'},
+  {p1:[-2,7], p2:[2,3],  k:-1, m:5,  hint:'k = (3&minus;7)/(2&minus;(&minus;2)) = &minus;4/4 = &minus;1. Sedan: 3 = &minus;1·2 + m → m = 5.'},
+];
+
+function buildL3(){
+  buildDots('dots3',L3.length);
+  const cont=document.getElementById('exercises3');
+  L3.forEach((ex,i)=>{
+    const fp=p=>`(${p[0]}, ${p[1]})`;
+    const div=document.createElement('div'); div.className='exr';
+    div.innerHTML=`
+      <p class="exr-num">Uppgift ${i+1} av ${L3.length}</p>
+      <p class="exr-q">Skriv ekvationen y = <span class="hl-k">k</span>x + <span class="hl-m">m</span> för linjen genom:</p>
+      <div class="exr-pts"><span class="pt-badge">A${fp(ex.p1)}</span><span class="pt-badge">B${fp(ex.p2)}</span></div>
+      <div class="exr-row" style="align-items:center">
+        <span class="exr-serif">y =</span>
+        <input type="text" class="exr-in" inputmode="decimal" placeholder="k" aria-label="k" style="width:60px">
+        <span class="exr-serif">x +</span>
+        <input type="text" class="exr-in" inputmode="decimal" placeholder="m" aria-label="m" style="width:60px">
+        <button class="chk-btn">Kontrollera</button>
+      </div>
+      <div class="exr-fb"></div>`;
+    cont.appendChild(div);
+    const ins=div.querySelectorAll('.exr-in'),btn=div.querySelector('.chk-btn'),fb=div.querySelector('.exr-fb');
+    let tries=0;
+    btn.addEventListener('click',()=>{
+      const ko=chk(ins[0].value,ex.k),mo=chk(ins[1].value,ex.m);
+      ins[0].classList.toggle('ok',ko); ins[0].classList.toggle('err',!ko);
+      ins[1].classList.toggle('ok',mo); ins[1].classList.toggle('err',!mo);
+      if(ko&&mo){fb.className='exr-fb show good';fb.textContent=`✓ Rätt! ${eqStr(ex.k,ex.m)}.`;btn.disabled=true;markDot('dots3',i);}
+      else{tries++;if(tries===1){fb.className='exr-fb show tip';fb.innerHTML='Tips: '+ex.hint;}else{fb.className='exr-fb show bad';fb.textContent=`Svaret: ${eqStr(ex.k,ex.m)}.`;}}
+    });
+    ins.forEach(el=>el.addEventListener('keydown',e=>e.key==='Enter'&&btn.click()));
+  });
+}
+
+/* ═══════════════════════════════════════
+   LEVEL 4 — GRAPHICAL
+   ═══════════════════════════════════════ */
+
+/* Type A: Avläs ekvationen från grafen */
+const L4_READ=[
+  {
+    k:2, m:1,
+    markPts:[[0,1],[1,3]],
+    hint:'Markerade punkter: (0, 1) och (1, 3). Beräkna k = (3−1)/(1−0). m läser du direkt från y-axeln.'
+  },
+  {
+    k:-1, m:3,
+    markPts:[[0,3],[3,0]],
+    hint:'Markerade punkter: (0, 3) och (3, 0). k = (0−3)/(3−0). m är skärningspunkten med y-axeln.'
+  },
+  {
+    k:2, m:-2,
+    markPts:[[0,-2],[2,2]],
+    hint:'Markerade punkter: (0, −2) och (2, 2). k = (2−(−2))/(2−0). m är negativ — linjen skär nedanför origo.'
+  },
+];
+
+/* Type B: Välj rätt graf */
+const L4_PICK=[
+  {
+    label:'Vilken graf visar y = −2x + 1?',
+    opts:[
+      {k:-2,m:1,  correct:true},
+      {k:2, m:1,  correct:false},
+      {k:-2,m:-1, correct:false},
+    ]
+  },
+  {
+    label:'Vilken graf visar y = x − 2?',
+    opts:[
+      {k:1, m:2,  correct:false},
+      {k:-1,m:-2, correct:false},
+      {k:1, m:-2, correct:true},
+    ]
+  },
+];
+
+const LOGI_R=280, SC_R=24; // read exercises
+const LOGI_P=160, SC_P=13; // pick exercises
+
+function buildReadExr(ex, idx, total, dotsId, cont) {
+  const n = idx+1;
+  const div=document.createElement('div'); div.className='exr';
+  div.innerHTML=`
+    <p class="exr-num">Uppgift ${n} av ${total}</p>
+    <p class="exr-q">Avläs ekvationen y = <span class="hl-k">k</span>x + <span class="hl-m">m</span> direkt från koordinatsystemet:</p>
+    <div class="graph-exr-wrap">
+      <div class="graph-canvas-box">
+        <canvas id="rcv${idx}" aria-label="Koordinatsystem med en rät linje"></canvas>
+        <p class="graph-hint">Blå punkter markerar synliga gitterkoordinater på linjen.</p>
+      </div>
+      <div class="graph-inputs">
+        <div class="exr-row">
+          <span class="exr-label k">k =</span>
+          <input type="text" class="exr-in" inputmode="decimal" placeholder="?" aria-label="k">
+        </div>
+        <div class="exr-row">
+          <span class="exr-label m">m =</span>
+          <input type="text" class="exr-in" inputmode="decimal" placeholder="?" aria-label="m">
+        </div>
+        <div><button class="chk-btn">Kontrollera</button></div>
+        <div class="exr-fb"></div>
+      </div>
+    </div>`;
+  cont.appendChild(div);
+
+  // Setup canvas
+  const cv=div.querySelector(`#rcv${idx}`);
+  setupCv(cv, LOGI_R);
+  const ropts={logi:LOGI_R, sc:SC_R, markPts:ex.markPts, tickRange:4};
+  drawG(cv, ex.k, ex.m, ropts);
+  regCv(cv, ex.k, ex.m, ropts);
+
+  const ins=div.querySelectorAll('.exr-in'),btn=div.querySelector('.chk-btn'),fb=div.querySelector('.exr-fb');
+  let tries=0;
+  btn.addEventListener('click',()=>{
+    const ko=chk(ins[0].value,ex.k),mo=chk(ins[1].value,ex.m);
+    ins[0].classList.toggle('ok',ko); ins[0].classList.toggle('err',!ko);
+    ins[1].classList.toggle('ok',mo); ins[1].classList.toggle('err',!mo);
+    if(ko&&mo){fb.className='exr-fb show good';fb.textContent=`✓ Rätt! ${eqStr(ex.k,ex.m)}.`;btn.disabled=true;markDot(dotsId,idx);}
+    else{tries++;if(tries===1){fb.className='exr-fb show tip';fb.innerHTML='Tips: '+ex.hint;}else{fb.className='exr-fb show bad';fb.textContent=`Svaret: ${eqStr(ex.k,ex.m)}.`;}}
+  });
+  ins.forEach(el=>el.addEventListener('keydown',e=>e.key==='Enter'&&btn.click()));
+}
+
+function buildPickExr(ex, idx, total, dotsId, globalIdx, cont) {
+  const n = idx+1;
+  const div=document.createElement('div'); div.className='exr';
+  div.innerHTML=`
+    <p class="exr-num">Uppgift ${globalIdx+1} av ${total}</p>
+    <p class="exr-q">${ex.label}</p>
+    <div class="pick-row" id="pickrow_${globalIdx}"></div>
+    <div class="exr-fb"></div>`;
+  cont.appendChild(div);
+
+  const row=div.querySelector(`#pickrow_${globalIdx}`);
+  const fb=div.querySelector('.exr-fb');
+  let done=false;
+
+  ex.opts.forEach((opt,oi)=>{
+    const wrap=document.createElement('div'); wrap.className='pick-opt';
+    const lbl=document.createElement('p'); lbl.className='pick-label';
+    lbl.textContent=`Graf ${String.fromCharCode(65+oi)}`;
+    const cv=document.createElement('canvas');
+    wrap.appendChild(cv); wrap.appendChild(lbl);
+    row.appendChild(wrap);
+
+    setupCv(cv, LOGI_P);
+    const popts={logi:LOGI_P, sc:SC_P, tickRange:3};
+    drawG(cv, opt.k, opt.m, popts);
+    regCv(cv, opt.k, opt.m, popts);
+
+    wrap.addEventListener('click',()=>{
+      if(done) return;
+      if(opt.correct){
+        wrap.classList.add('selected-ok');
+        fb.className='exr-fb show good';
+        fb.textContent=`✓ Rätt! Graf ${String.fromCharCode(65+oi)} stämmer med ${ex.label.replace('Vilken graf visar ','').replace('?','')}.`;
+        done=true; markDot(dotsId, L4_READ.length+idx);
+      } else {
+        wrap.classList.add('selected-err');
+        setTimeout(()=>wrap.classList.remove('selected-err'),700);
+        fb.className='exr-fb show bad';
+        fb.textContent='✗ Inte rätt — titta på lutningen och skärningspunkten med y-axeln.';
+        fb.className='exr-fb show tip';
+        fb.textContent='Kontrollera: vilken riktning lutar k? Var skär linjen y-axeln (m)?';
+      }
+    });
+  });
+}
+
+function buildL4(){
+  const total = L4_READ.length + L4_PICK.length;
+  buildDots('dots4', total);
+  const cont=document.getElementById('exercises4');
+
+  L4_READ.forEach((ex,i)=> buildReadExr(ex, i, total, 'dots4', cont));
+  L4_PICK.forEach((ex,i)=> buildPickExr(ex, i, total, 'dots4', i, cont));
+}
+
+/* ═══════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded',()=>{
+  // Hero canvas
+  const mainCv=document.getElementById('mainCanvas');
+  setupCv(mainCv,320);
+  heroRefresh();
+  regCv(mainCv, 1, 0, {logi:320,sc:25,tickRange:5}); // will get overridden on sliders
+
+  document.getElementById('kSlider').addEventListener('input',function(){kV=parseFloat(this.value);heroRefresh();cvReg[0]={cv:mainCv,k:kV,m:mV,opts:{logi:320,sc:25,tickRange:5}};});
+  document.getElementById('mSlider').addEventListener('input',function(){mV=parseFloat(this.value);heroRefresh();cvReg[0]={cv:mainCv,k:kV,m:mV,opts:{logi:320,sc:25,tickRange:5}};});
+
+  initMainTabs();
+  initSubTabs();
+  buildL1();
+  buildL2();
+  buildL3();
+  buildL4();
+});
+</script>

@@ -1,14 +1,13 @@
 <title>Är det AI?</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&family=Inter:wght@400;500&display=swap">
 <style>
-/* ── Tokens ─────────────────────────────── */
+/* ── Tokens ── */
 :root {
   --bg:#0D1117; --surface:#161B22; --surface2:#21262D; --border:#30363D;
   --text:#E6EDF3; --muted:#8B949E;
   --violet:#9B6DFF; --violet-dim:rgba(155,109,255,.15); --violet-glow:rgba(155,109,255,.35);
   --green:#3FFFA0;  --green-dim:rgba(63,255,160,.15);
   --red:#FF6B6B;    --red-dim:rgba(255,107,107,.15);
-  --amber:#FFB627;
   --fh:'Space Grotesk',system-ui,sans-serif;
   --fb:'Inter',system-ui,sans-serif;
   --r:14px;
@@ -41,11 +40,16 @@ body{
   min-height:100vh;display:flex;flex-direction:column;align-items:center;
 }
 
-/* ── Header ── */
+/* ── Header / Tab bar ── */
 header{
-  width:100%;padding:14px 24px;
-  display:flex;align-items:center;justify-content:space-between;
+  width:100%;
+  display:flex;flex-direction:column;
   border-bottom:1px solid var(--border);background:var(--surface);
+  position:sticky;top:0;z-index:10;
+}
+.header-top{
+  padding:12px 24px;
+  display:flex;align-items:center;justify-content:space-between;
 }
 .back-link{
   font-size:.8rem;color:var(--muted);text-decoration:none;
@@ -59,112 +63,177 @@ header{
 }
 .theme-btn:hover{background:var(--surface2);}
 
-/* ── Shared ── */
-main{flex:1;width:100%;max-width:780px;padding:32px 20px 60px;display:flex;flex-direction:column;gap:28px;}
-
-/* ══════════════════════════════════════════
-   PHASE 1 — PREDICTION GRID
-══════════════════════════════════════════ */
-.predict-header{display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;}
-.predict-title{font-family:var(--fh);font-weight:800;font-size:1.7rem;line-height:1.2;}
-.predict-sub{font-size:.9rem;color:var(--muted);max-width:460px;line-height:1.65;}
-.predict-status{
-  display:flex;align-items:center;gap:14px;
-  background:var(--surface);border:1px solid var(--border);border-radius:10px;
-  padding:10px 18px;
+/* Tab strip */
+.tab-strip{
+  display:flex;border-top:1px solid var(--border);
 }
-.predict-count{font-size:.85rem;color:var(--muted);}
-.submit-btn{
-  font-family:var(--fh);font-weight:700;font-size:.9rem;
-  padding:10px 22px;border-radius:8px;border:none;cursor:pointer;
-  background:var(--violet);color:#fff;
-  transition:opacity .15s,transform .15s;
+.tab-btn{
+  flex:1;padding:10px;border:none;background:none;cursor:pointer;
+  font-family:var(--fh);font-weight:600;font-size:.85rem;
+  color:var(--muted);position:relative;transition:color .12s;
+  max-width:200px;
 }
-.submit-btn:disabled{opacity:.35;cursor:not-allowed;}
-.submit-btn:not(:disabled):hover{opacity:.88;transform:translateY(-1px);}
+.tab-btn:hover{color:var(--text);background:var(--surface2);}
+.tab-btn.active{color:var(--violet);}
+.tab-btn.active::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;
+  height:2px;background:var(--violet);
+}
 
-/* Grid of prediction cards */
-.predict-grid{
+/* ── Panels ── */
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* ── PANEL 1: Card gallery ── */
+.gallery-wrap{
+  width:100%;max-width:860px;
+  margin:0 auto;padding:32px 20px 48px;
+  display:flex;flex-direction:column;gap:28px;
+}
+.gallery-intro{
+  text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+.gallery-title{font-family:var(--fh);font-weight:800;font-size:1.6rem;}
+.gallery-sub{font-size:.9rem;color:var(--muted);max-width:460px;line-height:1.65;}
+
+.card-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
   gap:12px;
+}
+.g-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:18px 16px;display:flex;flex-direction:column;gap:8px;
+}
+.g-emoji{font-size:2.2rem;line-height:1;}
+.g-name{font-family:var(--fh);font-weight:700;font-size:.95rem;line-height:1.25;}
+.g-desc{font-size:.78rem;color:var(--muted);line-height:1.55;}
+
+.gallery-cta{
+  display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;
+  border-top:1px solid var(--border);padding-top:28px;
+}
+.gallery-cta-text{font-size:.9rem;color:var(--muted);}
+.start-btn{
+  font-family:var(--fh);font-weight:700;font-size:1rem;
+  padding:14px 36px;border-radius:10px;border:2px solid var(--violet);
+  background:var(--violet-dim);color:var(--violet);cursor:pointer;
+  transition:background .15s,transform .15s;
+}
+.start-btn:hover{background:var(--violet);color:#fff;transform:translateY(-2px);}
+
+/* ── PANEL 2: Quiz ── */
+.quiz-wrap{
+  flex:1;width:100%;max-width:600px;
+  margin:0 auto;padding:32px 20px 60px;
+  display:flex;flex-direction:column;gap:28px;
+}
+
+/* HUD */
+.hud{width:100%;display:flex;align-items:center;gap:14px;}
+.q-counter{font-family:var(--fh);font-size:.85rem;color:var(--muted);white-space:nowrap;min-width:56px;}
+.prog-bar{flex:1;height:6px;background:var(--surface2);border-radius:99px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--violet);border-radius:99px;transition:width .4s cubic-bezier(.4,0,.2,1);}
+.score-badge{font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--violet);white-space:nowrap;min-width:56px;text-align:right;}
+
+/* Question card */
+.card-wrap{width:100%;perspective:800px;}
+.q-card{
   width:100%;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:36px 28px 28px;
+  display:flex;flex-direction:column;align-items:center;gap:20px;
+  transform-origin:center bottom;
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1),opacity .2s;
 }
-.pred-card{
-  background:var(--surface);border:2px solid var(--border);border-radius:12px;
-  padding:16px 14px;display:flex;flex-direction:column;gap:10px;
-  transition:border-color .2s;
+.q-card.entering{animation:cardIn .35s cubic-bezier(.34,1.56,.64,1) forwards;}
+@keyframes cardIn{
+  from{transform:translateY(18px) rotate(-1.5deg);opacity:0;}
+  to{transform:translateY(0) rotate(0);opacity:1;}
 }
-.pred-card.answered-ja  { border-color:var(--green); }
-.pred-card.answered-nej { border-color:var(--red); }
-.pred-emoji{font-size:2rem;line-height:1;}
-.pred-name{font-family:var(--fh);font-weight:700;font-size:.95rem;line-height:1.25;}
-.pred-desc{font-size:.78rem;color:var(--muted);line-height:1.5;flex:1;}
-.pred-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:2px;}
-.pred-btn{
-  font-family:var(--fh);font-weight:700;font-size:.78rem;
-  padding:8px 4px;border-radius:8px;border:2px solid;cursor:pointer;
-  transition:background .15s,transform .1s;
-}
-.pred-btn:active{transform:scale(.97);}
-.pred-btn.ja{background:transparent;border-color:var(--green);color:var(--green);}
-.pred-btn.nej{background:transparent;border-color:var(--red);color:var(--red);}
-.pred-btn.ja.selected{background:var(--green-dim);}
-.pred-btn.nej.selected{background:var(--red-dim);}
+.card-label{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--violet);font-weight:600;}
+.card-emoji{font-size:3.6rem;line-height:1;filter:drop-shadow(0 4px 12px var(--violet-glow));}
+.card-name{font-family:var(--fh);font-weight:800;font-size:1.65rem;text-align:center;line-height:1.2;text-wrap:balance;}
+.card-desc{font-size:.85rem;color:var(--muted);text-align:center;line-height:1.6;max-width:420px;}
 
-/* ══════════════════════════════════════════
-   PHASE 2 — RESULTS
-══════════════════════════════════════════ */
-#phase-results{display:none;}
+/* Answer buttons */
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;}
+.ans-btn{
+  font-family:var(--fh);font-weight:700;font-size:1.05rem;
+  padding:16px 10px;border-radius:10px;border:2px solid;cursor:pointer;
+  transition:transform .15s,box-shadow .15s,background .15s;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+}
+.ans-btn .btn-icon{font-size:1.4rem;}
+.ans-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px -4px var(--shadow);}
+.ans-btn:active{transform:translateY(0);}
+.ans-btn.ja{background:var(--green-dim);border-color:var(--green);color:var(--green);--shadow:var(--green-dim);}
+.ans-btn.nej{background:var(--red-dim);border-color:var(--red);color:var(--red);--shadow:var(--red-dim);}
+.ans-btn:disabled{pointer-events:none;opacity:.5;}
 
-/* Score ring */
-.result-hero{display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;}
+/* Feedback */
+.feedback{
+  width:100%;border-radius:10px;padding:18px 20px;border:1px solid;
+  animation:slideDown .3s cubic-bezier(.34,1.3,.64,1) forwards;
+  display:none;gap:12px;flex-direction:column;
+}
+@keyframes slideDown{from{transform:translateY(-8px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.feedback.show{display:flex;}
+.feedback.correct{background:var(--green-dim);border-color:var(--green);}
+.feedback.wrong{background:var(--red-dim);border-color:var(--red);}
+.fb-verdict{font-family:var(--fh);font-weight:700;font-size:1rem;display:flex;align-items:center;gap:8px;}
+.fb-verdict .vc{font-size:1.3rem;}
+.feedback.correct .fb-verdict{color:var(--green);}
+.feedback.wrong   .fb-verdict{color:var(--red);}
+.fb-text{font-size:.87rem;line-height:1.65;color:var(--text);}
+.fb-nuance{font-size:.8rem;color:var(--muted);font-style:italic;}
+.next-btn{
+  font-family:var(--fh);font-weight:700;font-size:.95rem;
+  padding:13px 28px;border-radius:8px;border:none;cursor:pointer;
+  background:var(--violet);color:#fff;
+  transition:opacity .15s,transform .15s;align-self:flex-end;
+}
+.next-btn:hover{opacity:.88;transform:translateY(-1px);}
+
+/* Score pulse */
+@keyframes scorePulse{0%{transform:scale(1);}40%{transform:scale(1.35);}100%{transform:scale(1);}}
+.score-badge.pulse{animation:scorePulse .35s ease;}
+
+/* End screen */
+.end-screen{display:none;flex-direction:column;align-items:center;gap:24px;width:100%;text-align:center;}
+.end-screen.show{display:flex;}
 .end-ring{
-  width:130px;height:130px;border-radius:50%;
+  width:140px;height:140px;border-radius:50%;
   border:5px solid var(--violet);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   background:var(--violet-dim);box-shadow:0 0 40px var(--violet-glow);
 }
-.end-score-num{font-family:var(--fh);font-weight:800;font-size:2.6rem;color:var(--violet);line-height:1;}
-.end-score-of{font-size:.8rem;color:var(--muted);}
-.result-title{font-family:var(--fh);font-weight:800;font-size:1.7rem;}
-.result-msg{font-size:.92rem;color:var(--muted);max-width:420px;line-height:1.65;}
-
-/* Retry */
+.end-score-num{font-family:var(--fh);font-weight:800;font-size:2.8rem;color:var(--violet);line-height:1;}
+.end-score-of{font-size:.85rem;color:var(--muted);}
+.end-title{font-family:var(--fh);font-weight:800;font-size:1.8rem;line-height:1.2;}
+.end-msg{font-size:.95rem;color:var(--muted);max-width:380px;line-height:1.65;}
 .retry-btn{
-  font-family:var(--fh);font-weight:700;font-size:.95rem;
-  padding:13px 32px;border-radius:10px;border:2px solid var(--violet);
+  font-family:var(--fh);font-weight:700;font-size:1rem;
+  padding:14px 36px;border-radius:10px;border:2px solid var(--violet);
   background:var(--violet-dim);color:var(--violet);cursor:pointer;
   transition:background .15s,transform .15s;
 }
 .retry-btn:hover{background:var(--violet);color:#fff;transform:translateY(-2px);}
 
-/* Results list */
-.results-list{width:100%;display:flex;flex-direction:column;gap:10px;}
-.res-card{
-  background:var(--surface);border:1px solid var(--border);border-radius:10px;
-  padding:16px;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start;
+/* Summary */
+.summary{width:100%;display:flex;flex-direction:column;gap:6px;}
+.sum-row{
+  display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;
+  font-size:.8rem;padding:8px 12px;border-radius:8px;
+  background:var(--surface);border:1px solid var(--border);
 }
-.res-card.res-ok { border-left:3px solid var(--green); }
-.res-card.res-bad{ border-left:3px solid var(--red); }
-.res-emoji{font-size:1.6rem;line-height:1;padding-top:2px;}
-.res-body{display:flex;flex-direction:column;gap:4px;}
-.res-name{font-family:var(--fh);font-weight:700;font-size:.95rem;}
-.res-explain{font-size:.8rem;color:var(--muted);line-height:1.6;}
-.res-nuance{font-size:.75rem;color:var(--muted);font-style:italic;margin-top:2px;}
-.res-verdict{
-  display:flex;flex-direction:column;align-items:flex-end;gap:4px;
-  white-space:nowrap;padding-top:2px;
-}
-.verdict-chip{
-  font-family:var(--fh);font-weight:700;font-size:.78rem;
-  padding:3px 10px;border-radius:20px;
-}
-.verdict-chip.ok { background:var(--green-dim);color:var(--green); }
-.verdict-chip.bad{ background:var(--red-dim);color:var(--red); }
-.your-answer{font-size:.72rem;color:var(--muted);}
+.sum-em{font-size:1.1rem;}
+.sum-name{color:var(--text);}
+.sum-result{font-weight:700;font-size:1rem;}
+.sum-result.ok{color:var(--green);}
+.sum-result.bad{color:var(--red);}
 
-/* ── Footer ── */
+/* Footer */
 footer{
   width:100%;padding:14px;text-align:center;
   font-size:.75rem;color:var(--muted);border-top:1px solid var(--border);
@@ -174,45 +243,85 @@ footer a{color:var(--muted);text-decoration:none;}
 footer a:hover{color:var(--text);}
 
 @media(max-width:500px){
-  .predict-grid{grid-template-columns:1fr;}
-  .predict-status{flex-direction:column;gap:8px;}
+  .card-grid{grid-template-columns:1fr 1fr;}
+  .q-card{padding:24px 16px 20px;}
+}
+@media(max-width:360px){
+  .card-grid{grid-template-columns:1fr;}
 }
 </style>
 
 <header>
-  <a class="back-link" href="../index.html">← Kurssidan</a>
-  <span class="header-title">🤖 Är det AI?</span>
-  <button class="theme-btn" id="theme-toggle">☀</button>
+  <div class="header-top">
+    <a class="back-link" href="../index.html">← Kurssidan</a>
+    <span class="header-title">🤖 Är det AI?</span>
+    <button class="theme-btn" id="theme-toggle">☀</button>
+  </div>
+  <div class="tab-strip">
+    <button class="tab-btn active" id="tab-kort" onclick="switchTab('kort')">Korten</button>
+    <button class="tab-btn"        id="tab-quiz" onclick="switchTab('quiz')">Quiz</button>
+  </div>
 </header>
 
-<main>
-  <!-- ── PHASE 1: PREDICTION ── -->
-  <div id="phase-predict">
-    <div class="predict-header">
-      <h1 class="predict-title">Ta ställning — är det AI?</h1>
-      <p class="predict-sub">Svara på alla 12 system utan att se rätt svar. Välj <strong>Ja, AI</strong> eller <strong>Nej, inte AI</strong> för varje kort — sedan ser du resultaten.</p>
-      <div class="predict-status">
-        <span class="predict-count" id="predict-count">0 av 12 besvarade</span>
-        <button class="submit-btn" id="submit-btn" disabled onclick="showResults()">Visa resultat →</button>
+<!-- ── PANEL 1: GALLERY ── -->
+<div class="panel active" id="panel-kort">
+  <div class="gallery-wrap">
+    <div class="gallery-intro">
+      <h1 class="gallery-title">Är det AI?</h1>
+      <p class="gallery-sub">Tolv datorsystem. Titta igenom dem — fundera på vad du tror innan du går vidare till quizet.</p>
+    </div>
+    <div class="card-grid" id="gallery-grid"></div>
+    <div class="gallery-cta">
+      <p class="gallery-cta-text">Redo att testa dig? Gå till quizet och svara Ja eller Nej på varje system i tur och ordning.</p>
+      <button class="start-btn" onclick="switchTab('quiz')">Starta quizet →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── PANEL 2: QUIZ ── -->
+<div class="panel" id="panel-quiz">
+  <div class="quiz-wrap">
+    <div class="hud" id="hud">
+      <div class="q-counter" id="q-counter">1 / 12</div>
+      <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      <div class="score-badge" id="score-badge">0 p</div>
+    </div>
+    <div id="quiz-area" style="width:100%;display:flex;flex-direction:column;gap:16px;">
+      <div class="card-wrap">
+        <div class="q-card" id="q-card">
+          <div class="card-label">Är det AI?</div>
+          <div class="card-emoji" id="q-emoji">🤖</div>
+          <div class="card-name" id="q-name">–</div>
+          <div class="card-desc" id="q-desc"></div>
+          <div class="btn-row">
+            <button class="ans-btn ja" id="btn-ja" onclick="answer(true)">
+              <span class="btn-icon">✅</span> Ja, AI
+            </button>
+            <button class="ans-btn nej" id="btn-nej" onclick="answer(false)">
+              <span class="btn-icon">❌</span> Nej, inte AI
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="feedback" id="feedback">
+        <div class="fb-verdict"><span class="vc" id="fb-icon"></span><span id="fb-verdict-text"></span></div>
+        <div class="fb-text" id="fb-text"></div>
+        <div class="fb-nuance" id="fb-nuance" style="display:none"></div>
+        <button class="next-btn" id="next-btn" onclick="nextQuestion()">Nästa →</button>
       </div>
     </div>
-    <div class="predict-grid" id="predict-grid"></div>
-  </div>
-
-  <!-- ── PHASE 2: RESULTS ── -->
-  <div id="phase-results">
-    <div class="result-hero">
+    <div class="end-screen" id="end-screen">
       <div class="end-ring">
         <div class="end-score-num" id="end-num">0</div>
         <div class="end-score-of" id="end-of">av 12</div>
       </div>
-      <div class="result-title" id="result-title"></div>
-      <div class="result-msg"   id="result-msg"></div>
+      <div class="end-title" id="end-title"></div>
+      <div class="end-msg"   id="end-msg"></div>
       <button class="retry-btn" onclick="restart()">Försök igen 🔄</button>
+      <div class="summary" id="summary"></div>
     </div>
-    <div class="results-list" id="results-list"></div>
   </div>
-</main>
+</div>
 
 <footer>
   AI 1 · Erik Dahlbergsgymnasiet · Teknikprogrammet &nbsp;·&nbsp;
@@ -239,6 +348,18 @@ document.getElementById('theme-toggle').addEventListener('click',()=>{
   localStorage.setItem('ai1-theme',document.documentElement.getAttribute('data-theme'));
   updateBtn();
 });
+
+/* ── Tab switching ── */
+function switchTab(id) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+  // When entering quiz, reset if finished
+  if(id==='quiz' && document.getElementById('end-screen').classList.contains('show')) {
+    restart();
+  }
+}
 
 /* ── Questions ── */
 const QUESTIONS = [
@@ -281,7 +402,7 @@ const QUESTIONS = [
   {
     emoji:'🗺️', name:'GPS — beräkna kortaste väg', isAI:false,
     desc:'Navigationsappar som hittar den snabbaste rutten.',
-    explain:'Att beräkna kortaste väg (t.ex. Dijkstras algoritm) är ett deterministiskt matematiskt problem — inte AI. Systemet följer en fast algoritm och lär sig ingenting. Däremot kan trafikprediktioner i moderna GPS-appar använda ML.',
+    explain:'Att beräkna kortaste väg (t.ex. Dijkstras algoritm) är ett deterministiskt matematiskt problem — inte AI. Systemet följer en fast algoritm och lär sig ingenting.',
     nuance:'Moderna appar som Google Maps använder ML för trafikprognoser, men själva vägberäkningen är inte AI.',
   },
   {
@@ -307,109 +428,113 @@ const QUESTIONS = [
   },
 ];
 
-/* ── State ── */
-const userAnswers = new Array(QUESTIONS.length).fill(null); // true=ja, false=nej, null=ej svarad
-
-/* ── Build prediction grid ── */
-function buildGrid() {
-  const grid = document.getElementById('predict-grid');
-  QUESTIONS.forEach((q, i) => {
+/* ── Build gallery ── */
+(function buildGallery() {
+  const grid = document.getElementById('gallery-grid');
+  QUESTIONS.forEach(q => {
     const card = document.createElement('div');
-    card.className = 'pred-card';
-    card.id = `pred-${i}`;
-    card.innerHTML = `
-      <div class="pred-emoji">${q.emoji}</div>
-      <div class="pred-name">${q.name}</div>
-      <div class="pred-desc">${q.desc}</div>
-      <div class="pred-btns">
-        <button class="pred-btn ja" id="ja-${i}" onclick="setPred(${i},true)">✅ Ja, AI</button>
-        <button class="pred-btn nej" id="nej-${i}" onclick="setPred(${i},false)">❌ Nej</button>
-      </div>`;
+    card.className = 'g-card';
+    card.innerHTML = `<div class="g-emoji">${q.emoji}</div>
+      <div class="g-name">${q.name}</div>
+      <div class="g-desc">${q.desc}</div>`;
     grid.appendChild(card);
   });
+})();
+
+/* ── Quiz state ── */
+let current = 0, score = 0, results = [];
+const order = [...Array(QUESTIONS.length).keys()];
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+
+function loadQuestion(){
+  const q = QUESTIONS[order[current]];
+  const card = document.getElementById('q-card');
+  card.classList.remove('entering');
+  void card.offsetWidth;
+  card.classList.add('entering');
+  document.getElementById('q-emoji').textContent   = q.emoji;
+  document.getElementById('q-name').textContent    = q.name;
+  document.getElementById('q-desc').textContent    = q.desc;
+  document.getElementById('q-counter').textContent = `${current+1} / ${QUESTIONS.length}`;
+  document.getElementById('prog-fill').style.width = `${(current/QUESTIONS.length)*100}%`;
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+  document.getElementById('btn-ja').disabled  = false;
+  document.getElementById('btn-nej').disabled = false;
 }
 
-function setPred(i, val) {
-  userAnswers[i] = val;
-
-  // Update button styles
-  const jaBtn  = document.getElementById(`ja-${i}`);
-  const nejBtn = document.getElementById(`nej-${i}`);
-  jaBtn.classList.toggle('selected',  val === true);
-  nejBtn.classList.toggle('selected', val === false);
-
-  // Update card border
-  const card = document.getElementById(`pred-${i}`);
-  card.classList.toggle('answered-ja',  val === true);
-  card.classList.toggle('answered-nej', val === false);
-
-  // Update counter + submit button
-  const answered = userAnswers.filter(v => v !== null).length;
-  document.getElementById('predict-count').textContent = `${answered} av ${QUESTIONS.length} besvarade`;
-  document.getElementById('submit-btn').disabled = answered < QUESTIONS.length;
+function answer(userSaysYes){
+  const q  = QUESTIONS[order[current]];
+  const ok = (userSaysYes === q.isAI);
+  if(ok){ score++; animateScore(); }
+  results.push({q, ok});
+  document.getElementById('btn-ja').disabled  = true;
+  document.getElementById('btn-nej').disabled = true;
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback show ' + (ok ? 'correct' : 'wrong');
+  document.getElementById('fb-icon').textContent         = ok ? '✅' : '❌';
+  document.getElementById('fb-verdict-text').textContent = ok
+    ? (q.isAI ? 'Rätt! Det är AI.' : 'Rätt! Det är inte AI.')
+    : (q.isAI ? 'Fel — det är faktiskt AI.' : 'Fel — det är inte AI.');
+  document.getElementById('fb-text').textContent = q.explain;
+  const nuance = document.getElementById('fb-nuance');
+  if(q.nuance){ nuance.textContent = q.nuance; nuance.style.display=''; }
+  else nuance.style.display = 'none';
+  if(current === QUESTIONS.length - 1)
+    document.getElementById('next-btn').textContent = 'Visa resultat →';
 }
 
-/* ── Show Results ── */
-function showResults() {
-  let score = 0;
-  const list = document.getElementById('results-list');
-  list.innerHTML = '';
+function animateScore(){
+  const badge = document.getElementById('score-badge');
+  badge.textContent = score + ' p';
+  badge.classList.remove('pulse');
+  void badge.offsetWidth;
+  badge.classList.add('pulse');
+}
 
-  QUESTIONS.forEach((q, i) => {
-    const userSaidYes = userAnswers[i];
-    const ok = (userSaidYes === q.isAI);
-    if (ok) score++;
+function nextQuestion(){
+  current++;
+  if(current >= QUESTIONS.length){ showEnd(); return; }
+  loadQuestion();
+}
 
-    const card = document.createElement('div');
-    card.className = `res-card ${ok ? 'res-ok' : 'res-bad'}`;
-
-    const userLabel = userSaidYes ? 'Ja, AI' : 'Nej, inte AI';
-    const correctLabel = q.isAI ? 'Ja, AI' : 'Nej, inte AI';
-
-    card.innerHTML = `
-      <div class="res-emoji">${q.emoji}</div>
-      <div class="res-body">
-        <div class="res-name">${q.name}</div>
-        <div class="res-explain">${q.explain}</div>
-        ${q.nuance ? `<div class="res-nuance">${q.nuance}</div>` : ''}
-      </div>
-      <div class="res-verdict">
-        <span class="verdict-chip ${ok ? 'ok' : 'bad'}">${ok ? '✓ Rätt' : '✗ Fel'}</span>
-        <span class="your-answer">Du: ${userLabel}</span>
-        ${!ok ? `<span class="your-answer">Svar: ${correctLabel}</span>` : ''}
-      </div>`;
-    list.appendChild(card);
-  });
-
-  // Score message
+function showEnd(){
+  document.getElementById('quiz-area').style.display = 'none';
+  document.getElementById('hud').style.display       = 'none';
+  const end = document.getElementById('end-screen');
+  end.classList.add('show');
+  document.getElementById('end-num').textContent = score;
+  document.getElementById('end-of').textContent  = `av ${QUESTIONS.length}`;
   const pct = score / QUESTIONS.length;
   let title, msg;
-  if(pct === 1)       { title='Perfekt! 🏆'; msg='Alla rätt! Du har en skarp känsla för vad AI faktiskt innebär — inklusive gränsfallen.'; }
-  else if(pct >= .83) { title='Imponerande! 🎯'; msg='Nästan perfekt! Gränsfallen är svåra — AI är inte alltid ett ja eller nej-svar, och det syns i resultaten.'; }
-  else if(pct >= .67) { title='Bra jobbat! 👍'; msg='Du har en god grundkänsla för vad AI är. Titta på de du missade — det är ofta i gränsfallen de bästa diskussionerna finns.'; }
-  else if(pct >= .5)  { title='Halvvägs! 🤔'; msg='AI är ett begrepp med suddiga kanter. Gränsen mellan "smart program" och "AI" är inte alltid tydlig — det är poängen med övningen!'; }
-  else                 { title='Testa igen! 💪'; msg='Inte lätt! AI-begreppet är genuint förvirrande — även experter är oense. Läs förklaringarna och prova igen.'; }
-
-  document.getElementById('end-num').textContent   = score;
-  document.getElementById('end-of').textContent    = `av ${QUESTIONS.length}`;
-  document.getElementById('result-title').textContent = title;
-  document.getElementById('result-msg').textContent   = msg;
-
-  document.getElementById('phase-predict').style.display = 'none';
-  document.getElementById('phase-results').style.display = '';
+  if(pct===1)       {title='Perfekt! 🏆';       msg='Du fick alla rätt! Du har koll på vad AI faktiskt är — och vad det inte är.';}
+  else if(pct>=.83) {title='Imponerande! 🎯';   msg='Nästan perfekt! Gränsfallen är svåra — AI är inte alltid ett ja eller nej-svar.';}
+  else if(pct>=.67) {title='Bra jobbat! 👍';    msg='Du har en god grundkänsla för vad AI är. Titta på de du missade — gränsfallen är de intressantaste.';}
+  else if(pct>=.5)  {title='Halvvägs! 🤔';      msg='AI är ett begrepp med suddiga kanter. Gränsen mellan "smart program" och "AI" är inte alltid tydlig.';}
+  else               {title='Testa igen! 💪';   msg='Inte lätt! AI-begreppet är genuint förvirrande — även experter är oense. Läs förklaringarna och prova igen.';}
+  document.getElementById('end-title').textContent = title;
+  document.getElementById('end-msg').textContent   = msg;
+  const sum = document.getElementById('summary');
+  sum.innerHTML = '';
+  results.forEach(({q, ok})=>{
+    const row = document.createElement('div');
+    row.className = 'sum-row';
+    row.innerHTML = `<span class="sum-em">${q.emoji}</span><span class="sum-name">${q.name}</span><span class="sum-result ${ok?'ok':'bad'}">${ok?'✓':'✗'}</span>`;
+    sum.appendChild(row);
+  });
 }
 
-/* ── Restart ── */
-function restart() {
-  userAnswers.fill(null);
-  document.getElementById('predict-grid').innerHTML = '';
-  document.getElementById('predict-count').textContent = '0 av 12 besvarade';
-  document.getElementById('submit-btn').disabled = true;
-  document.getElementById('phase-results').style.display = 'none';
-  document.getElementById('phase-predict').style.display  = '';
-  buildGrid();
+function restart(){
+  current=0; score=0; results=[];
+  shuffle(order);
+  document.getElementById('score-badge').textContent = '0 p';
+  document.getElementById('end-screen').classList.remove('show');
+  document.getElementById('quiz-area').style.display = '';
+  document.getElementById('hud').style.display       = '';
+  loadQuestion();
 }
 
-/* ── Init ── */
-buildGrid();
+// Init
+shuffle(order);
+loadQuestion();
 </script>

@@ -83,9 +83,9 @@ footer{color:var(--muted);font-size:.85rem;border-top:1px solid var(--line);padd
       <li>beskriva AI:s utveckling i rätt ordning, från 1940-talet till idag</li>
       <li>förklara varför AI-forskningen gick in i två ”vintrar” och vad som fick den att ta fart igen</li>
       <li>känna till viktiga personer, system och händelser</li>
-      <li>förklara hur en perceptron och ett expertsystem fungerar</li>
+      <li>förklara (i stora drag) hur en perceptron och ett expertsystem fungerar</li>
       <li>använda och förklara centrala AI-begrepp</li>
-      <li>resonera kring diskussionsfrågorna från slutet av presentationen</li>
+      <li>resonera kring diskussionsfrågorna</li>
     </ul>
   </div>
   <p class="note"><strong>Tips:</strong> gå igenom tidslinjen och ordlistan, och testa <a href="https://prolixab.github.io/ai1/perceptron/">perceptron-demon</a>.</p>
@@ -141,17 +141,11 @@ footer{color:var(--muted);font-size:.85rem;border-top:1px solid var(--line);padd
     <tbody>
       <tr><td>Warren McCulloch &amp; Walter Pitts</td><td>Matematisk modell av nervcellen (1943)</td></tr>
       <tr><td>Alan Turing</td><td>”Can machines think?” och Turing-testet (1950)</td></tr>
-      <tr><td>Marvin Minsky</td><td>SNARC, Dartmouth, perceptron-kritiken med Papert (1969)</td></tr>
-      <tr><td>Arthur Samuel</td><td>Dammspel som lärde sig spela bättre än sin skapare</td></tr>
       <tr><td>John McCarthy</td><td>Myntade begreppet AI, Dartmouth 1956</td></tr>
       <tr><td>Claude Shannon</td><td>Informationsteori, Dartmouth</td></tr>
-      <tr><td>Newell &amp; Simon</td><td>Logic Theorist</td></tr>
       <tr><td>Frank Rosenblatt</td><td>Perceptronen (1958)</td></tr>
       <tr><td>Sir James Lighthill</td><td>Lighthill-rapporten (1973)</td></tr>
       <tr><td>Geoffrey Hinton</td><td>Deep belief networks (2006)</td></tr>
-      <tr><td>Fei-Fei Li</td><td>ImageNet (2009)</td></tr>
-      <tr><td>Alex Krizhevsky</td><td>AlexNet (2012)</td></tr>
-      <tr><td>Ian Goodfellow</td><td>GAN (2014)</td></tr>
       <tr><td>Garry Kasparov / Lee Sedol</td><td>Förlorade mot Deep Blue (1997) respektive AlphaGo (2016)</td></tr>
     </tbody>
   </table></div>
@@ -178,13 +172,12 @@ footer{color:var(--muted);font-size:.85rem;border-top:1px solid var(--line);padd
     <li>Stegfunktionen ger output 1 om z &gt; 0, annars 0.</li>
   </ol>
   <div class="formula">z = x₁·w₁ + x₂·w₂ + x₃·w₃ + … + b</div>
-  <p>Moderna nätverk använder mjukare aktiveringsfunktioner som sigmoid och ReLU.</p>
 
   <h3>Expertsystem</h3>
   <p>Kunskapsbas med IF–THEN-regler + slutledningsmotor (inference engine). Kunna stegen kunskapsinsamling → användarinput → slutledning → output, samt fördelar (transparenta, förklarbara, lönsamma) och begränsningar (dyra att underhålla, kan inte lära sig, fungerar bara inom snäva områden).</p>
 
   <h3>Kombinatorisk explosion</h3>
-  <p>Antalet möjligheter växer exponentiellt. Schack har över 10<sup>120</sup> möjliga partier, så AI använder heuristisk sökning och beskärning (pruning).</p>
+  <p>Antalet möjligheter växer exponentiellt. Schack har över 10<sup>120</sup> möjliga partier</p>
 
   <h3>Ordlista</h3>
   <div class="table"><table>
@@ -196,15 +189,6 @@ footer{color:var(--muted);font-size:.85rem;border-top:1px solid var(--line);padd
       <tr><td>Transformer</td><td>Arkitektur med självuppmärksamhet – grunden för GPT och BERT</td></tr>
       <tr><td>LLM</td><td>Large Language Model, tränad på enorma mängder text</td></tr>
       <tr><td>Prompt</td><td>Textinstruktion till en AI-modell</td></tr>
-      <tr><td>Fine-tuning</td><td>Vidareträning av en modell för en specifik uppgift</td></tr>
-      <tr><td>Bias</td><td>Systematisk snedvridning i output på grund av träningsdata</td></tr>
-      <tr><td>Hallucination</td><td>Modellen hittar på saker som låter trovärdiga men är fel</td></tr>
-      <tr><td>Förstärkt inlärning</td><td>Agenten lär sig via belöningar, t.ex. AlphaGo</td></tr>
-      <tr><td>Parametrar</td><td>Viktade värden i nätverket</td></tr>
-      <tr><td>Token</td><td>Grundläggande textenhet för en LLM (ca 0,75 ord)</td></tr>
-      <tr><td>GAN</td><td>Två nätverk som tävlar mot varandra för att skapa realistiska bilder</td></tr>
-      <tr><td>Agentic AI</td><td>AI som planerar och utför uppgifter autonomt i steg</td></tr>
-      <tr><td>RAG</td><td>Retrieval Augmented Generation – LLM + dokumentsökning</td></tr>
       <tr><td>Antropomorfisering</td><td>Att tillskriva teknik mänskliga egenskaper, som när användare trodde att ELIZA förstod dem</td></tr>
     </tbody>
   </table></div>
@@ -223,17 +207,12 @@ footer{color:var(--muted);font-size:.85rem;border-top:1px solid var(--line);padd
   </ul>
   <h3>Tillämpning</h3>
   <ul>
-    <li>En perceptron har x₁ = 1, x₂ = 0, w₁ = 0,6, w₂ = 0,4 och b = −0,5. Beräkna z och output.</li>
-    <li>Skriv en egen IF–THEN-regel för ett enkelt expertsystem och beskriv hur systemet använder den.</li>
     <li>Placera händelser (t.ex. AlexNet, ELIZA, XCON, ChatGPT, Deep Blue) i rätt ordning på en tidslinje.</li>
   </ul>
   <h3>Resonerande frågor</h3>
   <ol>
     <li>Varför gick AI-forskningen in i ”vintrar”? Vad kan vi lära oss av det?</li>
     <li>Turing-testet mäter imitation – mäter det intelligens?</li>
-    <li>Expertsystem var transparenta; moderna LLM är ”svarta lådor”. Jämför för- och nackdelar.</li>
-    <li>ChatGPT nådde 100 miljoner användare på två månader. Vilka samhällskonsekvenser ser du?</li>
-    <li>Vilken AI-teknik tror du får störst påverkan om 10 år? Motivera.</li>
   </ol>
 </section>
 

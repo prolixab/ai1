@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Show me the Money</title>
+<style>body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Public+Sans:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: a ledger of seven "branschkort" — one sticky row of card tabs, one panel at a time; prose column + full-width tables and maps */
+:root{
+  --bg:#f3f5f2; --surface:#ffffff; --fg:#17201d; --muted:#56635e; --line:#d5ddd8;
+  --accent:#17705a; --accent-soft:#e0efe9; --tolk:#9a5b00; --tolk-soft:#fbf0dc;
+  --m-edge:#8f9b96; --m-accent:#17705a; --m-ink:#17201d; --m-quiet:#56635e;
+  --display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111614; --surface:#18201d; --fg:#e4ebe7; --muted:#9daaa4; --line:#2c3833;
+  --accent:#4fc2a0; --accent-soft:#1b3a31; --tolk:#e8b05c; --tolk-soft:#3a2c14;
+  --m-edge:#6f7d77; --m-accent:#4fc2a0; --m-ink:#e4ebe7; --m-quiet:#9daaa4; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111614; --surface:#18201d; --fg:#e4ebe7; --muted:#9daaa4; --line:#2c3833;
+  --accent:#4fc2a0; --accent-soft:#1b3a31; --tolk:#e8b05c; --tolk-soft:#3a2c14;
+  --m-edge:#6f7d77; --m-accent:#4fc2a0; --m-ink:#e4ebe7; --m-quiet:#9daaa4; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.6 var(--body);padding-inline:16px;padding-block:0 64px}
+.wrap{max-width:1040px;margin-inline:auto}
+.masthead{padding-block:40px 20px;display:grid;gap:8px}
+.kicker{font:500 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.masthead h1{font-family:var(--display);font-stretch:68%;font-weight:800;font-size:clamp(40px,8vw,76px);line-height:.92;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.masthead p{margin:0;color:var(--muted);max-width:62ch}
+.tabbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-16px;padding-inline:16px}
+.tabs{max-width:1040px;margin-inline:auto;display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin;padding-block:10px}
+.tabs button{flex:none;font:600 14px/1 var(--body);color:var(--muted);background:transparent;border:1px solid transparent;border-radius:999px;padding:9px 14px;cursor:pointer;display:flex;gap:7px;align-items:center;white-space:nowrap}
+.tabs button b{font:500 11px/1 var(--mono);color:var(--muted);opacity:.8}
+.tabs button:hover{border-color:var(--line);color:var(--fg)}
+.tabs button[aria-selected="true"]{background:var(--fg);color:var(--bg)}
+.tabs button[aria-selected="true"] b{color:var(--bg)}
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panel{padding-block:28px 0}
+.phead{display:grid;gap:6px;margin-bottom:18px}
+.cardno{font:500 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.panel h2{font-family:var(--display);font-stretch:75%;font-weight:750;font-size:clamp(30px,5vw,46px);line-height:1;margin:0;text-wrap:balance}
+.panel h3{font-family:var(--display);font-stretch:85%;font-weight:700;font-size:22px;margin:40px 0 12px;padding-top:14px;border-top:1px solid var(--line);text-wrap:balance}
+.panel h4{font-family:var(--display);font-stretch:85%;font-weight:700;font-size:19px;margin:36px 0 8px}
+.panel p,.panel ul{max-width:68ch}
+.panel ul{padding-left:1.2em}
+.panel li{margin-block:6px}
+.panel a{color:var(--accent);text-underline-offset:2px}
+.lead{font-size:18px;line-height:1.55;background:var(--accent-soft);border-radius:10px;padding:16px 18px;max-width:72ch}
+.lead-label{display:block;font:500 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface);margin-block:8px 20px}
+table{border-collapse:collapse;min-width:880px;width:100%;font-size:14px;line-height:1.45}
+th{text-align:left;font:600 12px/1.3 var(--body);text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:bottom}
+td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600;width:17%}
+em.tolk{font-style:normal;font-size:12px;font-weight:600;color:var(--tolk);background:var(--tolk-soft);border-radius:4px;padding:1px 6px;white-space:nowrap}
+.mapfig{margin:12px 0 18px}
+.mapscroll{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px}
+svg.map{display:block;width:100%;max-width:820px;margin-inline:auto;min-width:620px;height:auto;font-family:var(--body)}
+.mapfig figcaption{font:500 12px/1.4 var(--mono);color:var(--muted);margin-top:8px}
+.ovgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:12px}
+.ovcard{all:unset;cursor:pointer;display:grid;gap:8px;align-content:start;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+.ovcard:hover{border-color:var(--accent)}
+.ovcard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ovno{font:500 12px/1 var(--mono);color:var(--accent)}
+.ovname{font-family:var(--display);font-stretch:80%;font-weight:700;font-size:20px;line-height:1.1}
+.ovpow{font-size:14px;color:var(--fg)}
+.ovlab{display:block;font:500 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.foot{margin-top:48px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+@media (max-width:560px){.lead{font-size:16px}.masthead{padding-block:28px 14px}}
+@media (prefers-reduced-motion:no-preference){.panel:not([hidden]){animation:in .25s ease-out}@keyframes in{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}}
+</style>
+<div class="wrap">
+  <header class="masthead">
+    <span class="kicker">Drivkrafter bakom AI · modellsvar</span>
+    <h1>Show me the Money!</h1>
+    <p>Vem har egentligen makten över AI i din bransch? Ett modellsvar för vart och ett av de sju branschkorten, med exempel, aktörer, maktkarta och reflektion. Uppgifterna är kontrollerade mot källor i oktober 2026.</p>
+  </header>
+</div>
+<nav class="tabbar" aria-label="Branschkort"><div class="tabs" role="tablist"><button role="tab" id="t-oversikt" aria-controls="p-oversikt" data-tab="oversikt" type="button">Översikt</button><button role="tab" id="t-vard" aria-controls="p-vard" data-tab="vard" type="button"><b>1</b>Vård och hälsa</button><button role="tab" id="t-bank" aria-controls="p-bank" data-tab="bank" type="button"><b>2</b>Bank och finans</button><button role="tab" id="t-handel" aria-controls="p-handel" data-tab="handel" type="button"><b>3</b>Handel</button><button role="tab" id="t-industri" aria-controls="p-industri" data-tab="industri" type="button"><b>4</b>Tillverkning</button><button role="tab" id="t-forsvar" aria-controls="p-forsvar" data-tab="forsvar" type="button"><b>5</b>Försvar</button><button role="tab" id="t-media" aria-controls="p-media" data-tab="media" type="button"><b>6</b>Media</button><button role="tab" id="t-skola" aria-controls="p-skola" data-tab="skola" type="button"><b>7</b>Utbildning</button></div></nav>
+<main class="wrap">
+<section role="tabpanel" id="p-oversikt" aria-labelledby="t-oversikt" class="panel" hidden><header class="phead"><span class="cardno">Översikt</span><h2>Vem har makten över AI?</h2></header><p>Det här är modellsvar på uppgiften för alla sju branschkort – så som en stark grupp borde ha löst den. Varje bransch följer uppgiftens steg: konkreta exempel (steg 2), spårade aktörer (steg 3), en maktkarta (steg 4) och svar på reflektionsfrågorna (steg 5), med källor.</p>
+<p>Tre saker gör ett svar starkt och återkommer i alla branscher:</p>
+<ul>
+<li><strong>Pengarna följs hela vägen.</strong> Inte bara "sjukhuset använder AI", utan vem som betalar vem: användaren betalar en specialiserad leverantör, som i sin tur hyr molnkapacitet av en teknikjätte, som köper chip av Nvidia.</li>
+<li><strong>Fakta skiljs från tolkning.</strong> Markeringen <em class="tolk">tolkning</em> används där företaget inte själv säger vilken leverantör det använder.</li>
+<li><strong>Makt förklaras med beroende.</strong> Den med mest makt är den som är svårast att byta ut – inte den som syns mest.</li>
+</ul>
+<p>Uppgifterna är kontrollerade mot källor i oktober 2026; kontrollera dem igen innan materialet används, eftersom branschen förändras snabbt.</p><h3>Svaret skiljer sig mellan branscherna</h3><div class="ovgrid"><button class="ovcard" data-go="vard" type="button"><span class="ovno">1</span><span class="ovname">Vård och hälsa</span><span class="ovpow"><span class="ovlab">Mest makt</span>Microsoft (molnet under vården)</span></button><button class="ovcard" data-go="bank" type="button"><span class="ovno">2</span><span class="ovname">Bank och finans</span><span class="ovpow"><span class="ovlab">Mest makt</span>Bankerna själva – de äger datan</span></button><button class="ovcard" data-go="handel" type="button"><span class="ovno">3</span><span class="ovname">Detaljhandel och e-handel</span><span class="ovpow"><span class="ovlab">Mest makt</span>Google, Meta och Amazon</span></button><button class="ovcard" data-go="industri" type="button"><span class="ovno">4</span><span class="ovname">Tillverkning och logistik</span><span class="ovpow"><span class="ovlab">Mest makt</span>Nvidia (chippen i fordonen)</span></button><button class="ovcard" data-go="forsvar" type="button"><span class="ovno">5</span><span class="ovname">Försvar och säkerhet</span><span class="ovpow"><span class="ovlab">Mest makt</span>Staterna – enda köparen</span></button><button class="ovcard" data-go="media" type="button"><span class="ovno">6</span><span class="ovname">Media och sociala medier</span><span class="ovpow"><span class="ovlab">Mest makt</span>Meta, Google och ByteDance</span></button><button class="ovcard" data-go="skola" type="button"><span class="ovno">7</span><span class="ovname">Utbildning</span><span class="ovpow"><span class="ovlab">Mest makt</span>Microsoft och Google</span></button></div></section><section role="tabpanel" id="p-vard" aria-labelledby="t-vard" class="panel" hidden><header class="phead"><span class="cardno">Branschkort 1</span><h2>Vård och hälsa</h2></header><p class="lead"><span class="lead-label">Kort svar</span>Vården köper AI från specialiserade bolag (ofta små och europeiska), men de bolagen körs allt oftare i amerikanska moln. Mest makt har molnleverantören (här Microsoft), eftersom både AI-bolagen och regionernas system blir beroende av den.</p>
+<h3>Steg 2–3: Exempel och aktörer</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Exempel</th>
+<th>Vad AI:n gör</th>
+<th>Vem använder</th>
+<th>Hur någon tjänar pengar</th>
+<th>Teknik bakom</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://www.ai.lu.se/node/1407">MASAI-studien</a> – AI i mammografiscreening</td>
+<td>Sorterar mammografibilder efter risk och markerar misstänkta områden. I studien med ca 106 000 kvinnor hittades 29 % fler cancrar och radiologernas granskning minskade med 44 %.</td>
+<td>Region Skåne (screening i Malmö), forskare vid Lunds universitet</td>
+<td>Regionen sparar radiologtid (en bristyrkesgrupp). Leverantören säljer licenser per undersökning.</td>
+<td>Transpara från ScreenPoint Medical (Nederländerna) (<a target="_blank" rel="noopener" href="https://appliedradiology.com/articles/masai-trial-demonstrates-ai-assisted-mammography-screening-increases-cancer-detection-decreases-radiologist-workload">källa</a>)</td>
+</tr>
+<tr>
+<td>AI-journalföring med Tandem Health</td>
+<td>Lyssnar på samtalet mellan läkare och patient och skriver ett utkast till journalanteckning.</td>
+<td><a target="_blank" rel="noopener" href="https://via.tt.se/pressmeddelande/3670263/aleris-breddinfor-svensk-ai-losning-for-journalforing">Aleris</a> (privat vårdgivare, 15 av ca 100 enheter 2024)</td>
+<td>Aleris hinner med fler patienter per dag. Tandem tar abonnemangsavgift per användare; bolaget säger att läkarna lägger 80 % mindre tid på journaler (bolagets egen siffra).</td>
+<td>Tal-till-text och en stor språkmodell. Vilken modell och vilket moln anges inte – troligen en stor amerikansk språkmodell via moln <em class="tolk">tolkning</em>.</td>
+</tr>
+<tr>
+<td>Sectra Amplifier – "appbutik" för AI i röntgen och patologi</td>
+<td>Samlar AI-verktyg från många utvecklare i Sectras bildhanteringssystem, så att regionen kan slå på dem som en tjänst.</td>
+<td>Svenska regioner och sjukhus i flera länder som redan använder Sectras system</td>
+<td>Sectra tar betalt för plattformen och får en del av varje AI-app som säljs – som en appbutik.</td>
+<td>Sectra One Cloud <a target="_blank" rel="noopener" href="https://medical.sectra.com/case/homerton-healthcare-embraces-true-saas-enterprise-imaging-with-sectra-and-microsoft-azure/">körs på Microsoft Azure</a></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Forskning:</strong> Lunds universitet (MASAI, Kristina Lång), Karolinska Institutet, Linköpings universitet och CMIV (bildanalys, nära Sectra), AI Sweden.</p>
+<p><strong>Regelmakare:</strong></p>
+<ul>
+<li><strong>EU:s AI-förordning:</strong> AI i medicintekniska produkter är högrisk. Efter EU:s så kallade digitala omnibus gäller kraven för sådana produkter från 2 augusti 2028 (<a target="_blank" rel="noopener" href="https://www.orrick.com/en/Insights/2026/07/EU-AI-Act-Update-Digital-Omnibus-Finalizes-8-Compliance-Changes">Orrick</a>).</li>
+<li><strong>MDR (EU:s förordning om medicinteknik):</strong> AI som ställer diagnos måste CE-märkas. Läkemedelsverket är tillsynsmyndighet.</li>
+<li><strong>GDPR och patientdatalagen:</strong> Hälsodata är känsliga personuppgifter. IMY är tillsynsmyndighet och har <a target="_blank" rel="noopener" href="https://www.imy.se/globalassets/dokument/rapporter/rapport---anvandning-av-molntjanster-inom-offentlig-sektor-.pdf">granskat offentliga myndigheters molnanvändning</a>.</li>
+<li><strong>IVO</strong> granskar vårdens kvalitet och patientsäkerhet.</li>
+</ul>
+<h3>Steg 4: Maktkarta</h3>
+<figure class="mapfig"><div class="mapscroll"><svg class="map" viewBox='0 0 760 576' role='img' aria-label='Vården köper AI av små bolag – men molnet under dem äger Microsoft' font-size='13'><defs><marker id='mk-vard' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='6' markerHeight='6' orient='auto-start-reverse'><path d='M0 0L10 5L0 10z' style="fill:var(--m-edge)"/></marker></defs><text x='24' y='28' font-size='15' font-weight='600' style="fill:var(--m-ink)">Vården köper AI av små bolag – men molnet under dem äger Microsoft</text><g><rect x='256' y='48' width='248' height='88' rx='8' fill-opacity='0.12' stroke-width='2' style="fill:var(--m-accent);stroke:var(--m-accent)"/><text x='380' y='72' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Microsoft Azure (molnet)</text><text x='380' y='90' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Sectra One Cloud körs här</text><text x='380' y='106' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Chip från Nvidia i datacentren</text><text x='380' y='122' font-size='11.5' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Mest makt: svårast att byta ut</text></g><g><rect x='256' y='200' width='248' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">AI-leverantörer</text><text x='380' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">ScreenPoint Medical (Transpara)</text><text x='380' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Tandem Health (journal-AI)</text><text x='380' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Sectra (Amplifier-plattform)</text></g><g><rect x='256' y='352' width='248' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='376' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Vården använder AI</text><text x='380' y='394' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Region Skåne, Region Jönköping</text><text x='380' y='410' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Region Stockholm</text><text x='380' y='426' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Aleris (privat vårdgivare)</text></g><g><rect x='256' y='504' width='248' height='48' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='528' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Patienter och vårdpersonal</text></g><g><rect x='24' y='200' width='160' height='240' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='104' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Forskning</text><text x='104' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Lunds universitet</text><text x='104' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">(MASAI-studien)</text><text x='104' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Karolinska Institutet</text><text x='104' y='290' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">LiU och CMIV</text><text x='104' y='306' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">AI Sweden</text></g><g><rect x='576' y='200' width='160' height='240' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='656' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Regelmakare</text><text x='656' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">EU: AI-förordningen</text><text x='656' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">EU: MDR (medicinteknik)</text><text x='656' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">GDPR, patientdatalagen</text><text x='656' y='290' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Läkemedelsverket</text><text x='656' y='306' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">IMY, IVO</text></g><g fill='none' stroke-width='1.25' style="stroke:var(--m-edge)"><path d='M340 136V200' marker-end='url(#mk-vard)'/><path d='M420 200V136' marker-end='url(#mk-vard)'/><path d='M340 288V352' marker-end='url(#mk-vard)'/><path d='M420 352V288' marker-end='url(#mk-vard)'/><path d='M380 504V440' marker-end='url(#mk-vard)'/><path d='M184 244H256' marker-end='url(#mk-vard)'/><path d='M184 396H256' marker-end='url(#mk-vard)'/><path d='M576 244H504' marker-end='url(#mk-vard)'/><path d='M576 396H504' marker-end='url(#mk-vard)'/></g><text x='332' y='172' font-size='11.5' text-anchor='end' style="fill:var(--m-quiet)">levererar moln</text><text x='428' y='172' font-size='11.5' style="fill:var(--m-quiet)">betalar hyra</text><text x='332' y='324' font-size='11.5' text-anchor='end' style="fill:var(--m-quiet)">levererar AI</text><text x='428' y='324' font-size='11.5' style="fill:var(--m-quiet)">betalar licens</text><text x='388' y='476' font-size='11.5' style="fill:var(--m-quiet)">hälsodata</text><text x='220' y='236' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">forskar</text><text x='220' y='388' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">testar</text><text x='540' y='236' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">godkänner</text><text x='540' y='388' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">reglerar</text></svg></div><figcaption>Maktkarta · vård och hälsa</figcaption></figure>
+<h4 class="deep-h">Fördjupning: vad gör teknikbolagen egentligen?</h4>
+<p>"AI" är inte en sak utan en kedja av företag. Följ en mammografibild från patienten nedåt: den tas av en maskin, sparas i Sectras bildarkiv, läses av Transpara, lagras i Microsofts datacenter och räknas fram på Nvidias chip.</p>
+<figure class="mapfig deep"><div class="mapscroll"><svg class="map" viewBox='0 0 760 916' role='img' aria-label='Bakom en AI-mammografi står sju lager av företag' font-size='13'><defs><marker id='mk-deep' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='6' markerHeight='6' orient='auto-start-reverse'><path d='M0 0L10 5L0 10z' style="fill:var(--m-edge)"/></marker></defs><text x='24' y='28' font-size='15' font-weight='600' style="fill:var(--m-ink)">Bakom en AI-mammografi står sju lager av företag – längst ner Microsoft och Nvidia</text><text x='24' y='56' font-size='11.5' font-weight='600' style="fill:var(--m-quiet)">Företagen och vad de gör – varje lager bygger på lagret under</text><text x='584' y='50' font-size='11.5' font-weight='600' style="fill:var(--m-quiet)">Så tjänar de pengar</text><text x='584' y='66' font-size='11.5' style="fill:var(--m-quiet)">(pengarna flödar nedåt)</text><g><text x='24' y='84' font-size='11' font-weight='600' style="fill:var(--m-quiet)">1 · PATIENTEN</text><rect x='24' y='92' width='536' height='72' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='36' y='114' font-weight='600' style="fill:var(--m-ink)">Kvinna på mammografi i Malmö, patient hos Aleris</text><text x='36' y='132' font-size='11.5' style="fill:var(--m-quiet)">Bilderna och samtalet blir data som skickas vidare ned i kedjan</text><text x='36' y='148' font-size='11.5' style="fill:var(--m-quiet)">Får tillbaka: svar från läkaren – som AI har hjälpt till med</text><text x='584' y='114' font-size='11.5' style="fill:var(--m-ink)">Betalar via</text><text x='584' y='130' font-size='11.5' style="fill:var(--m-quiet)">skatten och</text><text x='584' y='146' font-size='11.5' style="fill:var(--m-quiet)">patientavgiften</text></g><g><text x='24' y='192' font-size='11' font-weight='600' style="fill:var(--m-quiet)">2 · VÅRDGIVAREN</text><rect x='24' y='200' width='260' height='72' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='36' y='222' font-weight='600' style="fill:var(--m-ink)">Region Skåne, Region Jönköping</text><text x='36' y='240' font-size='11.5' style="fill:var(--m-quiet)">Ansvarar för patientdatan enligt lag</text><text x='36' y='256' font-size='11.5' style="fill:var(--m-quiet)">Köper allt nedan genom upphandlingar</text><rect x='300' y='200' width='260' height='72' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='312' y='222' font-weight='600' style="fill:var(--m-ink)">Aleris (privat vårdgivare)</text><text x='312' y='240' font-size='11.5' style="fill:var(--m-quiet)">Har infört Tandem Health i 15 av</text><text x='312' y='256' font-size='11.5' style="fill:var(--m-quiet)">sina ca 100 enheter (2024)</text><text x='584' y='222' font-size='11.5' style="fill:var(--m-ink)">Får skattepengar,</text><text x='584' y='238' font-size='11.5' style="fill:var(--m-quiet)">sparar läkartid</text><text x='584' y='254' font-size='11.5' style="fill:var(--m-quiet)">med AI</text></g><g><text x='24' y='300' font-size='11' font-weight='600' style="fill:var(--m-quiet)">3 · MASKINER OCH JOURNALSYSTEM</text><rect x='24' y='308' width='260' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='36' y='330' font-weight='600' style="fill:var(--m-ink)">Siemens, GE, Philips</text><text x='36' y='348' font-size='11.5' style="fill:var(--m-quiet)">Bygger mammografimaskinerna</text><text x='36' y='364' font-size='11.5' style="fill:var(--m-quiet)">som tar själva röntgenbilderna</text><rect x='300' y='308' width='260' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='312' y='330' font-weight='600' style="fill:var(--m-ink)">Cambio (Sverige), Oracle (USA)</text><text x='312' y='348' font-size='11.5' style="fill:var(--m-quiet)">Journalsystem: Cosmic i Jönköping.</text><text x='312' y='364' font-size='11.5' style="fill:var(--m-quiet)">Oracles Millennium i Skåne skrotades</text><text x='312' y='380' font-size='11.5' style="fill:var(--m-quiet)">2026 efter över 3 miljarder kr</text><text x='584' y='330' font-size='11.5' style="fill:var(--m-ink)">Säljer maskiner</text><text x='584' y='346' font-size='11.5' style="fill:var(--m-quiet)">och systemavtal</text><text x='584' y='362' font-size='11.5' style="fill:var(--m-quiet)">på många år</text></g><g><text x='24' y='424' font-size='11' font-weight='600' style="fill:var(--m-quiet)">4 · AI-APPARNA</text><rect x='24' y='432' width='260' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='36' y='454' font-weight='600' style="fill:var(--m-ink)">Transpara (ScreenPoint, NL)</text><text x='36' y='472' font-size='11.5' style="fill:var(--m-quiet)">Läser bröstbilderna och markerar</text><text x='36' y='488' font-size='11.5' style="fill:var(--m-quiet)">misstänkt cancer. Har analyserat 5</text><text x='36' y='504' font-size='11.5' style="fill:var(--m-quiet)">miljoner bilder i 30+ länder</text><rect x='300' y='432' width='260' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='312' y='454' font-weight='600' style="fill:var(--m-ink)">Tandem Health (Stockholm)</text><text x='312' y='472' font-size='11.5' style="fill:var(--m-quiet)">Lyssnar på läkarsamtalet och skriver</text><text x='312' y='488' font-size='11.5' style="fill:var(--m-quiet)">ett journalutkast med en stor</text><text x='312' y='504' font-size='11.5' style="fill:var(--m-quiet)">språkmodell (vilken anges inte)</text><text x='584' y='454' font-size='11.5' style="fill:var(--m-ink)">Licens per</text><text x='584' y='470' font-size='11.5' style="fill:var(--m-quiet)">undersökning</text><text x='584' y='486' font-size='11.5' style="fill:var(--m-quiet)">eller användare</text></g><g><text x='24' y='548' font-size='11' font-weight='600' style="fill:var(--m-quiet)">5 · PLATTFORMEN</text><rect x='24' y='556' width='536' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='36' y='578' font-weight='600' style="fill:var(--m-ink)">Sectra (Linköping)</text><text x='36' y='596' font-size='11.5' style="fill:var(--m-quiet)">Lagrar och visar alla röntgenbilder (bildarkivet PACS).</text><text x='36' y='612' font-size='11.5' style="fill:var(--m-quiet)">Amplifier är Sectras ”appbutik” där regionen slår på AI-appar som Transpara.</text><text x='36' y='628' font-size='11.5' style="fill:var(--m-quiet)">Molnversionen Sectra One Cloud körs i Microsoft Azure.</text><text x='584' y='578' font-size='11.5' style="fill:var(--m-ink)">Plattformsavgift</text><text x='584' y='594' font-size='11.5' style="fill:var(--m-quiet)">plus en andel av</text><text x='584' y='610' font-size='11.5' style="fill:var(--m-quiet)">varje AI-app</text></g><g><text x='24' y='672' font-size='11' font-weight='600' style="fill:var(--m-quiet)">6 · MOLNET</text><rect x='24' y='680' width='536' height='88' rx='8' fill-opacity='0.12' stroke-width='2' style="fill:var(--m-accent);stroke:var(--m-accent)"/><text x='36' y='702' font-weight='600' style="fill:var(--m-ink)">Microsoft Azure (USA)</text><text x='36' y='720' font-size='11.5' style="fill:var(--m-quiet)">Datacenter i Gävle, Sandviken och Staffanstorp sedan 2021.</text><text x='36' y='736' font-size='11.5' style="fill:var(--m-quiet)">Hyr ut lagring och datorkraft – betalt per timme och gigabyte.</text><text x='36' y='752' font-size='11.5' font-weight='600' style="fill:var(--m-ink)">Mest makt: dyrt och långsamt att flytta all bilddata till ett annat moln.</text><text x='584' y='702' font-size='11.5' style="fill:var(--m-ink)">Hyra varje</text><text x='584' y='718' font-size='11.5' style="fill:var(--m-quiet)">månad – så länge</text><text x='584' y='734' font-size='11.5' style="fill:var(--m-quiet)">datan bor där</text></g><g><text x='24' y='796' font-size='11' font-weight='600' style="fill:var(--m-quiet)">7 · CHIPPEN</text><rect x='24' y='804' width='260' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='36' y='826' font-weight='600' style="fill:var(--m-ink)">Nvidia (USA)</text><text x='36' y='844' font-size='11.5' style="fill:var(--m-quiet)">Designar grafikprocessorerna (GPU)</text><text x='36' y='860' font-size='11.5' style="fill:var(--m-quiet)">som tränar och kör AI-modellerna i</text><text x='36' y='876' font-size='11.5' style="fill:var(--m-quiet)">datacentren – dominerar marknaden</text><rect x='300' y='804' width='260' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='312' y='826' font-weight='600' style="fill:var(--m-ink)">TSMC (Taiwan), ASML (NL)</text><text x='312' y='844' font-size='11.5' style="fill:var(--m-quiet)">TSMC tillverkar Nvidias chip.</text><text x='312' y='860' font-size='11.5' style="fill:var(--m-quiet)">ASML bygger de enda maskinerna som</text><text x='312' y='876' font-size='11.5' style="fill:var(--m-quiet)">klarar de minsta chippen</text><text x='584' y='826' font-size='11.5' style="fill:var(--m-ink)">Säljer chip och</text><text x='584' y='842' font-size='11.5' style="fill:var(--m-quiet)">maskiner för</text><text x='584' y='858' font-size='11.5' style="fill:var(--m-quiet)">miljarder dollar</text></g><g fill='none' stroke-width='1.25' style="stroke:var(--m-edge)"><path d='M420 164V200' marker-end='url(#mk-deep)'/><path d='M420 272V308' marker-end='url(#mk-deep)'/><path d='M420 396V432' marker-end='url(#mk-deep)'/><path d='M420 520V556' marker-end='url(#mk-deep)'/><path d='M420 644V680' marker-end='url(#mk-deep)'/><path d='M420 768V804' marker-end='url(#mk-deep)'/></g><g><path d='M572 92V892' fill='none' stroke-width='1.25' marker-end='url(#mk-deep)' style="stroke:var(--m-edge)"/></g></svg></div><figcaption>Teknikkedjan bakom en AI-mammografi · 7 lager</figcaption></figure>
+<p>Ju längre ner i kedjan, desto färre bolag finns att välja mellan – och desto svårare är de att byta ut. Källor: <a target="_blank" rel="noopener" href="https://news.microsoft.com/europe/2021/11/16/microsoft-opens-its-sustainable-datacenter-region-in-sweden-creating-new-opportunities-for-a-cloud-first-sweden/">Microsofts datacenter i Sverige</a>, <a target="_blank" rel="noopener" href="https://itnonline.com/content/transpara-surpasses-5-million-mammograms-and-1-million-tomosynthesis-studies-analyzed">Transpara 5 miljoner bilder</a>, <a target="_blank" rel="noopener" href="https://www.svt.se/nyheter/lokalt/vast/darfor-har-17-regioner-inte-millennium-lider-med-hela-organisationen-i-vastra-gotalandregionen">Cosmic i 17 regioner</a>, <a target="_blank" rel="noopener" href="https://www.svt.se/nyheter/lokalt/skane/besked-idag-millenium-skrotas-nya-alternativ-ska-utredas">Millennium skrotas i Skåne</a>.</p>
+<p>Microsoft markeras som mäktigast: både Sectra och många regioner kör i Azure, och det är dyrt och långsamt att flytta tusentals terabyte röntgenbilder till ett annat moln.</p>
+<h3>Steg 5: Reflektion</h3>
+<ul>
+<li><strong>Vem har mest makt?</strong> Teknikjättarna. Regionerna är stora kunder, men de köper via upphandlingar som låser dem i flera år. AI-bolagen som Transpara och Tandem är utbytbara; molnet under dem är det inte.</li>
+<li><strong>Om Microsoft höjde priserna kraftigt?</strong> Sectra och dess kunder skulle få högre kostnader som till slut betalas med skattepengar. Att byta moln tar lång tid eftersom bilddata måste flyttas och system godkännas på nytt.</li>
+<li><strong>Ett litet svenskt företag?</strong> Det behöver CE-märkning, kliniska studier och en plats i Sectras eller någon annans plattform för att nå kunderna – höga trösklar som gynnar stora aktörer.</li>
+<li><strong>Vanliga människor?</strong> Patienter kan få tidigare cancerbesked och läkare mer tid. Risken är att känsliga uppgifter hamnar utanför regionens kontroll och att personal litar för mycket på AI:n.</li>
+<li><strong>Klurig fråga – patientdata i amerikanskt moln?</strong> Det är inte förbjudet, men kräver att regionen kan visa att GDPR och sekretessen håller. Problemet är amerikanska lagar (t.ex. CLOUD Act) som kan tvinga ett amerikanskt bolag att lämna ut data även om den lagras i Sverige. Pengarna på datan tjänar molnbolaget (hyra av lagring och beräkningskraft) och AI-bolagen, vars produkter blir bättre ju mer data de tränas och testas på.</li>
+</ul></section><section role="tabpanel" id="p-bank" aria-labelledby="t-bank" class="panel" hidden><header class="phead"><span class="cardno">Branschkort 2</span><h2>Bank och finans</h2></header><p class="lead"><span class="lead-label">Kort svar</span>Här har företagen som använder AI ovanligt mycket makt. Bankerna äger den viktigaste datan (dina transaktioner), bygger många modeller själva och är så hårt reglerade att teknikbolagen måste anpassa sig efter dem. Teknikjättarna är starkast inom generativ AI, som chattbotar.</p>
+<h3>Steg 2–3: Exempel och aktörer</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Exempel</th>
+<th>Vad AI:n gör</th>
+<th>Vem använder</th>
+<th>Hur någon tjänar pengar</th>
+<th>Teknik bakom</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://tech.eu/2024/02/28/power-of-ai-is-happening-right-now-says-klarna-boss-as/">Klarnas AI-assistent</a></td>
+<td>Svarar på kundtjänstärenden. Första månaden: 2,3 miljoner samtal på 35 språk, "motsvarande 700 heltidsanställda".</td>
+<td>Klarna</td>
+<td>Klarna räknade med 40 miljoner dollar i förbättrat resultat 2024 genom färre kundtjänstagenter. 2025 <a target="_blank" rel="noopener" href="https://www.xatakaon.com/robotics-and-ai/klarna-claimed-its-ai-was-doing-the-work-of-700-employees-its-now-rehiring-humans">började Klarna anställa människor igen</a> eftersom kvaliteten sjönk.</td>
+<td>OpenAI:s språkmodeller</td>
+</tr>
+<tr>
+<td>Kreditbedömning i kassan</td>
+<td>Avgör på sekunder om du får handla nu och betala senare, utifrån köphistorik och kreditupplysning.</td>
+<td>Klarna och andra "köp nu, betala sen"-bolag, banker vid bolån och privatlån</td>
+<td>Snabbare beslut = fler köp. Färre kreditförluster. Butiken betalar Klarna en avgift per köp.</td>
+<td>Egna maskininlärningsmodeller på egen data, i molnet <em class="tolk">tolkning: det mesta byggs internt eftersom datan är företagets konkurrensfördel</em></td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://www.siili.com/newsandinsights/ai-powered-fraud-detection-sara-helin-nordea">Nordeas bedrägeriupptäckt</a></td>
+<td>Letar efter ovanliga mönster i miljontals transaktioner och stoppar misstänkta betalningar, med färre falsklarm.</td>
+<td>Nordea; liknande system finns hos alla storbanker</td>
+<td>Banken slipper ersätta bedrägerioffer och undviker miljardböter för brister i penningtvättsarbetet.</td>
+<td>Leverantör anges inte. Banker använder ofta standardsystem från t.ex. SAS Institute, Nice Actimize eller Oracle (<a target="_blank" rel="noopener" href="https://www.realtid.se/bors-finans/darfor-hittar-ai-nasta-penningtvatt/">Realtid</a>) <em class="tolk">tolkning</em></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Lägesbild:</strong> Enligt <a target="_blank" rel="noopener" href="https://fi.se/contentassets/084ebc13d6364a28a87a37c9a557ec9c/rapport-ai-svenska-finanssektorn.pdf">Finansinspektionens kartläggning</a> (december 2024) har 22 % av finansföretagen AI i drift eller under utveckling. Bara 41 % av dem har en formellt godkänd AI-policy.</p>
+<p><strong>Forskning:</strong> KTH, Handelshögskolan i Stockholm (Swedish House of Finance), Umeå universitet, WASP.</p>
+<p><strong>Regelmakare:</strong></p>
+<ul>
+<li><strong>EU:s AI-förordning:</strong> kreditbedömning av privatpersoner är högrisk. Kraven gäller från 2 december 2027 efter EU:s senaste förskjutning (<a target="_blank" rel="noopener" href="https://www.orrick.com/en/Insights/2026/07/EU-AI-Act-Update-Digital-Omnibus-Finalizes-8-Compliance-Changes">Orrick</a>).</li>
+<li><strong>GDPR artikel 22:</strong> rätt att inte bli föremål för helt automatiserade beslut med betydande följder, och rätt till mänsklig prövning.</li>
+<li><strong>DORA</strong> (EU-förordning om digital motståndskraft, sedan januari 2025): bankerna måste ha koll på sina IT-leverantörer och en plan för att kunna byta.</li>
+<li><strong>Finansinspektionen</strong> (tillsyn), <strong>Konsumentverket</strong> (krediter till konsumenter), <strong>IMY</strong> (personuppgifter), EU:s penningtvättsregler.</li>
+</ul>
+<h3>Steg 4: Maktkarta</h3>
+<figure class="mapfig"><div class="mapscroll"><svg class="map" viewBox='0 0 760 576' role='img' aria-label='Bankerna äger datan – därför styr de mer än teknikbolagen' font-size='13'><defs><marker id='mk-bank' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='6' markerHeight='6' orient='auto-start-reverse'><path d='M0 0L10 5L0 10z' style="fill:var(--m-edge)"/></marker></defs><text x='24' y='28' font-size='15' font-weight='600' style="fill:var(--m-ink)">Bankerna äger datan – därför styr de mer än teknikbolagen</text><g><rect x='256' y='48' width='248' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='72' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Teknikjättar</text><text x='380' y='90' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">OpenAI (språkmodeller)</text><text x='380' y='106' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Microsoft, Google, AWS (moln)</text><text x='380' y='122' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Nvidia (chip)</text></g><g><rect x='256' y='200' width='248' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">AI- och systemleverantörer</text><text x='380' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">SAS, Nice Actimize, Oracle</text><text x='380' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">(penningtvättssystem)</text><text x='380' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Kreditupplysning (t.ex. UC)</text></g><g><rect x='256' y='352' width='248' height='88' rx='8' fill-opacity='0.12' stroke-width='2' style="fill:var(--m-accent);stroke:var(--m-accent)"/><text x='380' y='376' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Banker och fintech</text><text x='380' y='394' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Nordea, SEB, Swedbank</text><text x='380' y='410' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Handelsbanken, Klarna</text><text x='380' y='426' font-size='11.5' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Mest makt: äger transaktionsdatan</text></g><g><rect x='256' y='504' width='248' height='48' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='528' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Kunder och anställda</text></g><g><rect x='24' y='200' width='160' height='240' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='104' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Forskning</text><text x='104' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">KTH</text><text x='104' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Handelshögskolan</text><text x='104' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">(House of Finance)</text><text x='104' y='290' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Umeå universitet</text><text x='104' y='306' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">WASP</text></g><g><rect x='576' y='200' width='160' height='240' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='656' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Regelmakare</text><text x='656' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">EU: AI-förordningen</text><text x='656' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">GDPR (art. 22), DORA</text><text x='656' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Penningtvättsregler</text><text x='656' y='290' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Finansinspektionen</text><text x='656' y='306' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Konsumentverket, IMY</text></g><g fill='none' stroke-width='1.25' style="stroke:var(--m-edge)"><path d='M340 136V200' marker-end='url(#mk-bank)'/><path d='M420 200V136' marker-end='url(#mk-bank)'/><path d='M340 288V352' marker-end='url(#mk-bank)'/><path d='M420 352V288' marker-end='url(#mk-bank)'/><path d='M380 504V440' marker-end='url(#mk-bank)'/><path d='M184 244H256' marker-end='url(#mk-bank)'/><path d='M184 396H256' marker-end='url(#mk-bank)'/><path d='M576 244H504' marker-end='url(#mk-bank)'/><path d='M576 396H504' marker-end='url(#mk-bank)'/></g><text x='332' y='172' font-size='11.5' text-anchor='end' style="fill:var(--m-quiet)">levererar moln, AI</text><text x='428' y='172' font-size='11.5' style="fill:var(--m-quiet)">betalar</text><text x='332' y='324' font-size='11.5' text-anchor='end' style="fill:var(--m-quiet)">levererar system</text><text x='428' y='324' font-size='11.5' style="fill:var(--m-quiet)">betalar licens</text><text x='388' y='476' font-size='11.5' style="fill:var(--m-quiet)">transaktionsdata</text><text x='220' y='236' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">forskar</text><text x='220' y='388' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">samarbetar</text><text x='540' y='236' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">granskar</text><text x='540' y='388' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">tillsyn</text></svg></div><figcaption>Maktkarta · bank och finans</figcaption></figure>
+<p>Bankerna markeras som mäktigast: de äger datan, har kapitalet och kan byta AI-leverantör. Men de är i sin tur hårt styrda av Finansinspektionen.</p>
+<h3>Steg 5: Reflektion</h3>
+<ul>
+<li><strong>Vem har mest makt?</strong> Bankerna och Klarna, för att transaktionsdatan är deras och inte går att köpa. Teknikbolagen är starka inom chattbotar och moln, men en bank kan byta språkmodell utan att tappa kunderna.</li>
+<li><strong>Om OpenAI eller molnleverantören höjde priset?</strong> Klarna skulle kunna byta till en annan språkmodell inom några månader. Molnet är svårare – därför kräver DORA att bankerna har en exitplan.</li>
+<li><strong>Ett litet svenskt företag?</strong> Ett fintechbolag måste klara samma krav som storbankerna (tillstånd, DORA, AI-förordningen). Det gör det dyrt att starta och gynnar de stora.</li>
+<li><strong>Vanliga människor?</strong> Snabbare svar och färre bedrägerier, men risk att nekas lån av en modell som ingen kan förklara, och att kundtjänstjobb försvinner.</li>
+<li><strong>Klurig fråga – vem förklarar ett nekat lån?</strong> Banken. Enligt GDPR och AI-förordningen är det den som fattar beslutet som ansvarar, inte den som sålt tekniken. Om banken inte kan förklara modellen får den inte använda den för sådana beslut.</li>
+</ul></section><section role="tabpanel" id="p-handel" aria-labelledby="t-handel" class="panel" hidden><header class="phead"><span class="cardno">Branschkort 3</span><h2>Detaljhandel och e-handel</h2></header><p class="lead"><span class="lead-label">Kort svar</span>Mest makt har plattformarna som styr var kunderna hittar varor: Google och Meta (annonser) och Amazon (marknadsplats och moln). Även H&amp;M och IKEA måste betala dem för att synas och för att köra sin AI.</p>
+<h3>Steg 2–3: Exempel och aktörer</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Exempel</th>
+<th>Vad AI:n gör</th>
+<th>Vem använder</th>
+<th>Hur någon tjänar pengar</th>
+<th>Teknik bakom</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://aimagazine.com/machine-learning/google-cloud-announces-partnership-with-h-m-to-advance-ai">H&amp;M:s efterfrågeprognoser</a></td>
+<td>Förutsäger vad som kommer att säljas var, och används för prissättning, varuplacering och leveranskedjan.</td>
+<td>H&amp;M</td>
+<td>Rätt varor i rätt butik ger färre rea-plagg och mindre som slängs.</td>
+<td>Google Cloud (avtal från juni 2022)</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://fortune.com/2026/07/30/ikea-ai-workforce-reskilling-jobs-billie-chatbot-global-500/">IKEA:s chattbot Billie</a></td>
+<td>Svarar på enkla kundfrågor sedan 2021, i dag ca 74 % av frågorna.</td>
+<td>IKEA (Ingka Group)</td>
+<td>Ca 8 500 kundtjänstanställda skolades om till inredningsrådgivare på distans. Den försäljningen gav 1,25 miljarder euro senaste räkenskapsåret.</td>
+<td>Leverantör anges inte – sannolikt en stor molnplattform <em class="tolk">tolkning</em></td>
+</tr>
+<tr>
+<td>Rekommendationer och dynamiska priser</td>
+<td>"Andra köpte också" och priser som ändras efter efterfrågan.</td>
+<td>Amazon, Zalando, Temu, Shein</td>
+<td>Kunden köper mer per besök. Plattformen tar också provision och annonsavgifter från säljarna.</td>
+<td>Egna AI-system; Amazon säljer samma sorts teknik till andra via AWS</td>
+</tr>
+<tr>
+<td>Annonser på Instagram och Google</td>
+<td>AI väljer vem som ser vilken annons och sätter budet automatiskt.</td>
+<td>Nästan alla butiker, stora som små</td>
+<td>Google och Meta tar betalt per visning eller klick – deras största inkomstkälla.</td>
+<td>Googles och Metas egna AI-system</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Forskning:</strong> Högskolan i Borås (textil och handel), Chalmers, Handelshögskolan i Stockholm, Jönköping International Business School.</p>
+<p><strong>Regelmakare:</strong></p>
+<ul>
+<li><strong>GDPR och cookieregler:</strong> profilering av kunder kräver samtycke eller annan laglig grund. IMY är tillsyn.</li>
+<li><strong>Digital Services Act (DSA):</strong> stora plattformar måste förklara sina rekommendationssystem. EU-kommissionen <a target="_blank" rel="noopener" href="https://www.lewissilkin.com/insights/2026/02/27/digital-services-act-shein-becomes-the-latest-vlop-to-face-formal-proceedings-102mkps">inledde i februari 2026 en granskning av Shein</a> om bland annat beroendeskapande design och otydliga rekommendationer. Temu bedömdes preliminärt bryta mot DSA i juli 2025.</li>
+<li><strong>Digital Markets Act (DMA) och konkurrensrätt:</strong> EU-kommissionen, Konkurrensverket. Konsumentverket bevakar vilseledande priser.</li>
+</ul>
+<h3>Steg 4: Maktkarta</h3>
+<figure class="mapfig"><div class="mapscroll"><svg class="map" viewBox='0 0 760 576' role='img' aria-label='Butikerna betalar plattformarna två gånger – för molnet och för att synas' font-size='13'><defs><marker id='mk-handel' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='6' markerHeight='6' orient='auto-start-reverse'><path d='M0 0L10 5L0 10z' style="fill:var(--m-edge)"/></marker></defs><text x='24' y='28' font-size='15' font-weight='600' style="fill:var(--m-ink)">Butikerna betalar plattformarna två gånger – för molnet och för att synas</text><g><rect x='256' y='48' width='248' height='88' rx='8' fill-opacity='0.12' stroke-width='2' style="fill:var(--m-accent);stroke:var(--m-accent)"/><text x='380' y='72' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Google, Meta, Amazon</text><text x='380' y='90' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Annonser: Google, Instagram</text><text x='380' y='106' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Moln och AI: Google Cloud, AWS</text><text x='380' y='122' font-size='11.5' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Mest makt: äger kundernas blickar</text></g><g><rect x='256' y='200' width='248' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Plattformar och AI-verktyg</text><text x='380' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Amazon-marknadsplatsen</text><text x='380' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Shopify, Klarna (kassa)</text><text x='380' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Rekommendationssystem</text></g><g><rect x='256' y='352' width='248' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='376' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Handeln använder AI</text><text x='380' y='394' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">H&M, IKEA, Zalando</text><text x='380' y='410' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Temu, Shein</text><text x='380' y='426' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Små svenska webbutiker</text></g><g><rect x='256' y='504' width='248' height='48' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='528' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Kunder och butiksanställda</text></g><g><rect x='24' y='200' width='160' height='240' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='104' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Forskning</text><text x='104' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Högskolan i Borås</text><text x='104' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Chalmers</text><text x='104' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Handelshögskolan</text><text x='104' y='290' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Jönköping International</text><text x='104' y='306' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Business School</text></g><g><rect x='576' y='200' width='160' height='240' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='656' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Regelmakare</text><text x='656' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">EU: DSA och DMA</text><text x='656' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">GDPR, cookieregler</text><text x='656' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">EU-kommissionen</text><text x='656' y='290' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Konkurrensverket</text><text x='656' y='306' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Konsumentverket, IMY</text></g><g fill='none' stroke-width='1.25' style="stroke:var(--m-edge)"><path d='M340 136V200' marker-end='url(#mk-handel)'/><path d='M420 200V136' marker-end='url(#mk-handel)'/><path d='M340 288V352' marker-end='url(#mk-handel)'/><path d='M420 352V288' marker-end='url(#mk-handel)'/><path d='M380 504V440' marker-end='url(#mk-handel)'/><path d='M184 244H256' marker-end='url(#mk-handel)'/><path d='M184 396H256' marker-end='url(#mk-handel)'/><path d='M576 244H504' marker-end='url(#mk-handel)'/><path d='M576 396H504' marker-end='url(#mk-handel)'/></g><text x='332' y='172' font-size='11.5' text-anchor='end' style="fill:var(--m-quiet)">moln, annonser</text><text x='428' y='172' font-size='11.5' style="fill:var(--m-quiet)">betalar</text><text x='332' y='324' font-size='11.5' text-anchor='end' style="fill:var(--m-quiet)">säljer via</text><text x='428' y='324' font-size='11.5' style="fill:var(--m-quiet)">provision, avgift</text><text x='388' y='476' font-size='11.5' style="fill:var(--m-quiet)">köpdata, klick</text><text x='220' y='236' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">forskar</text><text x='220' y='388' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">samarbetar</text><text x='540' y='236' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">granskar</text><text x='540' y='388' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">tillsyn</text></svg></div><figcaption>Maktkarta · detaljhandel och e-handel</figcaption></figure>
+<p>Google, Meta och Amazon markeras som mäktigast: de äger kundernas uppmärksamhet, och en butik som inte syns där säljer inte.</p>
+<h3>Steg 5: Reflektion</h3>
+<ul>
+<li><strong>Vem har mest makt?</strong> Plattformarna. H&amp;M och IKEA är stora, men köper både molnet för sin AI och annonsutrymmet för att nå kunderna av samma få bolag.</li>
+<li><strong>Om Google höjde priserna kraftigt?</strong> H&amp;M kan på några år flytta sin data till ett annat moln. Annonserna är svårare: det finns inget alternativ med lika många användare, så butikerna skulle troligen betala och höja sina priser.</li>
+<li><strong>Ett litet svenskt företag?</strong> Det kan använda samma AI-verktyg som de stora via Shopify, Google och Meta. Men det betalar annonspriser som de stora kan pressa och säljer i en butik som plattformen kontrollerar.</li>
+<li><strong>Vanliga människor?</strong> Tidsbesparande rekommendationer, men också design som får oss att köpa mer än vi tänkt och priser som kan skilja mellan kunder. Kundtjänstjobb förändras – IKEA visar att de kan bli nya jobb snarare än försvinna.</li>
+<li><strong>Klurig fråga – Amazon som både butik och leverantör?</strong> Amazon ser andra säljares data och kan använda den för att konkurrera med dem. EU-kommissionen fick därför Amazon att <a target="_blank" rel="noopener" href="https://www.scl.org/12771-european-commission-accepts-commitments-by-amazon-barring-it-from-using-marketplace-seller-data/">lova i december 2022</a> att inte använda säljarnas icke-offentliga data och att behandla dem lika i "Buy Box". En butik som kör sin AI på AWS betalar alltså en konkurrent.</li>
+</ul></section><section role="tabpanel" id="p-industri" aria-labelledby="t-industri" class="panel" hidden><header class="phead"><span class="cardno">Branschkort 4</span><h2>Tillverkning och logistik</h2></header><p class="lead"><span class="lead-label">Kort svar</span>Svensk industri är stark och äger sin egen maskin- och fordonsdata. Men när AI ska sitta i själva fordonen är Nvidia nästan omöjlig att komma runt: både Volvo Cars och Einride bygger på Nvidias chip och mjukvara.</p>
+<h3>Steg 2–3: Exempel och aktörer</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Exempel</th>
+<th>Vad AI:n gör</th>
+<th>Vem använder</th>
+<th>Hur någon tjänar pengar</th>
+<th>Teknik bakom</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://www.scania.com/group/en/home/newsroom/news/2019/scania-flexible-maintenance-reaches-100000-contracts.html">Scania Flexible Maintenance</a> (prediktivt underhåll)</td>
+<td>Analyserar data från uppkopplade lastbilar och bestämmer service efter faktiskt slitage i stället för fasta intervall.</td>
+<td>Scania och åkeriernas lastbilar; 100 000 avtal redan 2019</td>
+<td>Åkeriet slipper stillestående bilar. Scania säljer serviceavtal – löpande intäkter efter att lastbilen sålts.</td>
+<td>Scanias egna system och data; molnleverantör anges inte</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://ju.se/en/research/news/news-archive/2024-06-03-ai-technology-improves-automation-in-industry.html">AI-kvalitetskontroll, projektet AI4QAM</a></td>
+<td>Kameror och AI hittar fel på produkter i produktionen.</td>
+<td>Husqvarna, Scania, Thule m.fl. tillsammans med RISE och Jönköping University (JTH)</td>
+<td>Färre felaktiga produkter och mindre spill. Projektet har 8,47 miljoner kronor i forskningsstöd.</td>
+<td>Industrikameror och AI-programvara, t.ex. levererade Unibap <a target="_blank" rel="noopener" href="https://news.bequoted.com/newsroom/unibap/pressreleases/unibap-receives-order-from-husqvarna-group-of-sek-3-55-milli-11658">ett AI-kvalitetssystem till Husqvarnas fabrik i Huskvarna</a> 2018</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://blogs.nvidia.com/blog/volvo-cars-accelerated-computing-ai/">Volvo EX90</a> – AI i bilen</td>
+<td>Tolkar radar, lidar och kameror i realtid för säkerhetssystem och framtida självkörning.</td>
+<td>Volvo Cars och dotterbolaget Zenseact</td>
+<td>Volvo säljer säkerhet som varumärke. Nvidia säljer chip i varje bil och datorer för att träna AI:n.</td>
+<td>Nvidia DRIVE Orin i bilen, Nvidia DGX för träning</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://techcrunch.com/2025/10/01/self-driving-trucks-startup-einride-raises-100m/">Einride</a> – självkörande eldrivna lastbilar</td>
+<td>Kör gods utan förarhytt och planerar rutter.</td>
+<td>Kunder som PepsiCo, Carlsberg Sverige och Apotea</td>
+<td>Einride säljer transport som tjänst. Bolaget tog in 100 miljoner dollar i oktober 2025.</td>
+<td>Har använt Nvidias teknik sedan 2018 och fördjupade samarbetet 2026 (<a target="_blank" rel="noopener" href="https://cryptobriefing.com/einride-nvidia-autonomous-trucking-partnership/">rapport</a>)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Forskning:</strong> Jönköping University (JTH), RISE, Chalmers, KTH, WASP (Wallenbergs AI-program).</p>
+<p><strong>Regelmakare:</strong></p>
+<ul>
+<li><strong>EU:s AI-förordning:</strong> AI som säkerhetskomponent i maskiner och fordon är högrisk. Kraven för produkter som redan har EU-regler gäller från 2 augusti 2028 (<a target="_blank" rel="noopener" href="https://www.orrick.com/en/Insights/2026/07/EU-AI-Act-Update-Digital-Omnibus-Finalizes-8-Compliance-Changes">Orrick</a>).</li>
+<li><strong>EU:s maskinförordning</strong> (gäller från januari 2027) och EU:s typgodkännanderegler för automatiserade fordon.</li>
+<li><strong>Transportstyrelsen</strong> ger tillstånd till försök med självkörande fordon på svenska vägar. <strong>Arbetsmiljöverket</strong> bevakar säkerheten när människor och robotar arbetar ihop.</li>
+</ul>
+<h3>Steg 4: Maktkarta</h3>
+<figure class="mapfig"><div class="mapscroll"><svg class="map" viewBox='0 0 760 576' role='img' aria-label='Fabrikerna äger sin data – men AI i fordonen går genom Nvidia' font-size='13'><defs><marker id='mk-industri' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='6' markerHeight='6' orient='auto-start-reverse'><path d='M0 0L10 5L0 10z' style="fill:var(--m-edge)"/></marker></defs><text x='24' y='28' font-size='15' font-weight='600' style="fill:var(--m-ink)">Fabrikerna äger sin data – men AI i fordonen går genom Nvidia</text><g><rect x='256' y='48' width='248' height='88' rx='8' fill-opacity='0.12' stroke-width='2' style="fill:var(--m-accent);stroke:var(--m-accent)"/><text x='380' y='72' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Nvidia (chip och mjukvara)</text><text x='380' y='90' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">DRIVE Orin i Volvo EX90</text><text x='380' y='106' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Einride sedan 2018</text><text x='380' y='122' font-size='11.5' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Mest makt: svår att byta ut</text></g><g><rect x='256' y='200' width='248' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Moln och industri-IT</text><text x='380' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Microsoft Azure, AWS, Google</text><text x='380' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Siemens (fabriksstyrning)</text><text x='380' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Unibap m.fl. (kamera-AI)</text></g><g><rect x='256' y='352' width='248' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='376' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Industrin använder AI</text><text x='380' y='394' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Scania, Volvo, Husqvarna</text><text x='380' y='410' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Thule, SKF, PostNord</text><text x='380' y='426' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Einride</text></g><g><rect x='256' y='504' width='248' height='48' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='528' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Anställda, förare, trafikanter</text></g><g><rect x='24' y='200' width='160' height='240' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='104' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Forskning</text><text x='104' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Jönköping University</text><text x='104' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">(JTH, AI4QAM)</text><text x='104' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">RISE</text><text x='104' y='290' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Chalmers, KTH</text><text x='104' y='306' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">WASP</text></g><g><rect x='576' y='200' width='160' height='240' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='656' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Regelmakare</text><text x='656' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">EU: AI-förordningen</text><text x='656' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">EU: maskinförordningen</text><text x='656' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Fordonsregler (EU)</text><text x='656' y='290' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Transportstyrelsen</text><text x='656' y='306' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Arbetsmiljöverket</text></g><g fill='none' stroke-width='1.25' style="stroke:var(--m-edge)"><path d='M340 136V200' marker-end='url(#mk-industri)'/><path d='M420 200V136' marker-end='url(#mk-industri)'/><path d='M340 288V352' marker-end='url(#mk-industri)'/><path d='M420 352V288' marker-end='url(#mk-industri)'/><path d='M380 504V440' marker-end='url(#mk-industri)'/><path d='M184 244H256' marker-end='url(#mk-industri)'/><path d='M184 396H256' marker-end='url(#mk-industri)'/><path d='M576 244H504' marker-end='url(#mk-industri)'/><path d='M576 396H504' marker-end='url(#mk-industri)'/></g><text x='332' y='172' font-size='11.5' text-anchor='end' style="fill:var(--m-quiet)">chip, mjukvara</text><text x='428' y='172' font-size='11.5' style="fill:var(--m-quiet)">betalar</text><text x='332' y='324' font-size='11.5' text-anchor='end' style="fill:var(--m-quiet)">levererar IT</text><text x='428' y='324' font-size='11.5' style="fill:var(--m-quiet)">betalar licens</text><text x='388' y='476' font-size='11.5' style="fill:var(--m-quiet)">maskin- och fordonsdata</text><text x='220' y='236' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">forskar</text><text x='220' y='388' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">samarbetar</text><text x='540' y='236' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">godkänner</text><text x='540' y='388' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">reglerar</text></svg></div><figcaption>Maktkarta · tillverkning och logistik</figcaption></figure>
+<p>Nvidia markeras som mäktigast: chippen sitter i fordonen i åratal, och mjukvaran är byggd för just dem.</p>
+<h3>Steg 5: Reflektion</h3>
+<ul>
+<li><strong>Vem har mest makt?</strong> Delad makt. I fabrikerna äger industriföretagen sin data och kan välja leverantör. I fordonen har Nvidia ett nästan-monopol på AI-chip, och utan dem ingen självkörning.</li>
+<li><strong>Om Nvidia höjde priserna eller slutade leverera?</strong> Nya bilmodeller skulle bli dyrare eller försenas, eftersom ett byte av chip kräver att mjukvaran skrivs om och säkerhetstestas på nytt. Det tar flera år. Chipbristen 2021–2022, då biltillverkare fick stoppa produktionen, visar hur sårbart det är.</li>
+<li><strong>Ett litet svenskt företag?</strong> Ett underleverantörsföretag i Gnosjöregionen kan börja i liten skala, t.ex. kamerabaserad kvalitetskontroll med hjälp av forskningsprojekt som AI4QAM. Det behöver inte bygga egen AI, men behöver personal som förstår data.</li>
+<li><strong>Vanliga människor?</strong> Säkrare fordon och färre haverier. Anställda får nya arbetsuppgifter, och yrkesförare kan på sikt ersättas.</li>
+<li><strong>Klurig fråga – vilka jobb i Jönköpingsregionen påverkas?</strong> Mest påverkas rutinjobb som går att mäta: manuell kvalitetskontroll, lager- och truckarbete (regionen är ett av Sveriges största logistikcentrum) och på längre sikt lastbilsförare. Samtidigt växer behovet av automationstekniker, dataanalytiker och underhållstekniker – jobb som Teknikprogrammet leder mot.</li>
+</ul></section><section role="tabpanel" id="p-forsvar" aria-labelledby="t-forsvar" class="panel" hidden><header class="phead"><span class="cardno">Branschkort 5</span><h2>Försvar och säkerhet</h2></header><p class="lead"><span class="lead-label">Kort svar</span>Här är staterna både enda kunden och regelmakaren, och det ger dem mest makt. Men de blir allt mer beroende av ett fåtal privata AI-bolag, nästan alla amerikanska, och EU:s AI-förordning gäller inte alls.</p>
+<h3>Steg 2–3: Exempel och aktörer</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Exempel</th>
+<th>Vad AI:n gör</th>
+<th>Vem använder</th>
+<th>Hur någon tjänar pengar</th>
+<th>Teknik bakom</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://helsing.ai/newsroom/helsing-ai-agent-successfully-completes-saab-gripen-e-test-flight">AI-agenten Centaur i Gripen E</a></td>
+<td>Flygde ett Gripen E-plan i ett simulerat luftstridsscenario över Östersjön i maj–juni 2025. En pilot satt med och kunde ta över.</td>
+<td>Saab, på uppdrag av FMV (studier för framtidens stridsflyg)</td>
+<td>FMV betalar med skattepengar. Saab och Helsing hoppas sälja AI-funktioner som uppgraderingar.</td>
+<td>Helsing (tyskt AI-försvarsbolag) och Saabs egen mjukvara</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://defensescoop.com/2025/04/14/nato-palantir-maven-smart-system-contract/">Palantirs Maven Smart System i Nato</a></td>
+<td>Samlar satellit-, drönar- och underrättelsedata, hittar mål och ger beslutsstöd.</td>
+<td>Natos militära ledning (ACO) sedan 2025 – Sverige är Natomedlem sedan 2024</td>
+<td>Palantir tar betalt för licenser; avtalets värde har inte offentliggjorts. Nato köpte utan konkurrens.</td>
+<td>Palantir (USA)</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://defensescoop.com/2025/07/14/pentagon-ai-contracts-musk-xai-google-openai-anthropic-cdao/">Pentagons avtal med AI-bolagen</a></td>
+<td>Språkmodeller och AI-agenter för analys, planering och administration.</td>
+<td>USA:s försvarsdepartement (juli 2025)</td>
+<td>Upp till 200 miljoner dollar vardera till OpenAI, Google, Anthropic och xAI.</td>
+<td>Bolagens egna stora språkmodeller</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Forskning:</strong> FOI (Totalförsvarets forskningsinstitut), Försvarshögskolan, KTH, Linköpings universitet (nära Saab), WASP.</p>
+<p><strong>Regelmakare:</strong></p>
+<ul>
+<li><strong>EU:s AI-förordning gäller inte</strong> AI som används enbart för militära ändamål.</li>
+<li><strong>Folkrätten</strong> (krigets lagar, Genèvekonventionerna) gäller ändå. Sverige granskar nya vapen mot folkrätten genom Delegationen för folkrättslig granskning av vapenprojekt.</li>
+<li><strong>FN:</strong> Generalsekreteraren och Röda korset krävde i <a target="_blank" rel="noopener" href="https://unric.org/sv/fn-och-roda-korset-fornyar-kravet-pa-bindande-regler-for-autonoma-vapen/">augusti 2026</a> bindande regler för autonoma vapen och pekar på konferensen om vapenkonventionen (CCW) i november 2026.</li>
+<li><strong>Nationellt:</strong> regeringen, FMV (upphandling), ISP (exportkontroll av krigsmateriel).</li>
+</ul>
+<h3>Steg 4: Maktkarta</h3>
+<figure class="mapfig"><div class="mapscroll"><svg class="map" viewBox='0 0 760 576' role='img' aria-label='Staterna köper och sätter reglerna – men tekniken kommer från några få bolag' font-size='13'><defs><marker id='mk-forsvar' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='6' markerHeight='6' orient='auto-start-reverse'><path d='M0 0L10 5L0 10z' style="fill:var(--m-edge)"/></marker></defs><text x='24' y='28' font-size='15' font-weight='600' style="fill:var(--m-ink)">Staterna köper och sätter reglerna – men tekniken kommer från några få bolag</text><g><rect x='256' y='48' width='248' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='72' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Amerikanska AI-bolag</text><text x='380' y='90' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Palantir (Maven, Nato)</text><text x='380' y='106' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">OpenAI, Google, Anthropic, xAI</text><text x='380' y='122' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Microsoft, AWS (moln)</text></g><g><rect x='256' y='200' width='248' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Försvarsindustri</text><text x='380' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Saab (Gripen)</text><text x='380' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Helsing (AI-agenten Centaur)</text><text x='380' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Anduril m.fl.</text></g><g><rect x='256' y='352' width='248' height='88' rx='8' fill-opacity='0.12' stroke-width='2' style="fill:var(--m-accent);stroke:var(--m-accent)"/><text x='380' y='376' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Stater och försvar</text><text x='380' y='394' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Försvarsmakten, FRA</text><text x='380' y='410' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">FMV (upphandling), Nato</text><text x='380' y='426' font-size='11.5' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Mest makt: enda köparen</text></g><g><rect x='256' y='504' width='248' height='48' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='528' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Soldater, civila, medborgare</text></g><g><rect x='24' y='200' width='160' height='240' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='104' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Forskning</text><text x='104' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">FOI</text><text x='104' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Försvarshögskolan</text><text x='104' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">KTH</text><text x='104' y='290' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Linköpings universitet</text><text x='104' y='306' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">WASP</text></g><g><rect x='576' y='200' width='160' height='240' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='656' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Regelmakare</text><text x='656' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Folkrätten</text><text x='656' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">FN (vapenkonventionen)</text><text x='656' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Regeringen</text><text x='656' y='290' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Vapengranskning</text><text x='656' y='306' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">ISP (export)</text></g><g fill='none' stroke-width='1.25' style="stroke:var(--m-edge)"><path d='M340 136V200' marker-end='url(#mk-forsvar)'/><path d='M420 200V136' marker-end='url(#mk-forsvar)'/><path d='M340 288V352' marker-end='url(#mk-forsvar)'/><path d='M420 352V288' marker-end='url(#mk-forsvar)'/><path d='M380 504V440' marker-end='url(#mk-forsvar)'/><path d='M184 244H256' marker-end='url(#mk-forsvar)'/><path d='M184 396H256' marker-end='url(#mk-forsvar)'/><path d='M576 244H504' marker-end='url(#mk-forsvar)'/><path d='M576 396H504' marker-end='url(#mk-forsvar)'/></g><text x='332' y='172' font-size='11.5' text-anchor='end' style="fill:var(--m-quiet)">AI, moln</text><text x='428' y='172' font-size='11.5' style="fill:var(--m-quiet)">betalar licens</text><text x='332' y='324' font-size='11.5' text-anchor='end' style="fill:var(--m-quiet)">levererar system</text><text x='428' y='324' font-size='11.5' style="fill:var(--m-quiet)">beställer, betalar</text><text x='388' y='476' font-size='11.5' style="fill:var(--m-quiet)">underrättelsedata</text><text x='220' y='236' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">forskar</text><text x='220' y='388' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">utvärderar</text><text x='540' y='236' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">granskar</text><text x='540' y='388' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">styr</text></svg></div><figcaption>Maktkarta · försvar och säkerhet</figcaption></figure>
+<p>Staterna (Försvarsmakten, FMV och Nato) markeras som mäktigast: de är enda köparen och skriver själva reglerna. Kartan visar också att regelmakaren och kunden här är samma aktör.</p>
+<h3>Steg 5: Reflektion</h3>
+<ul>
+<li><strong>Vem har mest makt?</strong> Staterna – de bestämmer vad som köps och vad som är tillåtet. Men makten flyttas mot bolagen: Nato köpte Palantirs system på sex månader utan konkurrens, eftersom inget europeiskt alternativ fanns.</li>
+<li><strong>Om Palantir eller en amerikansk molnleverantör slutade leverera?</strong> Då kan Natos lägesbild bli sämre mitt i en kris. Därför satsar Europa nu på egna bolag som Helsing och på "digital suveränitet".</li>
+<li><strong>Ett litet svenskt företag?</strong> Försvarsmarknaden växer snabbt, men kräver säkerhetsskydd, exporttillstånd och långa upphandlingar. Ett småföretag kommer oftast in som underleverantör till Saab.</li>
+<li><strong>Vanliga människor?</strong> Övervakning och dataanalys kan även riktas mot civila. Snabbare beslut ökar risken för misstag där ingen människa hinner pröva beslutet.</li>
+<li><strong>Klurig fråga – får AI besluta om våld?</strong> De flesta stater, även Sverige, säger att en människa ska ha "meningsfull kontroll". Men utan ett bindande avtal bestämmer varje stat själv vad det betyder. Reglerna sätts alltså av regeringarna – och i praktiken av de stater som bygger flest system.</li>
+</ul></section><section role="tabpanel" id="p-media" aria-labelledby="t-media" class="panel" hidden><header class="phead"><span class="cardno">Branschkort 6</span><h2>Media och sociala medier</h2></header><p class="lead"><span class="lead-label">Kort svar</span>I media är teknikjättarna inte bara leverantörer – de <em>är</em> branschen. Meta, Google och ByteDance äger plattformarna, algoritmerna och annonspengarna. Svenska medier som Aftonbladet är beroende av dem för att nå sin publik och sluter nu avtal med AI-bolagen för att inte bli ersatta.</p>
+<h3>Steg 2–3: Exempel och aktörer</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Exempel</th>
+<th>Vad AI:n gör</th>
+<th>Vem använder</th>
+<th>Hur någon tjänar pengar</th>
+<th>Teknik bakom</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Flödesalgoritmer på Instagram och Facebook</td>
+<td>Väljer vilket inlägg och vilken annons du ser härnäst, utifrån vad du tittar på och hur länge.</td>
+<td>Meta</td>
+<td>Meta hade <a target="_blank" rel="noopener" href="https://europeanbusinessmagazine.com/how-meta-actually-makes-money-and-the-80-billion-hole-its-still-digging/">ca 201 miljarder dollar i intäkter 2025, nästan allt från annonser</a>. AI-rekommendationer ökade tiden på Instagram med 6 %.</td>
+<td>Metas egna AI-modeller och datacenter</td>
+</tr>
+<tr>
+<td>TikToks "För dig"-flöde</td>
+<td>Extremt personligt flöde med oändlig scroll och autoplay.</td>
+<td>ByteDance (TikTok)</td>
+<td>Mer tid i appen = fler annonsvisningar.</td>
+<td>ByteDances egna system (Kina)</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://via.tt.se/pressmeddelande/3785026/schibsted-media-inleder-partnerskap-med-openai">Schibsted och OpenAI</a></td>
+<td>Aftonbladets och SvD:s artiklar sammanfattas med källhänvisning i ChatGPT. Redaktionerna använder AI för chattbotar, uppläsning och video.</td>
+<td>Schibsted (Aftonbladet, SvD), avtal från februari 2025</td>
+<td>OpenAI betalar för innehållet och får bättre svar. Schibsted får licenspengar och trafik.</td>
+<td>OpenAI</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://djmag.com/news/spotify-removes-75-million-spam-tracks-platform-ai-crackdown">Spotify mot AI-skräp</a></td>
+<td>Rekommenderar musik, men måste också hitta AI-genererat spam. 75 miljoner sådana låtar togs bort på ett år (sept. 2025).</td>
+<td>Spotify</td>
+<td>Spammare försöker få royalties för massgenererade låtar – pengar som annars går till riktiga artister.</td>
+<td>Spotifys egna system; moln från Google Cloud <em>(Spotify har länge kört på Google Cloud)</em></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Forskning:</strong> Göteborgs universitet (JMG), Uppsala universitet, KTH, Södertörns högskola, Institutet för mediestudier.</p>
+<p><strong>Regelmakare:</strong></p>
+<ul>
+<li><strong>Digital Services Act (DSA):</strong> stora plattformar måste bedöma riskerna med sina rekommendationssystem. EU-kommissionen fann i <a target="_blank" rel="noopener" href="https://digital-strategy.ec.europa.eu/en/news/commission-preliminarily-finds-tiktoks-addictive-design-breach-digital-services-act">februari 2026 preliminärt</a> att TikToks beroendeskapande design (oändlig scroll, autoplay, notiser, personligt flöde) bryter mot DSA.</li>
+<li><strong>EU:s AI-förordning, artikel 50:</strong> deepfakes och AI-genererat innehåll ska märkas. Kraven gäller sedan augusti 2026 (<a target="_blank" rel="noopener" href="https://www.orrick.com/en/Insights/2026/07/EU-AI-Act-Update-Digital-Omnibus-Finalizes-8-Compliance-Changes">Orrick</a>).</li>
+<li><strong>PTS (svensk samordnare för DSA), Mediemyndigheten</strong>, <strong>IMY</strong> (GDPR), upphovsrätten.</li>
+</ul>
+<h3>Steg 4: Maktkarta</h3>
+<figure class="mapfig"><div class="mapscroll"><svg class="map" viewBox='0 0 760 576' role='img' aria-label='Plattformarna äger publiken – medierna får det som blir över' font-size='13'><defs><marker id='mk-media' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='6' markerHeight='6' orient='auto-start-reverse'><path d='M0 0L10 5L0 10z' style="fill:var(--m-edge)"/></marker></defs><text x='24' y='28' font-size='15' font-weight='600' style="fill:var(--m-ink)">Plattformarna äger publiken – medierna får det som blir över</text><g><rect x='256' y='48' width='248' height='88' rx='8' fill-opacity='0.12' stroke-width='2' style="fill:var(--m-accent);stroke:var(--m-accent)"/><text x='380' y='72' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Meta, Google, ByteDance</text><text x='380' y='90' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Instagram, YouTube, TikTok</text><text x='380' y='106' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Algoritmer och annonsmarknad</text><text x='380' y='122' font-size='11.5' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Mest makt: äger publiken</text></g><g><rect x='256' y='200' width='248' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">AI-bolag och moln</text><text x='380' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">OpenAI (avtal med Schibsted)</text><text x='380' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Google Cloud, AWS</text><text x='380' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Röst- och bildgeneratorer</text></g><g><rect x='256' y='352' width='248' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='376' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Medier använder AI</text><text x='380' y='394' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Aftonbladet, SvD (Schibsted)</text><text x='380' y='410' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">SVT, Bonnier</text><text x='380' y='426' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Spotify</text></g><g><rect x='256' y='504' width='248' height='48' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='528' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Användare, publik, kreatörer</text></g><g><rect x='24' y='200' width='160' height='240' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='104' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Forskning</text><text x='104' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Göteborgs universitet</text><text x='104' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">(JMG)</text><text x='104' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Uppsala universitet</text><text x='104' y='290' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">KTH</text><text x='104' y='306' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Södertörns högskola</text></g><g><rect x='576' y='200' width='160' height='240' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='656' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Regelmakare</text><text x='656' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">EU: DSA</text><text x='656' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">EU: AI-förordningen</text><text x='656' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">(märkning av deepfakes)</text><text x='656' y='290' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">PTS, Mediemyndigheten</text><text x='656' y='306' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">IMY, upphovsrätten</text></g><g fill='none' stroke-width='1.25' style="stroke:var(--m-edge)"><path d='M340 136V200' marker-end='url(#mk-media)'/><path d='M420 200V136' marker-end='url(#mk-media)'/><path d='M340 288V352' marker-end='url(#mk-media)'/><path d='M420 352V288' marker-end='url(#mk-media)'/><path d='M380 504V440' marker-end='url(#mk-media)'/><path d='M184 244H256' marker-end='url(#mk-media)'/><path d='M184 396H256' marker-end='url(#mk-media)'/><path d='M576 244H504' marker-end='url(#mk-media)'/><path d='M576 396H504' marker-end='url(#mk-media)'/></g><text x='332' y='172' font-size='11.5' text-anchor='end' style="fill:var(--m-quiet)">publik, trafik</text><text x='428' y='172' font-size='11.5' style="fill:var(--m-quiet)">annonspengar</text><text x='332' y='324' font-size='11.5' text-anchor='end' style="fill:var(--m-quiet)">AI och licenspengar</text><text x='428' y='324' font-size='11.5' style="fill:var(--m-quiet)">innehåll</text><text x='388' y='476' font-size='11.5' style="fill:var(--m-quiet)">tid, klick, data</text><text x='220' y='236' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">forskar</text><text x='220' y='388' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">granskar</text><text x='540' y='236' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">granskar</text><text x='540' y='388' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">reglerar</text></svg></div><figcaption>Maktkarta · media och sociala medier</figcaption></figure>
+<p>Meta, Google och ByteDance markeras som mäktigast: de äger både publiken, datan och annonsmarknaden.</p>
+<h3>Steg 5: Reflektion</h3>
+<ul>
+<li><strong>Vem har mest makt?</strong> Plattformarna. Aftonbladet är Sveriges största nyhetssajt, men en ändring i Metas eller Googles algoritm kan halvera trafiken från en dag till en annan.</li>
+<li><strong>Om en plattform "slutade leverera"?</strong> Det har hänt: Meta slutade visa nyheter i Kanada 2023 när landet ville tvinga bolaget att betala för dem. Nyhetsmedierna tappade en stor del av sin publik.</li>
+<li><strong>Ett litet svenskt företag?</strong> En liten lokaltidning eller poddproducent kan använda AI billigt, men är helt beroende av hur plattformarna rankar innehåll. Stora medier kan förhandla avtal med OpenAI; små kan det inte.</li>
+<li><strong>Vanliga människor?</strong> Vi får underhållning anpassad efter oss, men också filterbubblor, desinformation, deepfakes och flöden byggda för att vara svåra att släppa – särskilt för unga.</li>
+<li><strong>Klurig fråga – vad optimerar AI:n för?</strong> För din tid och dina klick, inte för ditt välmående eller för sanning. Det är exakt det EU-kommissionen kritiserar i TikTok-ärendet. Du är inte kunden – annonsörerna är kunden, och din uppmärksamhet är varan.</li>
+</ul></section><section role="tabpanel" id="p-skola" aria-labelledby="t-skola" class="panel" hidden><header class="phead"><span class="cardno">Branschkort 7</span><h2>Utbildning</h2></header><p class="lead"><span class="lead-label">Kort svar</span>Microsoft och Google har mest makt i skolan. Kommunerna har redan valt en av dem för e-post, dokument och inloggning, och nu följer AI:n med på köpet. Skolan kan i praktiken bara välja den AI som finns i det system den redan har.</p>
+<h3>Steg 2–3: Exempel och aktörer</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Exempel</th>
+<th>Vad AI:n gör</th>
+<th>Vem använder</th>
+<th>Hur någon tjänar pengar</th>
+<th>Teknik bakom</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://mc.merill.net/message/RM497916">Microsoft 365 Copilot Chat för elever</a></td>
+<td>En chattbot inne i skolans Office-konto. Elever från 13 år kan få förklaringar, sammanfattningar och hjälp med texter.</td>
+<td>Kommuner och friskolor med Microsoft 365, sedan augusti 2025 om skolan slår på det</td>
+<td>Gratis i grundversionen – Microsoft tjänar på licenserna kommunen redan betalar och på dyrare tillägg. Elevdata ska inte användas för att träna modellerna.</td>
+<td>OpenAI:s språkmodeller (GPT) i Microsofts moln Azure</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://workspaceupdates.googleblog.com/2025/06/gemini-google-classroom-all-edu-editions.html">Gemini i Google Classroom</a></td>
+<td>Över 30 AI-verktyg för lärare: bedömningsmatriser, uppgifter, översättning.</td>
+<td>Skolor med Google Workspace for Education och Chromebooks, gratis från juni 2025 (lärare över 18 år)</td>
+<td>Google säljer Chromebooks och dyrare licenser och vinner framtida användare.</td>
+<td>Googles egna Gemini-modeller och datacenter</td>
+</tr>
+<tr>
+<td>Lärare planerar med AI</td>
+<td>Planering, idéer, mejl och översättning. <a target="_blank" rel="noopener" href="https://via.tt.se/pressmeddelande/4400586/skolverket-foljer-upp-ai-anvandningen-i-skolan?lang=sv">Enligt Skolverket</a> (maj 2026) har nästan 8 av 10 lärare använt AI, och 4 av 10 låter elever använda det på lektionerna.</td>
+<td>Lärare i grundskolan</td>
+<td>Tidsbesparing för skolan. Bolagen tar betalt för Plus-abonnemang som lärare ofta betalar själva.</td>
+<td>ChatGPT (OpenAI), Copilot (Microsoft), Gemini (Google)</td>
+</tr>
+<tr>
+<td>Adaptiva läromedel, t.ex. Khanmigo</td>
+<td>En AI-handledare som ställer frågor i stället för att ge svaret, och läromedel som anpassar nivån.</td>
+<td>Khan Academy (USA); svenska läromedelsförlag bygger in liknande funktioner <em class="tolk">tolkning</em></td>
+<td>Licens per elev, betalas av kommunen.</td>
+<td>Khanmigo bygger på OpenAI:s GPT-modeller</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Forskning:</strong> Jönköping University (Högskolan för lärande och kommunikation, HLK), Göteborgs universitet, Umeå universitet, Stockholms universitet.</p>
+<p><strong>Regelmakare:</strong></p>
+<ul>
+<li><strong>EU:s AI-förordning:</strong> AI som bedömer elever, styr antagning eller övervakar prov är högrisk. Kraven gäller från 2 december 2027 (<a target="_blank" rel="noopener" href="https://www.orrick.com/en/Insights/2026/07/EU-AI-Act-Update-Digital-Omnibus-Finalizes-8-Compliance-Changes">Orrick</a>). Att läsa av elevers känslor med AI är förbjudet sedan februari 2025.</li>
+<li><strong>GDPR:</strong> IMY gav Skellefteå kommun <a target="_blank" rel="noopener" href="https://www.securityworldmarket.com/se/Nyheter/Foretagsnyheter/imy-far-ratt-om-ansiktsigenkanning-mot-skelleftea-gymnasienamnd">200 000 kronor i sanktionsavgift</a> 2019 för närvarokontroll med ansiktsigenkänning. Domstolen höll med: eleverna kan inte samtycka fritt eftersom skolan har makt över dem.</li>
+<li><strong>Skollagen och Skolverket</strong> (läroplaner, nationella prov), <strong>Skolinspektionen</strong> (tillsyn), <strong>kommunerna</strong> som huvudmän bestämmer vilka verktyg som köps.</li>
+</ul>
+<h3>Steg 4: Maktkarta</h3>
+<figure class="mapfig"><div class="mapscroll"><svg class="map" viewBox='0 0 760 576' role='img' aria-label='Skolan valde plattform för länge sedan – nu följer AI:n med på köpet' font-size='13'><defs><marker id='mk-skola' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='6' markerHeight='6' orient='auto-start-reverse'><path d='M0 0L10 5L0 10z' style="fill:var(--m-edge)"/></marker></defs><text x='24' y='28' font-size='15' font-weight='600' style="fill:var(--m-ink)">Skolan valde plattform för länge sedan – nu följer AI:n med på köpet</text><g><rect x='256' y='48' width='248' height='88' rx='8' fill-opacity='0.12' stroke-width='2' style="fill:var(--m-accent);stroke:var(--m-accent)"/><text x='380' y='72' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Microsoft och Google</text><text x='380' y='90' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Microsoft 365 + Copilot (GPT)</text><text x='380' y='106' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Google Workspace + Gemini</text><text x='380' y='122' font-size='11.5' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Mest makt: svåra att byta ut</text></g><g><rect x='256' y='200' width='248' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">AI- och läromedelsbolag</text><text x='380' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">OpenAI (ChatGPT, GPT-modeller)</text><text x='380' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Khan Academy (Khanmigo)</text><text x='380' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Svenska läromedelsförlag</text></g><g><rect x='256' y='352' width='248' height='88' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='376' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Skolan använder AI</text><text x='380' y='394' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Kommuner och friskolor</text><text x='380' y='410' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Lärare: planering, återkoppling</text><text x='380' y='426' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Elever: förklaringar, texter</text></g><g><rect x='256' y='504' width='248' height='48' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='380' y='528' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Elever, lärare, vårdnadshavare</text></g><g><rect x='24' y='200' width='160' height='240' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='104' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Forskning</text><text x='104' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Jönköping University</text><text x='104' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">(HLK)</text><text x='104' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Göteborgs universitet</text><text x='104' y='290' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Umeå universitet</text><text x='104' y='306' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Stockholms universitet</text></g><g><rect x='576' y='200' width='160' height='240' rx='8' fill='none' fill-opacity='1' stroke-width='1.25' style="stroke:var(--m-edge)"/><text x='656' y='224' font-weight='600' text-anchor='middle' style="fill:var(--m-ink)">Regelmakare</text><text x='656' y='242' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">EU: AI-förordningen</text><text x='656' y='258' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">GDPR</text><text x='656' y='274' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">IMY</text><text x='656' y='290' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Skolverket</text><text x='656' y='306' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">Skolinspektionen</text></g><g fill='none' stroke-width='1.25' style="stroke:var(--m-edge)"><path d='M340 136V200' marker-end='url(#mk-skola)'/><path d='M420 200V136' marker-end='url(#mk-skola)'/><path d='M340 288V352' marker-end='url(#mk-skola)'/><path d='M420 352V288' marker-end='url(#mk-skola)'/><path d='M380 504V440' marker-end='url(#mk-skola)'/><path d='M184 244H256' marker-end='url(#mk-skola)'/><path d='M184 396H256' marker-end='url(#mk-skola)'/><path d='M576 244H504' marker-end='url(#mk-skola)'/><path d='M576 396H504' marker-end='url(#mk-skola)'/></g><text x='332' y='172' font-size='11.5' text-anchor='end' style="fill:var(--m-quiet)">licenser, AI</text><text x='428' y='172' font-size='11.5' style="fill:var(--m-quiet)">betalar</text><text x='332' y='324' font-size='11.5' text-anchor='end' style="fill:var(--m-quiet)">levererar AI</text><text x='428' y='324' font-size='11.5' style="fill:var(--m-quiet)">licens per elev</text><text x='388' y='476' font-size='11.5' style="fill:var(--m-quiet)">elevdata, texter</text><text x='220' y='236' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">forskar</text><text x='220' y='388' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">utvärderar</text><text x='540' y='236' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">granskar</text><text x='540' y='388' font-size='11.5' text-anchor='middle' style="fill:var(--m-quiet)">reglerar</text></svg></div><figcaption>Maktkarta · utbildning</figcaption></figure>
+<p>Microsoft och Google markeras som mäktigast: kommunen har redan byggt hela skolans IT på en av dem, och AI:n kommer som en del av paketet.</p>
+<h3>Steg 5: Reflektion</h3>
+<ul>
+<li><strong>Vem har mest makt?</strong> Microsoft och Google. Kommunen är kunden, men att byta plattform betyder att flytta alla konton, dokument och rutiner för tusentals elever och lärare.</li>
+<li><strong>Om Microsoft höjde priserna kraftigt?</strong> Kommunen skulle i de flesta fall betala, och pengarna tas från annat i skolbudgeten. Att byta till Google tar flera år och kostar mycket utbildning.</li>
+<li><strong>Ett litet svenskt företag?</strong> Ett svenskt edtech-bolag måste konkurrera med AI som skolorna får gratis. Det måste erbjuda något Microsoft och Google inte gör, t.ex. koppling till svenska läroplaner, och ofta bygga sin tjänst på deras språkmodeller ändå.</li>
+<li><strong>Vanliga människor?</strong> Elever kan få hjälp när läraren inte hinner, men riskerar att tänka mindre själva. Lärare sparar tid men får nya frågor om fusk och bedömning.</li>
+<li><strong>Klurig fråga – vad får företagen tillbaka?</strong> Tre saker: licenspengar från kommunen, framtida kunder (den som lärt sig Office eller Google i skolan fortsätter oftast med det) och ett starkt grepp om en hel sektor. Enligt avtalen ska elevdata inte träna modellerna. Om det är okej beror på om skolan kan kontrollera det. I Danmark förbjöd datatillsynet 2022 Helsingør kommun att använda Chromebooks och Google Workspace eftersom elevdata kunde hamna utanför EU.</li>
+</ul></section>
+<p class="foot">Modellsvar till grupparbetet ”Show me the Money!”. Branschen förändras snabbt – kontrollera siffror och avtal mot aktuella källor innan materialet används.</p>
+</main>
+<script>
+(function(){
+  var tabs=[].slice.call(document.querySelectorAll('[role="tab"]'));
+  function show(key,focus){
+    var found=false;
+    tabs.forEach(function(t){var on=t.dataset.tab===key;if(on)found=true;t.setAttribute('aria-selected',on);t.tabIndex=on?0:-1;document.getElementById('p-'+t.dataset.tab).hidden=!on;if(on&&focus)t.focus();if(on)t.scrollIntoView({block:'nearest',inline:'nearest'});});
+    if(!found)return show('oversikt');
+    try{localStorage.setItem('smtm-tab',key)}catch(e){}
+    try{history.replaceState(null,'','#'+key)}catch(e){}
+  }
+  tabs.forEach(function(t,i){
+    t.addEventListener('click',function(){show(t.dataset.tab);window.scrollTo({top:0})});
+    t.addEventListener('keydown',function(e){var d=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:0;if(d){e.preventDefault();var n=tabs[(i+d+tabs.length)%tabs.length];show(n.dataset.tab,true)}});
+  });
+  document.querySelectorAll('[data-go]').forEach(function(b){b.addEventListener('click',function(){show(b.dataset.go);window.scrollTo({top:0})})});
+  var start=(location.hash||'').slice(1),saved=null;
+  try{saved=localStorage.getItem('smtm-tab')}catch(e){}
+  show(start||saved||'oversikt');
+})();
+</script>
+
+</body>
+</html>

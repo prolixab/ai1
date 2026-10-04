@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Maskinögat</title>
+  <meta name="description" content="Hur lär sig en dator att hitta cancer? Träna en egen bildigenkänningsmodell direkt i webbläsaren.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23123'/><circle cx='16' cy='16' r='7' fill='%2338bdf8'/><circle cx='16' cy='16' r='3' fill='%23123'/></svg>">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <a class="back-link" href="../index.html">← Kurssidan AI 1</a>
+    <p class="kicker">Bildigenkänning · AI · Medicin</p>
+    <h1>Maskinögat</h1>
+    <p class="lead">Hur lär sig en dator att hitta cancer på en röntgenbild? Här tränar du en egen AI-modell, direkt i webbläsaren, och ser vad som händer i varje steg – även när det går fel.</p>
+    <nav class="toc" aria-label="Kapitel">
+      <a href="#k1">1. Två sorters knölar</a>
+      <a href="#k2">2. Bli radiolog</a>
+      <a href="#k3">3. Vad ser datorn?</a>
+      <a href="#k4">4. Träna modellen</a>
+      <a href="#k5">5. Testa och välj gräns</a>
+      <a href="#k6">6. Var tittar modellen?</a>
+      <a href="#k7">7. När AI fuskar</a>
+      <a href="#k8">8. Riktiga bilder</a>
+      <a href="#k9">9. Diskutera</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="k1" class="chapter">
+  <h2><span class="num">1</span> Två sorters knölar</h2>
+  <p>En knöl (tumör) kan vara <b>godartad</b> – ofarlig – eller <b>elakartad</b>, alltså cancer. Läkare som tolkar bilder (radiologer) letar efter tecken på vilken sort det är. Bilderna här är <em>påhittade</em> av datorn så att skillnaderna blir tydliga. Riktiga bilder kommer i kapitel 8.</p>
+  <div class="two">
+    <div>
+      <h3 class="tag benign">Godartad</h3>
+      <ul class="facts"><li>Rund eller oval</li><li>Jämn, skarp kant</li><li>Jämn ljusstyrka inuti</li></ul>
+      <div class="gallery" id="g-benign"></div>
+    </div>
+    <div>
+      <h3 class="tag malignant">Elakartad</h3>
+      <ul class="facts"><li>Oregelbunden form, “taggar” ut i vävnaden</li><li>Suddig kant</li><li>Ojämn, fläckig inuti</li></ul>
+      <div class="gallery" id="g-malignant"></div>
+    </div>
+  </div>
+</section>
+
+<section id="k2" class="chapter">
+  <h2><span class="num">2</span> Bli radiolog</h2>
+  <p>En AI-modell lär sig från <b>exempel där svaret redan är känt</b>. Någon måste alltså först sätta etiketter (”godartad”/”elakartad”) på tusentals bilder. Prova själv: klicka på varje bild för att välja etikett, och tryck sedan på <i>Rätta</i>.</p>
+  <div class="toolbar">
+    <label>Svårighet <select id="k2-diff"><option value="0.3">Lätt</option><option value="0.6" selected>Medel</option><option value="0.8">Svår</option></select></label>
+    <button id="k2-new" class="ghost">Nya bilder</button>
+    <button id="k2-check">Rätta</button>
+    <span id="k2-timer" class="muted"></span>
+  </div>
+  <div class="label-grid" id="k2-grid"></div>
+  <div id="k2-result" class="callout" hidden></div>
+</section>
+
+<section id="k3" class="chapter">
+  <h2><span class="num">3</span> Vad ser datorn?</h2>
+  <p>För datorn är en bild bara en tabell med tal: varje pixel har ett värde mellan 0 (svart) och 1 (vitt). Modellen i det här projektet får bilder som är 48 × 48 pixlar – alltså 2 304 tal. För musen över bilden för att se talen.</p>
+  <div class="k3">
+    <figure>
+      <canvas id="k3-img" class="pix big"></canvas>
+      <figcaption>Bilden som modellen ser (48 × 48)</figcaption>
+    </figure>
+    <div>
+      <table class="numbers" id="k3-nums" aria-label="Pixelvärden runt muspekaren"></table>
+      <p class="muted small" id="k3-pos">För musen över bilden …</p>
+    </div>
+  </div>
+  <h3>Filter – så hittar ett faltningsnät mönster</h3>
+  <p>Ett <b>faltningsnät</b> (CNN, convolutional neural network) glider små rutnät av tal, <b>filter</b>, över bilden. Varje filter reagerar på ett visst mönster, till exempel kanter. Välj ett filter:</p>
+  <div class="toolbar" id="k3-filters"></div>
+  <div class="k3">
+    <figure>
+      <table class="kernel" id="k3-kernel"></table>
+      <figcaption>Filtrets 3 × 3 tal</figcaption>
+    </figure>
+    <figure>
+      <canvas id="k3-out" class="pix big"></canvas>
+      <figcaption>Resultat: ljust = filtret reagerar starkt</figcaption>
+    </figure>
+  </div>
+  <p class="callout">Här väljer <em>du</em> filtren. Det smarta med ett neuralt nät är att det <b>lär sig sina egna filter</b> under träningen – de som bäst skiljer godartat från elakartat. Vår modell har 56 filter i tre lager.</p>
+</section>
+
+<section id="k4" class="chapter">
+  <h2><span class="num">4</span> Träna modellen</h2>
+  <p>Nu tränar vi! Modellen tittar på träningsbilderna om och om igen. Ett varv genom alla bilder kallas en <b>epok</b>. Efter varje epok testas modellen på <b>valideringsbilder</b> som den aldrig får träna på – så ser vi om den verkligen har lärt sig, eller bara lärt sig träningsbilderna utantill.</p>
+  <div class="toolbar">
+    <label>Träningsbilder <select id="k4-n"><option>50</option><option selected>300</option><option>1000</option></select></label>
+    <label>Epoker <select id="k4-epochs"><option>5</option><option selected>20</option><option>40</option></select></label>
+    <label>Svårighet <select id="k4-diff"><option value="0.3">Lätt</option><option value="0.6" selected>Medel</option><option value="0.8">Svår</option></select></label>
+    <button id="k4-train">Träna</button>
+    <button id="k4-stop" class="ghost" hidden>Stoppa</button>
+  </div>
+  <p id="k4-status" class="status muted">Ingen modell tränad ännu.</p>
+  <div class="charts">
+    <figure><canvas id="k4-acc" class="chart"></canvas><figcaption>Träffsäkerhet (andel rätt) – högre är bättre</figcaption></figure>
+    <figure><canvas id="k4-loss" class="chart"></canvas><figcaption>Fel (loss) – lägre är bättre</figcaption></figure>
+  </div>
+  <div class="legend"><span class="sw train"></span> Träningsbilder <span class="sw val"></span> Valideringsbilder</div>
+  <h3>Modellens gissningar på valideringsbilder</h3>
+  <div class="strip" id="k4-strip"></div>
+  <details class="more"><summary>Experiment att prova</summary>
+    <ul>
+      <li><b>Lite data:</b> 50 bilder och 40 epoker. Vad händer med de två kurvorna? Avståndet mellan dem kallas <b>överanpassning</b> (overfitting) – modellen pluggar in svaren i stället för att förstå.</li>
+      <li><b>Mycket data:</b> 1 000 bilder. Blir valideringskurvan bättre?</li>
+      <li><b>Svåra bilder:</b> hur långt kommer modellen? Hur gick det för dig i kapitel 2?</li>
+    </ul>
+  </details>
+</section>
+
+<section id="k5" class="chapter">
+  <h2><span class="num">5</span> Testa och välj gräns</h2>
+  <p>Modellen ger inte ett ja eller nej, utan en <b>sannolikhet</b>: ”82 % säker på att det är cancer”. Någon måste bestämma <b>gränsen</b> – över den räknas bilden som elakartad. Här testas modellen på 400 helt nya bilder.</p>
+  <div class="needs-model" data-needs="main"></div>
+  <div class="k5" id="k5-body" hidden>
+    <figure>
+      <canvas id="k5-hist" class="chart"></canvas>
+      <figcaption>Modellens svar för alla testbilder. <span class="sw benign"></span> godartade <span class="sw malignant"></span> elakartade</figcaption>
+      <label class="slider">Gräns: <b id="k5-tval">50 %</b><input type="range" id="k5-t" min="1" max="99" value="50"></label>
+    </figure>
+    <div>
+      <table class="confusion">
+        <thead><tr><th></th><th>Modellen: elakartad</th><th>Modellen: godartad</th></tr></thead>
+        <tbody>
+          <tr><th>Egentligen elakartad</th><td class="good" id="tp"></td><td class="bad" id="fn"></td></tr>
+          <tr><th>Egentligen godartad</th><td class="bad soft" id="fp"></td><td class="good" id="tn"></td></tr>
+        </tbody>
+      </table>
+      <div class="metrics">
+        <div><span id="m-sens"></span><small>Känslighet<br>andel cancer som hittas</small></div>
+        <div><span id="m-spec"></span><small>Specificitet<br>andel friska som friskförklaras</small></div>
+        <div><span id="m-acc"></span><small>Träffsäkerhet<br>andel rätt totalt</small></div>
+      </div>
+    </div>
+  </div>
+  <p class="callout"><b>Fundera:</b> En <span class="bad-text">missad cancer</span> (falskt negativ) kan kosta ett liv. Ett <span class="soft-text">falskt larm</span> (falskt positiv) leder till oro och ett onödigt vävnadsprov. Var skulle du sätta gränsen vid screening av tusentals friska personer? Och om modellen bara är ett första filter innan en läkare tittar?</p>
+</section>
+
+<section id="k6" class="chapter">
+  <h2><span class="num">6</span> Var tittar modellen?</h2>
+  <p>Hittills har modellen bara svarat <i>vilken sorts</i> knöl det är (klassificering). Men <i>var</i> sitter den? Vi kan titta in i modellen: varje filter i sista lagret ger en karta över var i bilden det reagerar. Vi väger ihop kartorna efter hur mycket varje filter talar för ”elakartad” – då syns var modellen ser tecken på cancer. Klicka på en bild.</p>
+  <div class="needs-model" data-needs="main"></div>
+  <div id="k6-body" hidden>
+    <div class="strip pick" id="k6-strip"></div>
+    <div class="k6">
+      <figure><canvas id="k6-view" class="scan big"></canvas><figcaption id="k6-cap"></figcaption></figure>
+      <div>
+        <p><span class="sw heat"></span> Värmekarta: där modellen ser tecken på cancer</p>
+        <p><span class="sw box"></span> Modellens ruta (visas om modellen tror på cancer)</p>
+        <p><span class="sw truth"></span> Var knölen faktiskt sitter</p>
+        <label class="check"><input type="checkbox" id="k6-heat" checked> Visa värmekarta</label>
+        <p class="muted small">Riktiga system för att hitta objekt (t.ex. YOLO) tränas med rutor som läkare ritat in – men idén att modellen måste veta <i>var</i> den tittar är densamma. Det kallas <b>förklarbar AI</b>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="k7" class="chapter">
+  <h2><span class="num">7</span> När AI fuskar</h2>
+  <p>På sjukhus A har läkarna en vana: när de misstänker cancer sätter de en liten <b>linjal-markering</b> i hörnet av bilden för att mäta knölen. Vi tränar en ny modell på bilder från sjukhus A – och testar den sedan på sjukhus B, där ingen sätter markeringar.</p>
+  <div class="toolbar"><button id="k7-train">Träna på sjukhus A</button><span id="k7-status" class="status muted"></span></div>
+  <div id="k7-body" hidden>
+    <div class="metrics wide">
+      <div><span id="k7-a"></span><small>Träffsäkerhet<br>sjukhus A</small></div>
+      <div><span id="k7-b"></span><small>Träffsäkerhet<br>sjukhus B</small></div>
+    </div>
+    <div class="k6">
+      <figure><canvas id="k7-view" class="scan big"></canvas><figcaption>En elakartad bild från sjukhus A – vart tittar modellen?</figcaption></figure>
+      <div class="callout">
+        <p>Modellen hittade en <b>genväg</b>: markeringen är mycket lättare att känna igen än knölens form. På sjukhus A ser modellen fantastisk ut, men den har inte lärt sig något om cancer.</p>
+        <p>Det här har hänt på riktigt: forskare har visat att AI-modeller för hudcancer kunde luras av linjaler och pennmarkeringar på huden, och modeller för lungröntgen av märkningar från olika sjukhus. Därför måste AI testas på data från <b>andra</b> platser än där den tränades.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="k8" class="chapter">
+  <h2><span class="num">8</span> Riktiga bilder</h2>
+  <p>Hittills har bilderna varit påhittade. Nu byter vi till <b>riktiga ultraljudsbilder av bröst</b> – 780 bilder från ett sjukhus i Kairo, där läkare har avgjort vilka knölar som var elakartade. Bilderna är förminskade till 64 × 64 pixlar.</p>
+  <p id="k8-loading" class="muted">Laddar bilder …</p>
+  <div id="k8-body" hidden>
+    <div class="two">
+      <div><h3 class="tag benign">Normal eller godartad</h3><div class="gallery" id="k8-g-benign"></div></div>
+      <div><h3 class="tag malignant">Elakartad</h3><div class="gallery" id="k8-g-malignant"></div></div>
+    </div>
+    <p class="callout">Svårare att se skillnad, eller hur? Riktiga bilder är brusiga, knölarna har alla möjliga former och ibland syns ingen knöl alls. Lägg också märke till en sak: bara <b id="k8-share"></b> av bilderna är elakartade.</p>
+
+    <h3>Den lata modellen</h3>
+    <p>Tänk dig en ”modell” som inte tittar på bilden alls utan alltid svarar <i>godartad</i>. På testbilderna får den <b id="k8-lazy-acc"></b> rätt – men den hittar <b>inte en enda cancer</b>. När ena sorten är mycket vanligare säger träffsäkerheten nästan ingenting. Därför tittar man på känslighet och specificitet.</p>
+
+    <h3>Träna på riktiga bilder</h3>
+    <div class="toolbar">
+      <label class="check"><input type="checkbox" id="k8-aug" checked> Spegla bilderna (dubbelt så mycket träningsdata)</label>
+      <button id="k8-train">Träna</button>
+      <span id="k8-status" class="status muted"></span>
+    </div>
+    <div id="k8-result" hidden>
+      <div class="charts">
+        <figure><canvas id="k8-acc" class="chart"></canvas><figcaption>Träffsäkerhet <span class="sw train"></span> träning <span class="sw val"></span> validering</figcaption></figure>
+        <figure>
+          <canvas id="k8-hist" class="chart"></canvas>
+          <figcaption>Svar för de 156 testbilderna. <span class="sw benign"></span> godartade <span class="sw malignant"></span> elakartade</figcaption>
+          <label class="slider">Gräns: <b id="k8-tval">50 %</b><input type="range" id="k8-t" min="1" max="99" value="50"></label>
+        </figure>
+      </div>
+      <table class="compare">
+        <thead><tr><th></th><th>Träffsäkerhet</th><th>Känslighet<br><small>cancer som hittas</small></th><th>Specificitet<br><small>friska som friskförklaras</small></th></tr></thead>
+        <tbody>
+          <tr><th>Din modell</th><td id="k8-m-acc"></td><td id="k8-m-sens"></td><td id="k8-m-spec"></td></tr>
+          <tr><th>Lata modellen</th><td id="k8-l-acc"></td><td>0 %</td><td>100 %</td></tr>
+        </tbody>
+      </table>
+      <p class="callout"><b>Prova:</b> Dra ner gränsen. Hur många cancerfall kan modellen hitta innan de falska larmen blir för många? Var skulle du lägga gränsen om modellen bara ska välja ut vilka bilder en läkare ska titta på först?</p>
+      <h3>Några testbilder</h3>
+      <div class="strip" id="k8-strip"></div>
+      <div class="callout">
+        <p><b>Varför går det sämre än med de påhittade bilderna?</b> Vi har bara 546 träningsbilder, de är små och modellen är pytteliten (cirka 6 000 tal att justera). Riktiga system tränas på tiotusentals bilder i full upplösning, med modeller som har miljontals tal, ofta <b>förtränade</b> på andra bilder först. De måste sedan testas på patienter från andra sjukhus och godkännas innan de får användas i vården.</p>
+      </div>
+    </div>
+    <p class="muted small" id="k8-source">Bilder: BreastMNIST (Yang m.fl., <i>MedMNIST v2</i>, Scientific Data 2023), baserad på Al-Dhabyani m.fl., <i>Dataset of breast ultrasound images</i>, Data in Brief 2020. Licens: <a href="https://creativecommons.org/licenses/by/4.0/deed.sv">CC BY 4.0</a>.</p>
+  </div>
+</section>
+
+<section id="k9" class="chapter">
+  <h2><span class="num">9</span> Diskutera</h2>
+  <ol class="questions">
+    <li>Vem bär ansvaret om en AI missar en cancer – tillverkaren, sjukhuset eller läkaren som använde den?</li>
+    <li>I kapitel 7 lärde sig modellen fel sak. Hur skulle du som tillverkare kunna upptäcka sådana genvägar innan modellen används på patienter?</li>
+    <li>Om modellen tränas mest på bilder från en viss grupp människor (ålder, kön, ursprung) – vad kan hända med andra grupper?</li>
+    <li>Ska AI <i>ersätta</i> en läkare, vara en <i>andra granskare</i>, eller bara <i>sortera</i> vilka bilder läkaren ska titta på först? För- och nackdelar?</li>
+    <li>För att träna modeller behövs bilder från riktiga patienter. Vad krävs för att det ska vara okej att använda dem?</li>
+  </ol>
+  <p class="muted small">Bilderna i kapitel 1–7 är påhittade av datorn. Modellerna är kraftigt förenklade och ska inte användas för att bedöma riktiga bilder.</p>
+</section>
+
+</main>
+<footer class="wrap muted small">Maskinögat · byggt med TensorFlow.js · allt körs i din webbläsare, inga bilder skickas någonstans.</footer>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

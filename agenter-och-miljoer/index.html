@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agenter och miljöer</title>
+  <meta name="description" content="Interaktivt material för kursen AI 1: vad är en agent, PEAS, miljöns egenskaper och olika typer av agenter – med en dammsugarrobot du kan experimentera med.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2314112b'/><circle cx='16' cy='16' r='10' fill='%23e8890c'/><circle cx='16' cy='16' r='5' fill='none' stroke='%233a2300' stroke-width='2'/><circle cx='22' cy='16' r='2' fill='%233a2300'/></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <a class="back-link" href="../index.html">← Kurssidan AI 1</a>
+    <p class="kicker">AI 1 · Agenter och miljöer</p>
+    <h1>Agenter och miljöer</h1>
+    <p class="lead">Vad är det som gör en dammsugarrobot, en självkörande bil och en chattbot till <em>agenter</em>? Och varför är vissa miljöer så mycket svårare än andra? Här experimenterar du med en liten robot och ser hur olika sätt att tänka fungerar – och misslyckas.</p>
+    <nav class="toc" aria-label="Kapitel">
+      <a href="#k1">1. Vad är en agent?</a>
+      <a href="#k2">2. PEAS</a>
+      <a href="#k3">3. Miljöns egenskaper</a>
+      <a href="#k4">4. Fem sorters agenter</a>
+      <a href="#k5">5. Sandlådan</a>
+      <a href="#k6">6. Belöningsfusk</a>
+      <a href="#k7">7. Dagens AI-agenter</a>
+      <a href="#k8">8. Testa dig själv</a>
+    </nav>
+    <p><a class="teacher" href="larare.html">Lärarhandledning →</a></p>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="k1" class="chapter">
+  <h2><span class="num">1</span> Vad är en agent?</h2>
+  <p>En <b class="term">agent</b> är något som <b>uppfattar</b> sin omgivning med <b>sensorer</b> och <b>påverkar</b> den med <b>ställdon</b> (aktuatorer). Det den uppfattar i ett visst ögonblick kallas ett <b class="term">percept</b>. Mellan sensorerna och ställdonen sitter <b class="term">agentprogrammet</b> – det som bestämmer vilken handling som ska utföras.</p>
+  <p>Allt utanför agenten kallas <b class="term">miljön</b>. Agenten och miljön påverkar varandra i en oändlig loop: uppfatta → bestämma → handla → miljön ändras → uppfatta igen …</p>
+
+  <h3>Världens minsta dammsugarvärld</h3>
+  <p>Här finns bara två rutor, <b>A</b> och <b>B</b>. Robotens sensorer säger två saker: <i>vilken ruta den står på</i> och <i>om rutan är smutsig</i>. Agentprogrammet är en enkel tabell. Stega igenom loopen och se vad som händer. Du kan klicka på en ruta för att smutsa ned den.</p>
+  <div class="k1">
+    <div class="loop" id="k1-loop"></div>
+    <div>
+      <div class="k1-world"><canvas class="world" id="k1-canvas" aria-label="Två rutor, A och B, med en dammsugare"></canvas></div>
+      <div class="toolbar">
+        <button id="k1-next">Nästa fas</button>
+        <button id="k1-auto" class="ghost">▶ Kör automatiskt</button>
+      </div>
+      <table class="rules" id="k1-table">
+        <thead><tr><th>Percept</th><th>Handling</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="phase" id="k1-phase" aria-live="polite"></div>
+
+  <div class="callout">
+    <p><b>Rationell agent:</b> en agent som för varje percept väljer den handling som förväntas ge bäst resultat enligt ett <b>prestandamått</b>, utifrån det den har uppfattat och det den vet om världen. Rationell betyder alltså inte allvetande – agenten gör det bästa den kan med den information den har.</p>
+  </div>
+
+  <h3>Är det en agent?</h3>
+  <p>Avgör för varje sak om den är en agent eller inte. Fundera på: har den sensorer? Kan den påverka något? Väljer den mellan handlingar?</p>
+  <div class="sorter" id="k1-sort"></div>
+</section>
+
+<section id="k2" class="chapter">
+  <h2><span class="num">2</span> PEAS – beskriv uppgiften</h2>
+  <p>Innan man bygger en agent måste man beskriva <em>uppgiftsmiljön</em>. Ett vanligt sätt är <b class="term">PEAS</b>:</p>
+  <ul>
+    <li><span class="peas-letter">P</span>erformance – <b>prestandamått</b>: hur mäter vi om agenten gör ett bra jobb?</li>
+    <li><span class="peas-letter">E</span>nvironment – <b>miljö</b>: var verkar agenten, och vad finns där?</li>
+    <li><span class="peas-letter">A</span>ctuators – <b>ställdon</b>: hur kan agenten påverka miljön?</li>
+    <li><span class="peas-letter">S</span>ensors – <b>sensorer</b>: hur får agenten information?</li>
+  </ul>
+  <p>Sortera korten i rätt kolumn. Du kan dra korten, eller klicka på ett kort och sedan på en kolumn.</p>
+  <div class="tabs" id="k2-tabs" role="tablist"></div>
+  <div id="k2-ex"></div>
+  <div class="discuss">
+    <h4>Diskutera</h4>
+    <ul>
+      <li>Rekommendationsalgoritmen mäts ofta på hur länge du tittar. Är det ett bra prestandamått – för vem?</li>
+      <li>Vilket prestandamått skulle du själv vilja att en självkörande taxi hade? Vad händer om det bara är ”kom fram så snabbt som möjligt”?</li>
+    </ul>
+  </div>
+</section>
+
+<section id="k3" class="chapter">
+  <h2><span class="num">3</span> Miljöns egenskaper</h2>
+  <p>Vissa miljöer är mycket lättare för en agent än andra. Man brukar beskriva en miljö med sex egenskaper. I varje par är det <b>vänstra alternativet det lättare</b>.</p>
+  <div class="dims" id="k3-dims"></div>
+
+  <h3>Klassificera miljöerna</h3>
+  <p>Välj ett alternativ på varje rad och tryck på <i>Rätta</i>. Ibland finns inget självklart svar – då står det <i>diskutabelt</i>, och det viktiga är hur du motiverar.</p>
+  <div class="dots" id="k3-dots" aria-label="Välj miljö"></div>
+  <div id="k3-env"></div>
+</section>
+
+<section id="k4" class="chapter">
+  <h2><span class="num">4</span> Fem sorters agenter</h2>
+  <p>Agentprogrammet kan byggas på olika sätt – från en enkel regellista till ett program som planerar, väger för- och nackdelar eller lär sig av erfarenhet. Här möter du dem i samma lägenhet. Varje flik jämför en agenttyp med den föregående, <b>i exakt samma värld</b>.</p>
+  <p class="muted small">Prestanda = hur ren lägenheten har varit i genomsnitt under alla steg. Ju snabbare roboten städar, desto högre blir den.</p>
+  <div class="tabs" id="k4-tabs" role="tablist"></div>
+  <div id="k4-intro" class="type-intro"></div>
+  <div id="k4-body"></div>
+  <div id="k4-after"></div>
+</section>
+
+<section id="k5" class="chapter">
+  <h2><span class="num">5</span> Sandlådan</h2>
+  <p>Nu bestämmer du hur miljön ser ut. Ändra egenskaperna, välj agent och se vad som händer. Med <i>Tävling</i> får varje agent köra 30 omgångar i den miljö du har valt, och du får se snittresultatet.</p>
+  <div class="sandbox">
+    <div class="settings" id="k5-settings"></div>
+    <div>
+      <div id="k5-sim"></div>
+      <div id="k5-ctrl"></div>
+    </div>
+  </div>
+  <h3>Tävling</h3>
+  <div class="toolbar"><button id="k5-race">Kör tävling i den här miljön</button><span class="muted small" id="k5-race-desc"></span></div>
+  <div class="bars" id="k5-bars"></div>
+  <div class="discuss">
+    <h4>Uppdrag</h4>
+    <ol class="missions">
+      <li>Välj <i>delvis observerbar</i> och den enkla reflexagenten. Varför fastnar den? Slå sedan på <i>stokastisk</i>. Varför blir den <em>bättre</em> av att det slumpar?</li>
+      <li>Hitta en miljö där den målbaserade agenten blir sämre än den modellbaserade. Vad är det den målbaserade agenten tror?</li>
+      <li>Slå på <i>begränsat batteri</i> och <i>dynamisk</i>. Vilken agent klarar sig, och varför?</li>
+      <li>Slå på allt. Får någon agent ett bra resultat? Vad säger det om verkliga miljöer?</li>
+      <li>Finns det någon agent som är bäst i <em>alla</em> miljöer?</li>
+    </ol>
+  </div>
+</section>
+
+<section id="k6" class="chapter">
+  <h2><span class="num">6</span> Prestandamått och belöningsfusk</h2>
+  <p>En agent gör det vi <em>mäter</em> – inte det vi <em>menar</em>. Tänk dig att vi tränar en robot och belönar den med en poäng varje gång den suger upp smuts. Låter rimligt? Men roboten har också en knapp för att tömma dammpåsen …</p>
+  <div class="toolbar" id="k6-ctrl"></div>
+  <div class="duo" id="k6-duo"></div>
+  <p>Kör båda robotarna och jämför. Mätt i <b>sugningar</b> vinner den vänstra stort. Mätt i det vi egentligen ville – en <b>ren lägenhet</b> (prestanda) – vinner den högra.</p>
+  <div class="callout">
+    <p>Detta kallas <b>belöningsfusk</b> (<i>reward hacking</i> eller <i>specification gaming</i>): agenten hittar ett sätt att få hög poäng som vi inte hade tänkt oss. Agenten är inte ”elak” – den är rationell utifrån det prestandamått vi gav den. Felet ligger i måttet.</p>
+    <p>Tumregel: <b>mät det du vill ha i miljön</b> (en ren lägenhet), inte hur du tror att agenten ska bete sig (att den suger mycket).</p>
+  </div>
+  <h3>Det händer på riktigt</h3>
+  <ul>
+    <li>En AI som tränades att köra ett båtrace fick poäng för att träffa mål längs banan. Den lärde sig att åka runt i en cirkel och träffa samma mål om och om igen – utan att någonsin gå i mål.</li>
+    <li>En AI som skulle spela Tetris och undvika att förlora lärde sig att pausa spelet för alltid. Den som aldrig spelar kan aldrig förlora.</li>
+    <li>Sociala medier som optimerar för tittartid kan visa allt mer upprörande innehåll, eftersom det håller kvar oss längre.</li>
+  </ul>
+  <h3>Välj ett prestandamått</h3>
+  <p>Du ska bestämma hur en självkörande taxi ska bedömas. Klicka på ett förslag för att se vad som kan gå fel.</p>
+  <div class="options" id="k6-opts"></div>
+</section>
+
+<section id="k7" class="chapter">
+  <h2><span class="num">7</span> Dagens AI-agenter</h2>
+  <p>När man i dag pratar om <b>AI-agenter</b> menar man ofta en stor språkmodell (som i en chattbot) som får använda <b>verktyg</b>: söka på webben, läsa en kalender, skicka mejl eller köra kod. Språkmodellen är agentprogrammet. Den arbetar i samma loop som dammsugaren: uppfatta → bestämma → handla → se resultatet.</p>
+  <p>Stega igenom hur en sådan agent kan lösa en uppgift.</p>
+  <div class="toolbar"><button id="k7-next">Nästa steg</button><button id="k7-reset" class="ghost">Börja om</button></div>
+  <div class="trace" id="k7-trace"></div>
+  <h3>PEAS för AI-assistenten</h3>
+  <div class="peas-mini">
+    <div><b>Prestandamått</b>Uppgiften blir rätt löst, snabbt, utan att göra något användaren inte vill.</div>
+    <div><b>Miljö</b>Användaren, kalendrar, skolans bokningssystem, andra människor.</div>
+    <div><b>Ställdon</b>Verktygsanrop (boka, skicka meddelande) och textsvar.</div>
+    <div><b>Sensorer</b>Användarens text och resultaten från verktygen.</div>
+  </div>
+  <div class="discuss">
+    <h4>Diskutera</h4>
+    <ul>
+      <li>Är miljön fullt eller delvis observerbar för assistenten? Deterministisk eller stokastisk? Statisk eller dynamisk? En eller flera agenter?</li>
+      <li>Vilken av agenttyperna i kapitel 4 liknar den mest? Planerar den? Har den en modell av världen?</li>
+      <li>Assistenten fick tillåtelse att boka och skicka meddelanden. Vilka handlingar borde den <em>fråga</em> om innan den utför dem? Vem har ansvaret om den bokar fel?</li>
+    </ul>
+  </div>
+</section>
+
+<section id="k8" class="chapter">
+  <h2><span class="num">8</span> Testa dig själv</h2>
+  <p>Tolv frågor om allt du har gått igenom. Du får förklaringen direkt när du svarar.</p>
+  <div id="k8-quiz"></div>
+  <div class="toolbar"><span class="score" id="k8-score"></span><button id="k8-reset" class="ghost">Gör om testet</button></div>
+</section>
+
+</main>
+<footer class="wrap">
+  Begreppen följer den klassiska indelningen i Russell &amp; Norvig, <i>Artificial Intelligence: A Modern Approach</i>. Allt körs i din webbläsare.
+  · <a href="larare.html">Lärarhandledning</a>
+</footer>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

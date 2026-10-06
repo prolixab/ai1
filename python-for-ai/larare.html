@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Python för AI – lärarvy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F4F1; --surface:#FFFFFF; --ink:#1B2733; --muted:#566573; --line:#D3DBE0;
+  --accent:#2D68B0; --focus:#2D68B0; --ok:#2E7D4F; --warn:#B26A00; --bad:#C8402F; --empty:#E3E8E5;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#131A20; --surface:#1B232B; --ink:#E5EBEF; --muted:#9BA9B5; --line:#2F3B46;
+    --accent:#62A1EC; --focus:#62A1EC; --ok:#5DB883; --warn:#E6A23C; --bad:#F0705C; --empty:#28323B;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#131A20; --surface:#1B232B; --ink:#E5EBEF; --muted:#9BA9B5; --line:#2F3B46;
+  --accent:#62A1EC; --focus:#62A1EC; --ok:#5DB883; --warn:#E6A23C; --bad:#F0705C; --empty:#28323B;
+}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:1rem;line-height:1.55}
+h1,h2,h3{font-family:Archivo,"Arial Narrow",system-ui,sans-serif;line-height:1.1;margin:0}
+h1{font-size:clamp(2rem,6vw,3.4rem);font-weight:800;letter-spacing:-0.03em}
+h2{font-size:1.35rem;font-weight:800;margin-bottom:.6em}
+p{margin:0 0 1em}
+[hidden]{display:none!important}
+code,pre,textarea,.mono,.blank,.order button{font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0}
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+header.hero{padding:0 0 22px}
+.back{display:inline-block;margin:18px 0 0;font-size:.92rem;color:var(--muted);text-decoration:none}
+.back:hover{color:var(--ink);text-decoration:underline}
+.kicker{margin-top:28px!important}
+.kicker{font-size:.85rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
+.lede{font-size:1.1rem;max-width:44em;margin:.5em 0 0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+section{margin-bottom:22px}
+button,input,select,textarea{font:inherit;color:inherit}
+.btn{font-weight:700;border:1.5px solid var(--line);background:var(--surface);padding:7px 14px;border-radius:10px;cursor:pointer;min-height:38px}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.small{min-height:30px;padding:3px 10px;font-size:.88rem}
+input[type=text],input[type=password],input[type=search],select,textarea{padding:7px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper)}
+textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.8rem}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.muted{color:var(--muted)}.small{font-size:.9rem}
+.sources{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:820px){.sources{grid-template-columns:1fr}}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row .grow{flex:1;min-width:160px}
+.status{margin:10px 0 0;font-size:.9rem}
+.status[data-k="ok"]{color:var(--ok)}.status[data-k="bad"]{color:var(--bad)}
+details summary{cursor:pointer;font-weight:700}
+details ol{margin:.6em 0 0;padding-left:1.3em}
+code{font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.86em;background:color-mix(in srgb,var(--ink) 8%,transparent);padding:1px 5px;border-radius:4px}
+
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+@media (max-width:720px){.tiles{grid-template-columns:repeat(2,1fr)}}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.tile b{display:block;font-family:Archivo,sans-serif;font-size:1.9rem;font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums}
+.tile span{font-size:.88rem;color:var(--muted)}
+
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:.86rem;color:var(--muted);margin:0 0 10px}
+.sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.toolbar .grow{flex:1}
+
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:.94rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+th{font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
+th button{all:unset;cursor:pointer}
+th button:focus-visible{outline:3px solid var(--focus)}
+th[aria-sort] button::after{content:" ↓"}
+th[aria-sort="ascending"] button::after{content:" ↑"}
+td.num{text-align:right}
+tr.stu{cursor:pointer}
+tr.stu:hover td{background:color-mix(in srgb,var(--accent) 5%,transparent)}
+.name{font-weight:700}
+.src{font-size:.75rem;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:0 7px;margin-left:6px;font-weight:400}
+.bar{height:10px;border-radius:99px;background:var(--empty);overflow:hidden;display:flex;min-width:120px}
+.bar i{display:block;height:100%}
+.c{background:var(--ok)}.s{background:var(--warn)}.v{background:var(--bad)}
+.pbars{display:flex;gap:4px}
+.pbars .bar{min-width:34px;width:34px;height:8px}
+.recent{color:var(--ok);font-weight:700}
+.strip{display:flex;flex-wrap:wrap;gap:12px;padding:6px 0 10px}
+.strip .grp{display:flex;flex-direction:column;gap:4px}
+.strip .grp small{font-size:.75rem;color:var(--muted)}
+.cells{display:flex;flex-wrap:wrap;gap:3px}
+.cell{width:16px;height:16px;border-radius:4px;background:var(--empty)}
+.cell.c{background:var(--ok)}.cell.s{background:var(--warn)}.cell.v{background:var(--bad)}
+td.detail{white-space:normal;background:var(--paper)}
+
+.exlist{display:grid;gap:6px}
+.exrow{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(140px,2fr) auto;gap:12px;align-items:center;font-size:.92rem;padding:4px 0;border-bottom:1px solid var(--line)}
+.exrow .t small{color:var(--muted)}
+.exrow .pct{font-variant-numeric:tabular-nums;color:var(--muted);min-width:7.5em;text-align:right}
+@media (max-width:560px){.exrow{grid-template-columns:1fr}.exrow .pct{text-align:left}}
+.empty-msg{padding:28px 10px;text-align:center;color:var(--muted)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media (max-width:520px){.panel{padding:14px}.wrap{padding:0 16px}}
+</style>
+</head>
+<body>
+<header class="hero wrap">
+  <a class="back" href="../">← AI 1 – kursmaterial</a>
+  <p class="kicker">Lärarvy</p>
+  <h1>Python för AI – elevernas framsteg</h1>
+  <p class="lede">Se hur långt varje elev har kommit i <a href="./">övningen</a> och vilka uppgifter som är svårast för klassen.</p>
+</header>
+
+<main class="wrap">
+  <section class="sources">
+    <div class="panel">
+      <h2>Från servern</h2>
+      <p class="small muted">Elevernas framsteg skickas automatiskt till servern (Vercel) och hämtas hit med lärarnyckeln.</p>
+      <form class="row" id="keyForm">
+        <label class="grow"><span class="sr-only">Lärarnyckel</span>
+          <input type="password" id="key" placeholder="Lärarnyckel" autocomplete="current-password" style="width:100%">
+        </label>
+        <button class="btn primary" type="submit">Hämta</button>
+      </form>
+      <label class="small row" style="margin-top:8px"><input type="checkbox" id="auto" checked> Uppdatera automatiskt var 20:e sekund</label>
+      <p class="status" id="srvStatus" data-k="">Ange lärarnyckeln för att hämta elevernas framsteg.</p>
+      <details class="small">
+        <summary>Så slår du på lagringen</summary>
+        <ol>
+          <li>I Vercel: öppna projektet → <b>Storage</b> → lägg till <b>Upstash Redis</b> (gratisnivån räcker) och koppla den till projektet.</li>
+          <li><b>Settings → Environment Variables</b>: lägg till <code>TEACHER_KEY</code> med ett lösenord du väljer.</li>
+          <li>Gör en ny deploy. Kontrollera att <code>api</code> i <code>ovningar.js</code> pekar på Vercel-sajten.</li>
+        </ol>
+      </details>
+    </div>
+    <div class="panel">
+      <h2>Framstegskoder</h2>
+      <p class="small muted">Utan server: be eleverna klicka på <i>Min framstegskod</i> och skicka koden till dig. Klistra in en eller flera koder här (en per rad).</p>
+      <textarea id="codes" rows="4" placeholder="PYAI1.eyJxdWl6Ijoi…" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" type="button" id="btnImport">Lägg till</button>
+        <span class="grow"></span>
+        <button class="btn small" type="button" id="btnClearImp">Rensa inklistrade</button>
+      </div>
+      <p class="status" id="impStatus" data-k=""></p>
+    </div>
+  </section>
+
+  <section>
+    <div class="tiles" id="tiles"></div>
+  </section>
+
+  <section class="panel">
+    <div class="toolbar">
+      <h2 style="margin:0">Elever</h2>
+      <span class="grow"></span>
+      <label><span class="sr-only">Klass</span><select id="fKlass"><option value="">Alla klasser</option></select></label>
+      <label><span class="sr-only">Sök elev</span><input type="search" id="fName" placeholder="Sök namn"></label>
+      <button class="btn small" type="button" id="btnCsv">Ladda ner CSV</button>
+    </div>
+    <div class="legend">
+      <span><i class="sw c"></i>Rätt direkt</span>
+      <span><i class="sw s"></i>Rätt efter flera försök</span>
+      <span><i class="sw v"></i>Visade svaret</span>
+      <span><i class="sw" style="background:var(--empty)"></i>Inte gjord</span>
+      <span>Klicka på en elev för att se varje uppgift.</span>
+    </div>
+    <div class="tbl">
+      <table>
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="toolbar">
+      <h2 style="margin:0">Uppgifter</h2>
+      <span class="grow"></span>
+      <label class="small">Sortera
+        <select id="exSort"><option value="order">I ordning</option><option value="hard">Svårast först</option></select>
+      </label>
+    </div>
+    <p class="small muted">Andel av eleverna (i urvalet ovan) som klarat varje uppgift, och hur.</p>
+    <div class="exlist" id="exlist"></div>
+  </section>
+</main>
+
+<script src="ovningar.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var D = window.PYAI, EX = D.exercises, PARTS = D.parts;
+  var API = D.api;
+  var KEY_STORE = "pyai-larare-key", IMP_STORE = "pyai-larare-import-" + D.quiz;
+  var server = [], imported = loadImported(), sort = { col: "done", dir: "descending" }, open = {}, timer = null, serverOk = false;
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; });
+  }
+  function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function set(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+  function loadImported() { try { return JSON.parse(get(IMP_STORE)) || []; } catch (e) { return []; } }
+  function status(id, k, msg) { var el = $(id); el.dataset.k = k; el.textContent = msg; }
+
+  /* ---------- Server ---------- */
+  function fetchServer(quiet) {
+    var key = $("key").value.trim();
+    if (!key) return;
+    if (!API) { status("srvStatus", "bad", "Ingen server inställd (api i ovningar.js). Använd framstegskoder."); return; }
+    if (!quiet) status("srvStatus", "", "Hämtar…");
+    fetch(API + "?quiz=" + encodeURIComponent(D.quiz), { headers: { "x-teacher-key": key }, cache: "no-store" })
+      .then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (j) { return { r: r, j: j }; });
+      })
+      .then(function (x) {
+        if (x.r.ok) {
+          serverOk = true;
+          set(KEY_STORE, key);
+          server = (x.j.students || []).map(function (s) { s.src = "server"; s.ts = s.seen; return s; });
+          status("srvStatus", "ok", server.length + " elever hämtade " + new Date().toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) + ".");
+          render();
+          schedule();
+        } else {
+          serverOk = false;
+          if (x.r.status === 401) set(KEY_STORE, null);
+          status("srvStatus", "bad", x.r.status === 404 ? "Hittar inte servern – stämmer adressen i ovningar.js?" : (x.j.error || "Fel " + x.r.status));
+        }
+      })
+      .catch(function () { serverOk = false; status("srvStatus", "bad", "Kunde inte nå servern."); });
+  }
+  function schedule() {
+    clearTimeout(timer);
+    if ($("auto").checked && serverOk) timer = setTimeout(function () { fetchServer(true); }, 20000);
+  }
+  $("keyForm").addEventListener("submit", function (e) { e.preventDefault(); fetchServer(false); });
+  $("auto").addEventListener("change", schedule);
+
+  /* ---------- Framstegskoder ---------- */
+  function decode(code) {
+    var m = String(code).trim().match(/^PYAI1\.([A-Za-z0-9+/=]+)$/);
+    if (!m) return null;
+    try {
+      var bin = atob(m[1]), bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      var o = JSON.parse(new TextDecoder().decode(bytes));
+      if (o.quiz !== D.quiz || !o.id || !o.name) return null;
+      var answers = {};
+      Object.keys(o.answers || {}).forEach(function (k) { if (/^[csv]$/.test(o.answers[k])) answers[k] = o.answers[k]; });
+      return { id: String(o.id), name: String(o.name).slice(0, 40), klass: String(o.klass || "").slice(0, 12), answers: answers, ts: +o.updated || Date.now(), src: "kod" };
+    } catch (e) { return null; }
+  }
+  $("btnImport").addEventListener("click", function () {
+    var lines = $("codes").value.split(/\s+/).filter(Boolean), ok = 0, bad = 0;
+    lines.forEach(function (l) {
+      var s = decode(l);
+      if (!s) { bad++; return; }
+      imported = imported.filter(function (x) { return x.id !== s.id; });
+      imported.push(s); ok++;
+    });
+    set(IMP_STORE, JSON.stringify(imported));
+    $("codes").value = "";
+    status("impStatus", bad ? "bad" : "ok", ok + " kod" + (ok === 1 ? "" : "er") + " tillagd" + (ok === 1 ? "" : "a") + (bad ? ", " + bad + " gick inte att läsa." : "."));
+    render();
+  });
+  $("btnClearImp").addEventListener("click", function () {
+    if (!imported.length || !confirm("Ta bort alla inklistrade framstegskoder från den här datorn?")) return;
+    imported = []; set(IMP_STORE, null); status("impStatus", "", ""); render();
+  });
+
+  /* ---------- Data ---------- */
+  function students() {
+    var byId = {};
+    server.concat(imported).forEach(function (s) {
+      var cur = byId[s.id];
+      if (!cur || (s.ts || 0) > (cur.ts || 0)) byId[s.id] = s;
+    });
+    return Object.keys(byId).map(function (k) { return byId[k]; });
+  }
+  function stats(s, list) {
+    var c = { c: 0, s: 0, v: 0, done: 0 };
+    (list || EX).forEach(function (ex) { var a = s.answers[ex.id]; if (a) { c[a]++; c.done++; } });
+    return c;
+  }
+  function filtered() {
+    var k = $("fKlass").value, q = $("fName").value.trim().toLowerCase();
+    return students().filter(function (s) {
+      return (!k || (s.klass || "") === k) && (!q || s.name.toLowerCase().indexOf(q) >= 0);
+    });
+  }
+  function bar(c, n, cls) {
+    return '<span class="bar' + (cls ? " " + cls : "") + '">' + ["c", "s", "v"].map(function (k) {
+      return c[k] ? '<i class="' + k + '" style="width:' + (100 * c[k] / n) + '%"></i>' : "";
+    }).join("") + "</span>";
+  }
+  function ago(ts) {
+    if (!ts) return "–";
+    var m = Math.round((Date.now() - ts) / 60000);
+    if (m < 1) return "nyss";
+    if (m < 60) return m + " min sedan";
+    var h = Math.round(m / 60);
+    if (h < 24) return h + " h sedan";
+    return new Date(ts).toLocaleDateString("sv-SE");
+  }
+  function partEx(id) { return EX.filter(function (ex) { return ex.part === id; }); }
+
+  /* ---------- Rendering ---------- */
+  var COLS = [
+    { id: "name", label: "Elev" }, { id: "klass", label: "Klass" }, { id: "done", label: "Klart" },
+    { id: "parts", label: "Delar 1–5", nosort: true }, { id: "first", label: "Rätt direkt", num: true },
+    { id: "ts", label: "Senast aktiv" }, { id: "x", label: "", nosort: true }
+  ];
+
+  function render() {
+    var all = students();
+    var klasses = {};
+    all.forEach(function (s) { if (s.klass) klasses[s.klass] = 1; });
+    var sel = $("fKlass"), cur = sel.value;
+    sel.innerHTML = '<option value="">Alla klasser</option>' + Object.keys(klasses).sort().map(function (k) {
+      return '<option' + (k === cur ? " selected" : "") + ">" + esc(k) + "</option>";
+    }).join("");
+
+    var list = filtered();
+    renderTiles(list);
+    renderTable(list);
+    renderExercises(list);
+  }
+
+  function renderTiles(list) {
+    var n = list.length, sumDone = 0, finished = 0, active = 0;
+    list.forEach(function (s) {
+      var c = stats(s);
+      sumDone += c.done;
+      if (c.done === EX.length) finished++;
+      if (s.ts && Date.now() - s.ts < 15 * 60000) active++;
+    });
+    var tiles = [
+      [n, "elever"],
+      [n ? Math.round(100 * sumDone / (n * EX.length)) + " %" : "–", "genomsnittligt klart"],
+      [finished, "har gjort alla " + EX.length + " uppgifter"],
+      [active, "aktiva senaste 15 min"]
+    ];
+    $("tiles").innerHTML = tiles.map(function (t) { return '<div class="tile"><b>' + t[0] + "</b><span>" + t[1] + "</span></div>"; }).join("");
+  }
+
+  function sortVal(s, col) {
+    var c = stats(s);
+    if (col === "name") return s.name.toLowerCase();
+    if (col === "klass") return (s.klass || "").toLowerCase();
+    if (col === "done") return c.done;
+    if (col === "first") return c.done ? c.c / c.done : -1;
+    if (col === "ts") return s.ts || 0;
+    return 0;
+  }
+
+  function renderTable(list) {
+    $("thead").innerHTML = "<tr>" + COLS.map(function (c) {
+      if (c.nosort) return "<th>" + c.label + "</th>";
+      var a = sort.col === c.id ? ' aria-sort="' + sort.dir + '"' : "";
+      return "<th" + a + (c.num ? ' class="num"' : "") + '><button type="button" data-sort="' + c.id + '">' + c.label + "</button></th>";
+    }).join("") + "</tr>";
+
+    list.sort(function (a, b) {
+      var x = sortVal(a, sort.col), y = sortVal(b, sort.col), r = x < y ? -1 : x > y ? 1 : 0;
+      if (r === 0) r = a.name.localeCompare(b.name, "sv");
+      return sort.dir === "ascending" ? r : -r;
+    });
+
+    if (!list.length) {
+      $("tbody").innerHTML = '<tr><td colspan="' + COLS.length + '" class="empty-msg">Inga elever än. Hämta från servern eller klistra in framstegskoder.</td></tr>';
+      return;
+    }
+
+    $("tbody").innerHTML = list.map(function (s) {
+      var c = stats(s), recent = s.ts && Date.now() - s.ts < 15 * 60000;
+      var row = '<tr class="stu" data-id="' + esc(s.id) + '" aria-expanded="' + !!open[s.id] + '">' +
+        '<td><span class="name">' + esc(s.name) + "</span>" + (s.src === "kod" ? '<span class="src">kod</span>' : "") + "</td>" +
+        "<td>" + esc(s.klass || "–") + "</td>" +
+        '<td><div class="row" style="flex-wrap:nowrap">' + bar(c, EX.length) + '<span class="small">' + c.done + "/" + EX.length + "</span></div></td>" +
+        '<td><div class="pbars">' + PARTS.map(function (p, i) {
+          var l = partEx(p.id), pc = stats(s, l);
+          return '<span title="Del ' + (i + 1) + ": " + esc(p.title) + " – " + pc.done + "/" + l.length + '">' + bar(pc, l.length) + "</span>";
+        }).join("") + "</div></td>" +
+        '<td class="num">' + (c.done ? Math.round(100 * c.c / c.done) + " %" : "–") + "</td>" +
+        "<td" + (recent ? ' class="recent"' : "") + ">" + ago(s.ts) + "</td>" +
+        '<td><button class="btn small" type="button" data-del="' + esc(s.id) + '" aria-label="Ta bort ' + esc(s.name) + '">Ta bort</button></td></tr>';
+      if (open[s.id]) {
+        row += '<tr><td class="detail" colspan="' + COLS.length + '"><div class="strip">' + PARTS.map(function (p, i) {
+          return '<div class="grp"><small>' + (i + 1) + ". " + esc(p.title) + '</small><div class="cells">' + partEx(p.id).map(function (ex) {
+            var a = s.answers[ex.id];
+            return '<span class="cell' + (a ? " " + a : "") + '" title="' + esc(ex.title) + (a ? " – " + { c: "rätt direkt", s: "rätt efter flera försök", v: "visade svaret" }[a] : " – inte gjord") + '"></span>';
+          }).join("") + "</div></div>";
+        }).join("") + "</div></td></tr>";
+      }
+      return row;
+    }).join("");
+  }
+
+  $("thead").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-sort]");
+    if (!b) return;
+    var col = b.dataset.sort;
+    if (sort.col === col) sort.dir = sort.dir === "ascending" ? "descending" : "ascending";
+    else { sort.col = col; sort.dir = col === "name" || col === "klass" ? "ascending" : "descending"; }
+    render();
+  });
+  $("tbody").addEventListener("click", function (e) {
+    var del = e.target.closest("[data-del]");
+    if (del) { e.stopPropagation(); removeStudent(del.dataset.del); return; }
+    var tr = e.target.closest("tr.stu");
+    if (!tr) return;
+    open[tr.dataset.id] = !open[tr.dataset.id];
+    render();
+  });
+  $("fKlass").addEventListener("change", render);
+  $("fName").addEventListener("input", render);
+  $("exSort").addEventListener("change", render);
+
+  function removeStudent(id) {
+    var s = students().filter(function (x) { return x.id === id; })[0];
+    if (!s || !confirm("Ta bort " + s.name + " från listan?" + (s.src === "server" ? " Elevens framsteg raderas från servern (eleven har dem kvar i sin webbläsare)." : ""))) return;
+    imported = imported.filter(function (x) { return x.id !== id; });
+    set(IMP_STORE, JSON.stringify(imported));
+    if (s.src === "server") {
+      fetch(API + "?quiz=" + encodeURIComponent(D.quiz) + "&id=" + encodeURIComponent(id), { method: "DELETE", headers: { "x-teacher-key": $("key").value.trim() } })
+        .then(function (r) { if (!r.ok) throw 0; server = server.filter(function (x) { return x.id !== id; }); render(); })
+        .catch(function () { status("srvStatus", "bad", "Kunde inte ta bort eleven från servern."); });
+    } else render();
+  }
+
+  function renderExercises(list) {
+    var n = list.length;
+    var rows = EX.map(function (ex, i) {
+      var c = { c: 0, s: 0, v: 0, done: 0 };
+      list.forEach(function (s) { var a = s.answers[ex.id]; if (a) { c[a]++; c.done++; } });
+      return { ex: ex, i: i, c: c, hard: c.done ? (c.s + c.v * 1.5) / c.done : -1 };
+    });
+    if ($("exSort").value === "hard") rows.sort(function (a, b) { return b.hard - a.hard; });
+    if (!n) { $("exlist").innerHTML = '<p class="empty-msg">Ingen data än.</p>'; return; }
+    $("exlist").innerHTML = rows.map(function (r) {
+      var partNo = PARTS.map(function (p) { return p.id; }).indexOf(r.ex.part) + 1;
+      return '<div class="exrow"><span class="t">' + esc(r.ex.title) + " <small>· del " + partNo + "</small></span>" +
+        bar(r.c, n) +
+        '<span class="pct small">' + r.c.done + "/" + n + " gjort" + (r.c.done ? " · " + Math.round(100 * r.c.c / r.c.done) + " % direkt" : "") + "</span></div>";
+    }).join("");
+  }
+
+  /* ---------- CSV ---------- */
+  $("btnCsv").addEventListener("click", function () {
+    var head = ["Namn", "Klass", "Klara", "Rätt direkt", "Rätt efter försök", "Visade svaret", "Senast aktiv"]
+      .concat(PARTS.map(function (p, i) { return "Del " + (i + 1) + " klara"; }))
+      .concat(EX.map(function (ex) { return ex.id; }));
+    var lines = [head].concat(filtered().map(function (s) {
+      var c = stats(s);
+      return [s.name, s.klass || "", c.done, c.c, c.s, c.v, s.ts ? new Date(s.ts).toLocaleString("sv-SE") : ""]
+        .concat(PARTS.map(function (p) { return stats(s, partEx(p.id)).done; }))
+        .concat(EX.map(function (ex) { return s.answers[ex.id] || ""; }));
+    })).map(function (row) {
+      return row.map(function (v) { v = String(v); return /[";\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(";");
+    });
+    var blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "python-for-ai-framsteg.csv";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  });
+
+  // Uppdatera "senast aktiv" även utan ny hämtning
+  setInterval(function () { if (students().length) render(); }, 60000);
+
+  var saved = get(KEY_STORE);
+  if (saved) { $("key").value = saved; fetchServer(false); }
+  render();
+})();
+</script>
+</body>
+</html>

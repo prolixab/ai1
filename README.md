@@ -24,3 +24,14 @@ Digitalt kursmaterial för **AI 1** på Teknikprogrammet vid Erik Dahlbergsgymna
 
 Skapa en ny mapp, t.ex. `talsystem/`, med en `index.html` inuti.
 Lägg sedan till ett kort i `index.html` på startsidan som pekar dit.
+
+## Python för AI – övning och lärarvy
+
+`python-for-ai/` innehåller en övning (index.html) där eleven anger namn och
+framstegen sparas i webbläsaren, samt en lärarvy (`larare.html`, inte länkad
+från startsidan). Uppgifterna ligger i `python-for-ai/ovningar.js`.
+
+GitHub Pages kan inte köra serverkod, så framstegen skickas till en
+Vercel-funktion (`api/progress.js` i repot `prolixab/courses`). Adressen står i
+`api` överst i `ovningar.js`. Är den tom fungerar övningen ändå, och läraren kan
+samla in framstegen via elevernas *framstegskoder*.

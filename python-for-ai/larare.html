@@ -450,7 +450,7 @@ td.detail{white-space:normal;background:var(--paper)}
     if (!n) { $("exlist").innerHTML = '<p class="empty-msg">Ingen data än.</p>'; return; }
     $("exlist").innerHTML = rows.map(function (r) {
       var partNo = PARTS.map(function (p) { return p.id; }).indexOf(r.ex.part) + 1;
-      return '<div class="exrow"><span class="t">' + esc(r.ex.title) + " <small>· del " + partNo + "</small></span>" +
+      return '<div class="exrow"><span class="t">' + esc(r.ex.title) + " <small>· del " + partNo + (r.ex.type === "code" ? " · kod" : "") + "</small></span>" +
         bar(r.c, n) +
         '<span class="pct small">' + r.c.done + "/" + n + " gjort" + (r.c.done ? " · " + Math.round(100 * r.c.c / r.c.done) + " % direkt" : "") + "</span></div>";
     }).join("");

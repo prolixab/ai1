@@ -7,15 +7,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
 <style>
 :root{
   --paper:#F2F4F1; --surface:#FFFFFF; --ink:#1B2733; --muted:#566573; --line:#D3DBE0;
   --accent:#2D68B0; --focus:#2D68B0; --ok:#2E7D4F; --warn:#B26A00; --bad:#C8402F; --seen:#7A8794;
-  --code:#17212B; --code-ink:#E5EBEF; --code-line:#2F3B46;
-  --tk-k:#F2A65A; --tk-s:#A6D58F; --tk-n:#7FC8F8; --tk-c:#7D8B97; --tk-f:#E8CF72;
+  --code:#17212B; --code-ink:#E5EBEF; --code-line:#2F3B46; --code-muted:#7D8B97;
+  --tk-k:#F2A65A; --tk-s:#A6D58F; --tk-n:#7FC8F8; --tk-c:#7D8B97; --tk-f:#E8CF72; --tk-err:#FF8A7A; --tk-sys:#7FC8F8;
   box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px);
-  padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -30,172 +29,233 @@
   --code:#0E151B; --code-line:#26313B;
 }
 *,*::before,*::after{box-sizing:inherit}
+html,body{height:100%}
 body{margin:0;background:var(--paper);color:var(--ink);
   font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  font-size:1.0625rem;line-height:1.6}
-h1,h2,h3{font-family:Archivo,"Arial Narrow",system-ui,sans-serif;line-height:1.1;margin:0}
+  font-size:1.02rem;line-height:1.6}
+h1,h2,h3{font-family:Archivo,"Arial Narrow",system-ui,sans-serif;line-height:1.15;margin:0}
 h1{font-size:clamp(2.4rem,8vw,4.4rem);font-weight:800;letter-spacing:-0.035em}
-h2{font-size:clamp(1.35rem,3.6vw,1.75rem);font-weight:800;letter-spacing:-0.01em}
-p{margin:0 0 1em}
-code,.mono{font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.88em}
-p code,li code,.opt code,td code,.fb code,.explain code{background:color-mix(in srgb,var(--ink) 8%,transparent);padding:1px 5px;border-radius:4px}
+h2{font-size:1.45rem;font-weight:800;letter-spacing:-0.01em}
+h3{font-size:1.15rem;font-weight:800}
+p{margin:0 0 .9em}
 [hidden]{display:none!important}
-code,pre,textarea,.mono,.blank,.order button{font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0}
-.wrap{max-width:820px;margin:0 auto;padding:0 20px}
-header.hero{padding:0 0 24px}
-.back{display:inline-block;margin:18px 0 0;font-size:.92rem;color:var(--muted);text-decoration:none}
-.back:hover{color:var(--ink);text-decoration:underline}
-.kicker{margin-top:28px!important}
-.kicker{font-size:.85rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
-.lede{font-size:clamp(1.08rem,2.5vw,1.25rem);max-width:36em;margin:.6em 0 0}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px}
-main{padding-bottom:40px}
-
+code,kbd,.mono{font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.86em}
+code,pre,textarea,.mono,.blank,.order button,.CodeMirror,.console{font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0}
+.prose code,.q code,.opt code,.fb code,td code,li code{background:color-mix(in srgb,var(--ink) 8%,transparent);padding:1px 5px;border-radius:4px}
+kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:var(--surface)}
 button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.muted{color:var(--muted)}.small{font-size:.9rem}
+.grow{flex:1}
+
 .btn{font-weight:700;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);
-  padding:9px 16px;border-radius:10px;cursor:pointer;min-height:42px;line-height:1.2}
-.btn:hover{border-color:var(--muted)}
+  padding:7px 14px;border-radius:10px;cursor:pointer;min-height:38px;line-height:1.2;white-space:nowrap}
+.btn:hover:not(:disabled){border-color:var(--muted)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn.primary:hover{filter:brightness(1.08)}
-.btn.small{min-height:34px;padding:5px 12px;font-size:.92rem}
+.btn.primary:hover:not(:disabled){filter:brightness(1.08)}
+.btn.run{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.small{min-height:32px;padding:4px 11px;font-size:.88rem}
 .btn:disabled{opacity:.45;cursor:default}
 .linkish{background:none;border:0;padding:0;color:var(--accent);font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
-:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 
-/* Inloggning */
-.login{display:grid;gap:22px}
+/* ---------- Inloggning ---------- */
+.loginwrap{max-width:760px;margin:0 auto;padding:28px 20px 60px}
+.back{display:inline-block;font-size:.92rem;color:var(--muted);text-decoration:none}
+.back:hover{color:var(--ink);text-decoration:underline}
+.kicker{font-size:.85rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin:28px 0 10px}
+.lede{font-size:clamp(1.05rem,2.5vw,1.22rem);max-width:36em;margin:.6em 0 26px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px}
+.login{display:grid;gap:18px}
 .field{display:block;font-weight:700;margin-bottom:14px}
-.field input{display:block;width:100%;margin-top:6px;padding:10px 12px;border:1.5px solid var(--line);
-  border-radius:10px;background:var(--paper);font-weight:400}
+.field input{display:block;width:100%;margin-top:6px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);font-weight:400}
 .row2{display:grid;grid-template-columns:2fr 1fr;gap:0 14px}
 @media (max-width:520px){.row2{grid-template-columns:1fr}}
-.muted{color:var(--muted)}
-.small{font-size:.92rem}
 .profiles{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
 .profiles li{display:flex;align-items:center;gap:10px}
 .profiles .btn{flex:1;text-align:left;display:flex;justify-content:space-between;gap:12px}
 .profiles .btn span{color:var(--muted);font-weight:400}
 
-/* Översikt */
-.who{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-bottom:16px}
-.who .name{font-weight:700;font-size:1.1rem}
-.who .grow{flex:1}
-.chip{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted)}
+/* ---------- App-ramen ---------- */
+.app{height:100vh;height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr)}
+.topbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{font-family:Archivo,sans-serif;font-weight:800;font-size:1.1rem}
+.prog{display:flex;align-items:center;gap:8px;font-size:.88rem;font-variant-numeric:tabular-nums;color:var(--muted)}
+.prog .bar{width:120px}
+.who{font-size:.92rem}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted)}
 .chip::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--seen)}
 .chip[data-s="ok"]::before{background:var(--ok)}
 .chip[data-s="pending"]::before{background:var(--warn)}
-.total{display:grid;grid-template-columns:auto 1fr;gap:4px 18px;align-items:center;margin-bottom:18px}
-.total .big{font-family:Archivo,sans-serif;font-weight:800;font-size:2.2rem;line-height:1;font-variant-numeric:tabular-nums}
-.total .big small{font-size:1rem;color:var(--muted);font-weight:600}
-.bar{height:10px;border-radius:99px;background:color-mix(in srgb,var(--ink) 10%,transparent);overflow:hidden;display:flex}
+.bar{height:8px;border-radius:99px;background:color-mix(in srgb,var(--ink) 10%,transparent);overflow:hidden;display:flex}
 .bar i{display:block;height:100%}
 .bar .c{background:var(--ok)}.bar .s{background:var(--warn)}.bar .v{background:var(--seen)}
-.legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:.85rem;color:var(--muted);grid-column:2}
-.sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:0}
 
-.parts{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:18px}
-@media (max-width:720px){.parts{gap:6px}.part{min-height:0;padding:8px 9px}.part .t{display:none}.part .num{font-size:1rem;color:var(--ink)}.part .n{font-size:.75rem}}
-.part{text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 12px;cursor:pointer;
-  display:flex;flex-direction:column;gap:4px;min-height:92px}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);min-height:0}
+.left{overflow-y:auto;padding:16px 22px 40px;border-right:1px solid var(--line)}
+.right{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto minmax(110px,34%);min-height:0;background:var(--code);color:var(--code-ink)}
+@media (max-width:900px){
+  .app{height:auto;display:block}
+  .split{display:block}
+  .left{overflow:visible;border-right:0;padding:14px 16px 24px}
+  .right{height:88vh;height:88dvh;position:relative}
+  .prog .bar{width:70px}
+}
+
+/* Delar och flikar */
+.parts{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px}
+.part{text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 9px;cursor:pointer;display:flex;flex-direction:column;gap:3px}
 .part:hover{border-color:var(--muted)}
 .part[aria-current="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
-.part .num{font-family:Archivo,sans-serif;font-weight:800;color:var(--muted);font-size:.85rem}
-.part .t{font-weight:700;line-height:1.25;flex:1}
-.part .n{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
-.part .bar{height:6px}
+.part .num{font-family:Archivo,sans-serif;font-weight:800;font-size:.8rem;color:var(--muted)}
+.part .t{font-weight:700;font-size:.86rem;line-height:1.2;min-height:2.4em}
+.part .bar{height:5px}
 .part.done .num::after{content:" ✓";color:var(--ok)}
+@media (max-width:1250px){.part .t{display:none}.part .num{font-size:.95rem;color:var(--ink)}}
+.tabs{display:flex;gap:4px;border-bottom:1.5px solid var(--line);margin-bottom:16px}
+.tab{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-1.5px;padding:8px 12px;font-weight:700;color:var(--muted);cursor:pointer}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab .n{font-weight:400;font-size:.85rem;margin-left:4px;font-variant-numeric:tabular-nums}
+.parthead{display:flex;align-items:baseline;gap:10px;margin:0 0 4px}
+.parthead small{color:var(--muted);font-weight:700;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase}
 
-.dots{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
-.dot{width:30px;height:30px;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);cursor:pointer;
-  font-size:.78rem;font-weight:700;color:var(--muted);padding:0;font-variant-numeric:tabular-nums}
-.dot[data-s="c"]{background:var(--ok);border-color:var(--ok);color:var(--paper)}
-.dot[data-s="s"]{background:var(--warn);border-color:var(--warn);color:var(--paper)}
-.dot[data-s="v"]{background:var(--seen);border-color:var(--seen);color:var(--paper)}
-.dot[aria-current="true"]{outline:2.5px solid var(--ink);outline-offset:2px}
+/* Genomgång */
+.lesson{padding:16px 0;border-bottom:1px solid var(--line)}
+.lesson:first-of-type{padding-top:6px}
+.lesson h3{margin-bottom:.5em}
+.prose ul,.prose ol{margin:0 0 .9em;padding-left:1.3em}
+.prose li{margin-bottom:.3em}
+.prose table{border-collapse:collapse;width:100%;margin:0 0 .9em;font-size:.95rem}
+.prose th,.prose td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.prose th{font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.ex{position:relative}
+.ex .btn{margin-top:-6px}
+.next-up{margin-top:20px}
 
-/* Uppgiftskort */
-.card .meta{display:flex;justify-content:space-between;gap:12px;font-size:.85rem;color:var(--muted);margin-bottom:6px;font-weight:700;letter-spacing:.02em}
-.card h2{margin-bottom:.45em}
-.card .q{font-size:1.08rem}
-.badge{display:inline-block;font-size:.8rem;font-weight:700;padding:2px 10px;border-radius:99px;color:var(--paper);background:var(--ok);vertical-align:middle}
-.badge.s{background:var(--warn)}.badge.v{background:var(--seen)}
-
-pre.code{margin:0 0 16px;background:var(--code);color:var(--code-ink);border-radius:10px;padding:14px 16px;
-  overflow-x:auto;font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.92rem;line-height:1.65;tab-size:4}
+pre.code{margin:0 0 14px;background:var(--code);color:var(--code-ink);border-radius:10px;padding:12px 14px;
+  overflow-x:auto;font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.88rem;line-height:1.6;tab-size:4}
 pre.code code{font-size:inherit;background:none;padding:0}
 .tk-k{color:var(--tk-k);font-weight:600}.tk-s{color:var(--tk-s)}.tk-n{color:var(--tk-n)}.tk-c{color:var(--tk-c);font-style:italic}.tk-f{color:var(--tk-f)}
-.blank{font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.92rem;background:#0B1116;color:#fff;
+
+/* Uppgifter */
+.dots{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 12px}
+.dot{width:28px;height:28px;border-radius:7px;border:1.5px solid var(--line);background:var(--surface);cursor:pointer;
+  font-size:.74rem;font-weight:700;color:var(--muted);padding:0;font-variant-numeric:tabular-nums}
+.dot.code{border-style:dashed;border-color:var(--muted)}
+.dot[data-s="c"]{background:var(--ok);border:1.5px solid var(--ok);color:var(--paper)}
+.dot[data-s="s"]{background:var(--warn);border:1.5px solid var(--warn);color:var(--paper)}
+.dot[data-s="v"]{background:var(--seen);border:1.5px solid var(--seen);color:var(--paper)}
+.dot[aria-current="true"]{outline:2.5px solid var(--ink);outline-offset:2px}
+.dotlegend{font-size:.8rem;color:var(--muted);margin:-6px 0 12px}
+
+.card .meta{display:flex;justify-content:space-between;gap:12px;font-size:.82rem;color:var(--muted);margin-bottom:6px;font-weight:700}
+.card h2{margin-bottom:.45em}
+.badge{display:inline-block;font-size:.78rem;font-weight:700;padding:2px 10px;border-radius:99px;color:var(--paper);background:var(--ok);vertical-align:middle}
+.badge.s{background:var(--warn)}.badge.v{background:var(--seen)}
+.q{font-size:1.02rem}
+.q ol{padding-left:1.3em;margin:.4em 0}
+.codehint{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--accent) 9%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));margin:0 0 14px;font-size:.92rem}
+.codehint b{white-space:nowrap}
+details.tip{margin:0 0 14px}
+details.tip summary{cursor:pointer;font-weight:700;color:var(--accent)}
+details.tip p{margin:.4em 0 0}
+
+.blank{font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.88rem;background:#0B1116;color:#fff;
   border:1.5px dashed #6B7B89;border-radius:5px;padding:0 4px;margin:0 1px;min-width:4ch}
 .blank:focus{border-style:solid;border-color:var(--tk-n);outline:none}
 .blank.right{border:1.5px solid var(--ok);background:color-mix(in srgb,var(--ok) 35%,#0B1116)}
 .blank.wrong{border:1.5px solid var(--bad);background:color-mix(in srgb,var(--bad) 30%,#0B1116)}
-
-.opts{display:grid;gap:8px;margin-bottom:16px}
-.opt{text-align:left;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer;line-height:1.4}
+.opts{display:grid;gap:8px;margin-bottom:14px}
+.opt{text-align:left;padding:10px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer;line-height:1.4}
 .opt:hover:not(:disabled){border-color:var(--muted)}
 .opt[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,var(--surface))}
 .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--surface));text-decoration:line-through;text-decoration-color:var(--bad)}
 .opt:disabled{cursor:default}
-
-.outlab{display:block;font-size:.85rem;font-weight:700;color:var(--muted);margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase}
-textarea.out{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.95rem;line-height:1.6;
-  padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);resize:vertical;margin-bottom:16px}
+.outlab{display:block;font-size:.8rem;font-weight:700;color:var(--muted);margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase}
+textarea.out{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.92rem;line-height:1.6;
+  padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);resize:vertical;margin-bottom:14px}
 textarea.out.right{border-color:var(--ok)}textarea.out.wrong{border-color:var(--bad)}
-
-.match{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);gap:8px 14px;align-items:center;margin-bottom:16px}
+.match{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);gap:8px 12px;align-items:center;margin-bottom:14px}
 .match .l{font-weight:700}
-.match select{width:100%;padding:9px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper)}
+.match select{width:100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface)}
 .match select.right{border-color:var(--ok)}.match select.wrong{border-color:var(--bad)}
 @media (max-width:560px){.match{grid-template-columns:1fr}.match .l{margin-top:6px}}
-
-.order{display:grid;gap:14px;margin-bottom:16px}
-.order .lab{font-size:.85rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
-.order ol{list-style:none;margin:0;padding:8px;border-radius:10px;min-height:56px;display:grid;gap:6px;counter-reset:ln}
+.order{display:grid;gap:12px;margin-bottom:14px}
+.order .lab{font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.order ol{list-style:none;margin:0;padding:8px;border-radius:10px;min-height:52px;display:grid;gap:6px;counter-reset:ln}
 .order .built{background:var(--code)}
 .order .pool{border:1.5px dashed var(--line)}
 .order li button{width:100%;text-align:left;white-space:pre;overflow-x:auto;font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;
-  font-size:.9rem;padding:7px 10px;border-radius:7px;cursor:pointer;line-height:1.4}
+  font-size:.86rem;padding:6px 10px;border-radius:7px;cursor:pointer;line-height:1.4}
 .order .built li{display:grid;grid-template-columns:1.8em 1fr;align-items:center;counter-increment:ln}
-.order .built li::before{content:counter(ln);color:var(--tk-c);font-size:.8rem;text-align:right;padding-right:6px;font-family:"JetBrains Mono",monospace}
+.order .built li::before{content:counter(ln);color:var(--tk-c);font-size:.78rem;text-align:right;padding-right:6px;font-family:"JetBrains Mono",monospace}
 .order .built button{background:#0B1116;color:var(--code-ink);border:1px solid var(--code-line)}
-.order .built button:hover:not(:disabled){border-color:var(--tk-n)}
 .order .pool button{background:var(--surface);border:1.5px solid var(--line)}
 .order .pool button:hover{border-color:var(--accent)}
-.order .empty{color:var(--muted);font-size:.9rem;padding:8px;font-family:inherit}
+.order .empty{color:var(--muted);font-size:.88rem;padding:6px 8px}
 .order .built .empty{color:var(--tk-c)}
 
-.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.actions .grow{flex:1}
-.fb{margin:14px 0 0;padding:12px 14px;border-radius:10px;border-left:4px solid var(--line);background:var(--paper)}
-.fb.ok{border-left-color:var(--ok)}.fb.bad{border-left-color:var(--bad)}.fb.seen{border-left-color:var(--seen)}
-.fb p{margin:0}.fb p+p{margin-top:.5em}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.fb{margin:14px 0 0;padding:11px 14px;border-radius:10px;border-left:4px solid var(--line);background:var(--surface)}
+.fb.ok{border-left-color:var(--ok)}.fb.bad{border-left-color:var(--bad)}.fb.seen{border-left-color:var(--seen)}.fb.wait{border-left-color:var(--accent)}
+.fb p{margin:0}.fb p+p,.fb pre{margin-top:.5em}
+.fb pre{background:var(--code);color:var(--code-ink);padding:8px 10px;border-radius:8px;font-family:"JetBrains Mono",monospace;font-size:.85rem;white-space:pre-wrap}
 .fb b.h{font-family:Archivo,sans-serif}
-.nav{display:flex;justify-content:space-between;gap:10px;margin-top:14px}
+.nav{display:flex;justify-content:space-between;gap:10px;margin-top:16px}
 
-.done-all{text-align:center;padding:28px 20px}
-.done-all .big{font-family:Archivo,sans-serif;font-weight:800;font-size:clamp(2rem,6vw,3rem);margin:0 0 6px}
+/* ---------- Editor ---------- */
+.edbar,.conbar{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--code-line);font-size:.85rem}
+.conbar{border-top:1px solid var(--code-line);padding:5px 12px}
+.edbar{flex-wrap:wrap;row-gap:6px}
+.edbar .grow{display:none}
+.edlabel{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1 1 160px}
+.edlabel small{display:block;font-weight:400;color:var(--code-muted);font-size:.78rem}
+.pystatus{color:var(--code-muted);font-size:.8rem;white-space:nowrap}
+.pystatus[data-s="busy"]{color:var(--tk-k)}
+.pystatus[data-s="err"]{color:var(--tk-err)}
+.edbar .btn,.conbar .btn{border-color:var(--code-line);background:transparent;color:var(--code-ink)}
+.edbar .btn:hover:not(:disabled),.conbar .btn:hover:not(:disabled){border-color:var(--code-muted)}
+.edbar .btn.run{background:var(--ok);border-color:var(--ok);color:#fff}
+.edbar .btn.check{background:var(--accent);border-color:var(--accent);color:#fff}
+.editor{min-height:0;position:relative}
+.CodeMirror{height:100%;background:var(--code);color:var(--code-ink);font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:15px;line-height:1.6}
+.CodeMirror-gutters{background:var(--code);border-right:1px solid var(--code-line)}
+.CodeMirror-linenumber{color:#55636F}
+.CodeMirror-cursor{border-left:2px solid #fff}
+.CodeMirror-selected,.CodeMirror-focused .CodeMirror-selected{background:#2B3A4A!important}
+.CodeMirror-activeline-background{background:#1C2833}
+.CodeMirror-matchingbracket{color:#fff!important;background:#3A4C5E}
+.cm-s-pyai .cm-keyword{color:var(--tk-k);font-weight:600}
+.cm-s-pyai .cm-string{color:var(--tk-s)}
+.cm-s-pyai .cm-number{color:var(--tk-n)}
+.cm-s-pyai .cm-comment{color:var(--tk-c);font-style:italic}
+.cm-s-pyai .cm-builtin{color:var(--tk-f)}
+.cm-s-pyai .cm-def{color:#9FD4FF}
+.cm-s-pyai .cm-operator{color:#C9D3DC}
+.cm-s-pyai .cm-variable,.cm-s-pyai .cm-variable-2,.cm-s-pyai .cm-property{color:var(--code-ink)}
+.cm-s-pyai .cm-error{color:var(--tk-err)}
+.console{margin:0;overflow:auto;padding:10px 14px;font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.88rem;line-height:1.55;white-space:pre-wrap;word-break:break-word;background:#0A1015}
+.console .err{color:var(--tk-err)}
+.console .sys{color:var(--tk-sys);font-style:italic}
+.console .hint{color:var(--tk-k)}
+.console .placeholder{color:var(--code-muted)}
 
 dialog{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:22px;max-width:min(560px,calc(100vw - 32px))}
 dialog::backdrop{background:rgba(10,15,20,.55)}
 dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.8rem;padding:10px;border:1.5px solid var(--line);
   border-radius:10px;background:var(--paper);word-break:break-all;margin:8px 0 12px}
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-@media (max-width:520px){.panel{padding:14px}.wrap{padding:0 16px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
-<header class="hero wrap">
+
+<!-- ============ Inloggning ============ -->
+<div id="login" class="loginwrap" hidden>
   <a class="back" href="../">← AI 1 – kursmaterial</a>
   <p class="kicker">Övning · AI1</p>
   <h1>Python för AI</h1>
-  <p class="lede">Träna på allt från lektionen – från din första <code>print()</code> till din första egna AI-modell.</p>
-</header>
-
-<main class="wrap">
-  <!-- Inloggning -->
-  <section id="login" class="login" hidden>
+  <p class="lede">Läs genomgången till vänster och skriv och kör riktig Python till höger – från din första <code>print()</code> till din första egna AI-modell.</p>
+  <div class="login">
     <form id="loginForm" class="panel" autocomplete="off">
       <h2 style="margin-bottom:.6em">Vem är du?</h2>
       <div class="row2">
@@ -206,41 +266,59 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
           <input id="inKlass" name="klass" maxlength="12" placeholder="t.ex. TE24">
         </label>
       </div>
-      <button class="btn primary" type="submit">Börja öva →</button>
-      <p class="small muted" style="margin:14px 0 0">Dina framsteg sparas i den här webbläsaren. Använd samma dator och webbläsare nästa gång så fortsätter du där du slutade.</p>
+      <button class="btn primary" type="submit">Börja →</button>
+      <p class="small muted" style="margin:14px 0 0">Dina framsteg och din kod sparas i den här webbläsaren. Använd samma dator och webbläsare nästa gång så fortsätter du där du slutade.</p>
     </form>
     <div id="profilesBox" class="panel" hidden>
       <h2 style="font-size:1.15rem">Fortsätt som</h2>
       <ul class="profiles" id="profiles"></ul>
     </div>
-  </section>
+  </div>
+</div>
 
-  <!-- Övning -->
-  <section id="practice" hidden>
-    <div class="who">
-      <span>Hej <span class="name" id="whoName"></span><span class="muted" id="whoKlass"></span></span>
-      <span class="chip" id="syncChip" data-s="local">Sparat på den här datorn</span>
-      <span class="grow"></span>
-      <button class="btn small" type="button" id="btnCode">Min framstegskod</button>
-      <button class="btn small" type="button" id="btnSwitch">Byt elev</button>
-    </div>
+<!-- ============ Appen ============ -->
+<div id="app" class="app" hidden>
+  <header class="topbar">
+    <a class="back" href="../">← AI 1</a>
+    <span class="brand">Python för AI</span>
+    <span class="prog"><span class="bar" id="totBar"></span><span id="totNum"></span></span>
+    <span class="chip" id="syncChip" data-s="local">Sparat på den här datorn</span>
+    <span class="grow"></span>
+    <span class="who" id="who"></span>
+    <button class="btn small" type="button" id="btnCode">Min framstegskod</button>
+    <button class="btn small" type="button" id="btnSwitch">Byt elev</button>
+  </header>
 
-    <div class="total">
-      <div class="big" id="totNum"></div>
-      <div class="bar" id="totBar" role="img"></div>
-      <div></div>
-      <div class="legend">
-        <span><i class="sw" style="background:var(--ok)"></i>Rätt direkt <b id="nC">0</b></span>
-        <span><i class="sw" style="background:var(--warn)"></i>Rätt efter flera försök <b id="nS">0</b></span>
-        <span><i class="sw" style="background:var(--seen)"></i>Visat svaret <b id="nV">0</b></span>
+  <div class="split">
+    <section class="left" id="left" aria-label="Genomgång och uppgifter">
+      <nav class="parts" id="parts" aria-label="Delar"></nav>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tabLearn" data-tab="learn">Genomgång</button>
+        <button class="tab" role="tab" id="tabTasks" data-tab="tasks">Uppgifter <span class="n" id="tasksCount"></span></button>
       </div>
-    </div>
+      <div id="learn" role="tabpanel" aria-labelledby="tabLearn"></div>
+      <div id="tasks" role="tabpanel" aria-labelledby="tabTasks">
+        <div class="dots" id="dots" role="list" aria-label="Uppgifter i delen"></div>
+        <p class="dotlegend">Streckad ruta = skriv kod i editorn.</p>
+        <article class="card" id="card" aria-live="polite"></article>
+      </div>
+    </section>
 
-    <nav class="parts" id="parts" aria-label="Delar"></nav>
-    <div class="dots" id="dots" role="list" aria-label="Uppgifter i delen"></div>
-    <article class="panel card" id="card" aria-live="polite"></article>
-  </section>
-</main>
+    <section class="right" id="right" aria-label="Python-editor">
+      <div class="edbar">
+        <span class="edlabel" id="edLabel">Fri lek</span>
+        <span class="grow"></span>
+        <span class="pystatus" id="pyStatus" data-s="">Python laddas när du kör</span>
+        <button class="btn small" type="button" id="btnReset" hidden>Återställ</button>
+        <button class="btn small check" type="button" id="btnCheckTop" hidden>Kontrollera</button>
+        <button class="btn small run" type="button" id="btnRun" title="Ctrl+Enter">▶ Kör</button>
+      </div>
+      <div class="editor" id="editor"></div>
+      <div class="conbar"><span>Utskrift</span><span class="grow"></span><button class="btn small" type="button" id="btnClear">Rensa</button></div>
+      <pre class="console" id="console" aria-live="polite"><span class="placeholder">Utskriften från ditt program hamnar här. Kör med ▶ Kör eller Ctrl+Enter.</span></pre>
+    </section>
+  </div>
+</div>
 
 <dialog id="codeDlg" aria-labelledby="codeDlgTitle">
   <h2 id="codeDlgTitle" style="font-size:1.3rem;margin-bottom:.5em">Din framstegskod</h2>
@@ -254,6 +332,10 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
   </div>
 </dialog>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
 <script src="ovningar.js"></script>
 <script>
 (function () {
@@ -262,21 +344,32 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
   var D = window.PYAI, EX = D.exercises, PARTS = D.parts;
   var KEY = "pyai-ova-v1";
   var API = D.api;
-  var TYPE_LABEL = { mc: "Flerval", output: "Vad skrivs ut?", fill: "Fyll i luckorna", match: "Para ihop", order: "Sortera raderna" };
+  var PYODIDE = "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/";
+  var TYPE_LABEL = { mc: "Flerval", output: "Vad skrivs ut?", fill: "Fyll i luckorna", match: "Para ihop", order: "Sortera raderna", code: "Skriv kod" };
   var STATUS_TEXT = { c: "Rätt direkt", s: "Klarad", v: "Svaret visat" };
+  var SCRATCH = '# Fri lek – skriv och kör vad du vill.\n# Kör med ▶ Kör eller Ctrl+Enter.\n\nprint("Hej, AI!")\n';
+  var ERR_HINT = {
+    SyntaxError: "Glömt kolon, parentes eller citattecken?",
+    IndentationError: "Fel indrag efter if, for eller def? Använd fyra mellanslag.",
+    NameError: "Stavat fel på en variabel eller funktion – eller används den innan den skapats?",
+    TypeError: "Blandar du text och tal? Svar från input() är text – gör om med int().",
+    ValueError: "Försöker du göra om något till ett tal som inte är ett tal, t.ex. int(\"hej\")?",
+    IndexError: "Index utanför listan – kom ihåg att räkningen börjar på 0.",
+    KeyError: "Nyckeln finns inte i ordboken – kolla stavningen.",
+    ZeroDivisionError: "Division med noll.",
+    ModuleNotFoundError: "Biblioteket finns inte här – kolla stavningen i import-raden.",
+    EOFError: "Programmet ville ha indata men fick inget svar."
+  };
 
   /* ---------- Lagring ---------- */
   var store = load();
   function load() {
-    try {
-      var s = JSON.parse(localStorage.getItem(KEY));
-      if (s && s.profiles) return s;
-    } catch (e) {}
+    try { var s = JSON.parse(localStorage.getItem(KEY)); if (s && s.profiles) return s; } catch (e) {}
     return { current: null, profiles: {} };
   }
-  function save() {
-    try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {}
-  }
+  var saveTimer = null;
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
+  function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(save, 400); }
   function me() { return store.profiles[store.current] || null; }
   function uid() {
     if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -303,13 +396,10 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     var a = [], r = seeded(seed), i, j, t;
     for (i = 0; i < n; i++) a.push(i);
     for (i = n - 1; i > 0; i--) { j = Math.floor(r() * (i + 1)); t = a[i]; a[i] = a[j]; a[j] = t; }
-    // Undvik att blandningen råkar bli rätt ordning
-    var same = a.every(function (v, k) { return v === k; });
-    if (same && n > 1) { t = a[0]; a[0] = a[1]; a[1] = t; }
+    if (n > 1 && a.every(function (v, k) { return v === k; })) { t = a[0]; a[0] = a[1]; a[1] = t; }
     return a;
   }
-
-  var KW = /^(def|return|if|elif|else|for|in|import|from|as|while|True|False|None|and|or|not)$/;
+  var KW = /^(def|return|if|elif|else|for|in|import|from|as|while|True|False|None|and|or|not|pass)$/;
   var BI = /^(print|input|int|float|str|len|max|min|sum|range|type)$/;
   function hl(src) {
     var re = /(#.*)|([fF]?"(?:[^"\\\n]|\\.)*"|[fF]?'(?:[^'\\\n]|\\.)*')|([A-Za-z_]\w*)|(\d+(?:\.\d+)?)/g;
@@ -328,13 +418,13 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     return out + esc(src.slice(last));
   }
   function codeBlock(src) { return '<pre class="code"><code>' + hl(src) + "</code></pre>"; }
-
   function normOut(s) {
     return String(s).replace(/\r/g, "").split("\n")
       .map(function (l) { return l.replace(/\s+/g, " ").trim(); })
       .join("\n").replace(/^\n+|\n+$/g, "");
   }
   function normBlank(s) { return String(s).replace(/\s+/g, " ").trim(); }
+  function isNarrow() { return window.matchMedia("(max-width:900px)").matches; }
 
   /* ---------- Synk till läraren ---------- */
   var syncTimer = null, syncState = "local";
@@ -347,13 +437,9 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     syncState = s;
     var chip = $("syncChip");
     chip.dataset.s = s;
-    chip.textContent = s === "ok" ? "Sparat · läraren ser dina framsteg"
-      : s === "pending" ? "Sparar…" : "Sparat på den här datorn";
+    chip.textContent = s === "ok" ? "Sparat · läraren ser dina framsteg" : s === "pending" ? "Sparar…" : "Sparat på den här datorn";
   }
-  function scheduleSync() {
-    clearTimeout(syncTimer);
-    syncTimer = setTimeout(pushSync, 700);
-  }
+  function scheduleSync() { clearTimeout(syncTimer); syncTimer = setTimeout(pushSync, 700); }
   function pushSync() {
     var p = me();
     if (!p || !API || !window.fetch) return;
@@ -365,7 +451,7 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
 
   /* ---------- Inloggning ---------- */
   function showLogin() {
-    $("practice").hidden = true;
+    $("app").hidden = true;
     $("login").hidden = false;
     var list = Object.keys(store.profiles).map(function (k) { return store.profiles[k]; })
       .sort(function (a, b) { return (b.updated || 0) - (a.updated || 0); });
@@ -401,7 +487,7 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
       if (p.name.toLowerCase() === name.toLowerCase() && (p.klass || "") === klass) found = p;
     });
     if (!found) {
-      found = { id: uid(), name: name, klass: klass, answers: {}, pos: 0, created: Date.now(), updated: Date.now() };
+      found = { id: uid(), name: name, klass: klass, answers: {}, pos: 0, part: PARTS[0].id, tab: "learn", code: {}, created: Date.now(), updated: Date.now() };
       store.profiles[found.id] = found;
     }
     store.current = found.id;
@@ -409,25 +495,29 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     $("loginForm").reset();
     start();
   });
-  $("btnSwitch").addEventListener("click", function () { store.current = null; save(); showLogin(); });
+  $("btnSwitch").addEventListener("click", function () { saveEditor(); store.current = null; save(); showLogin(); });
 
-  /* ---------- Övningsvy ---------- */
-  var ui = null; // tillfälligt läge för aktuellt kort
-
+  /* ---------- Start ---------- */
+  var ui = null;
   function start() {
     var p = me();
     if (!p) return showLogin();
-    $("login").hidden = true;
-    $("practice").hidden = false;
-    $("whoName").textContent = p.name;
-    $("whoKlass").textContent = p.klass ? " · " + p.klass : "";
-    setSync("local");
+    if (!p.code) p.code = {};
     if (!(p.pos >= 0 && p.pos < EX.length)) p.pos = 0;
+    if (!p.part) p.part = EX[p.pos].part;
+    if (!p.tab) p.tab = "learn";
+    $("login").hidden = true;
+    $("app").hidden = false;
+    $("who").innerHTML = "<b>" + esc(p.name) + "</b>" + (p.klass ? ' <span class="muted">· ' + esc(p.klass) + "</span>" : "");
+    setSync("local");
+    initEditor();
     renderAll();
     pushSync();
+    // Ladda Python i bakgrunden så att första körningen går snabbare
+    setTimeout(function () { loadPy().catch(function () {}); }, 600);
   }
 
-  function renderAll() { renderTotals(); renderParts(); renderDots(); renderCard(); }
+  function renderAll() { renderTotals(); renderParts(); renderTabs(); }
 
   function counts(list, p) {
     var c = { c: 0, s: 0, v: 0, done: 0 };
@@ -439,36 +529,89 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
   }
   function renderTotals() {
     var p = me(), c = counts(EX, p);
-    $("totNum").innerHTML = c.done + "<small> / " + EX.length + "</small>";
+    $("totNum").textContent = c.done + " / " + EX.length;
     $("totBar").innerHTML = barHtml(c, EX.length);
-    $("totBar").setAttribute("aria-label", c.done + " av " + EX.length + " uppgifter klara");
-    $("nC").textContent = c.c; $("nS").textContent = c.s; $("nV").textContent = c.v;
+    $("totBar").title = c.c + " rätt direkt, " + c.s + " efter flera försök, " + c.v + " visat svaret";
   }
   function partEx(partId) { return EX.filter(function (ex) { return ex.part === partId; }); }
+  function partNo(id) { return PARTS.map(function (x) { return x.id; }).indexOf(id) + 1; }
+  function partTitle(id) { return PARTS[partNo(id) - 1].title; }
+
   function renderParts() {
-    var p = me(), cur = EX[p.pos].part;
+    var p = me();
     $("parts").innerHTML = PARTS.map(function (pt, i) {
       var list = partEx(pt.id), c = counts(list, p);
-      return '<button type="button" class="part' + (c.done === list.length ? " done" : "") + '" data-part="' + pt.id + '" aria-current="' + (pt.id === cur) + '" title="' + esc(pt.title) + '">' +
-        '<span class="num">0' + (i + 1) + "</span>" +
-        '<span class="t">' + esc(pt.title) + "</span>" +
-        '<span class="n">' + c.done + " / " + list.length + "</span>" +
+      return '<button type="button" class="part' + (c.done === list.length ? " done" : "") + '" data-part="' + pt.id + '" aria-current="' + (pt.id === p.part) + '" title="' + esc(pt.title) + " – " + c.done + "/" + list.length + ' klara">' +
+        '<span class="num">0' + (i + 1) + "</span>" + '<span class="t">' + esc(pt.title) + "</span>" +
         '<span class="bar">' + barHtml(c, list.length) + "</span></button>";
     }).join("");
+    var list = partEx(p.part);
+    $("tasksCount").textContent = counts(list, p).done + "/" + list.length;
   }
   $("parts").addEventListener("click", function (e) {
     var b = e.target.closest("[data-part]");
     if (!b) return;
-    var p = me(), list = partEx(b.dataset.part);
-    var first = list.filter(function (ex) { return !statusOf(p, ex); })[0] || list[0];
-    go(EX.indexOf(first));
+    var p = me();
+    p.part = b.dataset.part;
+    if (EX[p.pos].part !== p.part) {
+      var list = partEx(p.part);
+      var first = list.filter(function (ex) { return !statusOf(p, ex); })[0] || list[0];
+      p.pos = EX.indexOf(first);
+    }
+    save();
+    renderParts(); renderTabs();
+    $("left").scrollTop = 0;
   });
+
+  function setTab(t) { var p = me(); p.tab = t; save(); renderTabs(); $("left").scrollTop = 0; }
+  document.querySelector(".tabs").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-tab]");
+    if (b) setTab(b.dataset.tab);
+  });
+  function renderTabs() {
+    var p = me();
+    $("tabLearn").setAttribute("aria-selected", String(p.tab === "learn"));
+    $("tabTasks").setAttribute("aria-selected", String(p.tab === "tasks"));
+    $("learn").hidden = p.tab !== "learn";
+    $("tasks").hidden = p.tab !== "tasks";
+    if (p.tab === "learn") renderLearn(); else { renderDots(); renderCard(); }
+    syncEditor();
+  }
+
+  /* ---------- Genomgång ---------- */
+  function renderLearn() {
+    var p = me(), ls = (D.lessons || {})[p.part] || [];
+    $("learn").innerHTML = '<div class="parthead"><small>Del ' + partNo(p.part) + '</small></div><h2 style="margin-bottom:.4em">' + esc(partTitle(p.part)) + "</h2>" +
+      ls.map(function (l, i) {
+        return '<section class="lesson"><h3>' + esc(l.title) + '</h3><div class="prose">' + l.html + "</div>" +
+          (l.code ? '<div class="ex">' + codeBlock(l.code) + '<button class="btn small run" type="button" data-try="' + i + '">▶ Kör i editorn</button></div>' : "") +
+          "</section>";
+      }).join("") +
+      '<div class="next-up"><button class="btn primary" type="button" id="toTasks">Till uppgifterna →</button></div>';
+    $("toTasks").onclick = function () {
+      var list = partEx(p.part);
+      var first = list.filter(function (ex) { return !statusOf(p, ex); })[0] || list[0];
+      p.pos = EX.indexOf(first);
+      setTab("tasks");
+    };
+  }
+  $("learn").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-try]");
+    if (!b) return;
+    var l = D.lessons[me().part][+b.dataset.try];
+    setScratch(l.code);
+    if (isNarrow()) $("right").scrollIntoView({ behavior: "smooth" });
+    runInteractive();
+  });
+
+  /* ---------- Uppgifter ---------- */
   function renderDots() {
     var p = me(), cur = EX[p.pos];
-    $("dots").innerHTML = partEx(cur.part).map(function (ex, i) {
+    if (cur.part !== p.part) { p.pos = EX.indexOf(partEx(p.part)[0]); cur = EX[p.pos]; }
+    $("dots").innerHTML = partEx(p.part).map(function (ex, i) {
       var s = statusOf(p, ex);
-      return '<button type="button" role="listitem" class="dot" data-i="' + EX.indexOf(ex) + '" data-s="' + s + '" aria-current="' + (ex === cur) +
-        '" title="' + esc(ex.title) + (s ? " – " + STATUS_TEXT[s] : "") + '">' + (i + 1) + "</button>";
+      return '<button type="button" role="listitem" class="dot' + (ex.type === "code" ? " code" : "") + '" data-i="' + EX.indexOf(ex) + '" data-s="' + s + '" aria-current="' + (ex === cur) +
+        '" title="' + esc(ex.title) + (ex.type === "code" ? " (kod)" : "") + (s ? " – " + STATUS_TEXT[s] : "") + '">' + (i + 1) + "</button>";
     }).join("");
   }
   $("dots").addEventListener("click", function (e) {
@@ -478,32 +621,32 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
   function go(i) {
     var p = me();
     p.pos = Math.max(0, Math.min(EX.length - 1, i));
+    p.part = EX[p.pos].part;
     save();
-    renderParts(); renderDots(); renderCard();
-    var top = $("parts").getBoundingClientRect().top;
-    if (top < 0) $("parts").scrollIntoView({ block: "start" });
+    renderParts(); renderDots(); renderCard(); syncEditor();
+    if (isNarrow()) $("tasks").scrollIntoView({ block: "start" }); else $("left").scrollTop = 0;
   }
 
-  /* ---------- Kortet ---------- */
   function renderCard(retry) {
     var p = me(), ex = EX[p.pos], st = statusOf(p, ex);
     var list = partEx(ex.part), k = list.indexOf(ex);
-    var partNo = PARTS.map(function (x) { return x.id; }).indexOf(ex.part) + 1;
     ui = { ex: ex, locked: false, sel: -1, order: [] };
 
-    var h = '<div class="meta"><span>Del ' + partNo + " · Uppgift " + (k + 1) + " av " + list.length + "</span><span>" + TYPE_LABEL[ex.type] + "</span></div>" +
+    var h = '<div class="meta"><span>Del ' + partNo(ex.part) + " · Uppgift " + (k + 1) + " av " + list.length + "</span><span>" + TYPE_LABEL[ex.type] + "</span></div>" +
       "<h2>" + esc(ex.title) + (st ? ' <span class="badge ' + st + '">' + STATUS_TEXT[st] + "</span>" : "") + "</h2>" +
-      '<p class="q">' + ex.q + "</p>";
+      '<div class="q">' + ex.q + "</div>";
 
-    if (ex.type === "mc") {
+    if (ex.type === "code") {
+      h += '<div class="codehint"><b>→ Editorn</b><span>Skriv din kod i editorn till höger. Kör med <kbd>Ctrl</kbd>+<kbd>Enter</kbd> och tryck sedan <b>Kontrollera</b>.</span></div>';
+      if (ex.hint) h += '<details class="tip"><summary>Ledtråd</summary><p>' + ex.hint + "</p></details>";
+    } else if (ex.type === "mc") {
       if (ex.code) h += codeBlock(ex.code);
       h += '<div class="opts" role="group" aria-label="Svarsalternativ">' + shuffled(ex.options.length, ex.id).map(function (i) {
         return '<button type="button" class="opt" data-o="' + i + '" aria-pressed="false">' + ex.options[i] + "</button>";
       }).join("") + "</div>";
     } else if (ex.type === "output") {
       var lines = ex.answer.split("\n").length;
-      h += codeBlock(ex.code) +
-        '<label class="outlab" for="outTxt">Utskrift</label>' +
+      h += codeBlock(ex.code) + '<label class="outlab" for="outTxt">Utskrift</label>' +
         '<textarea class="out" id="outTxt" rows="' + Math.max(2, lines + 1) + '" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Skriv exakt det som visas på skärmen' + (lines > 1 ? " – en rad per utskrift" : "") + '"></textarea>';
     } else if (ex.type === "fill") {
       var parts = ex.code.split(/\{\{(\d+)\}\}/), html = "";
@@ -530,8 +673,9 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     }
 
     h += '<div class="actions"><button class="btn primary" type="button" id="btnCheck">Kontrollera</button>' +
-      '<button class="btn" type="button" id="btnShow" hidden>Visa svaret</button>' +
-      '<button class="btn" type="button" id="btnRetry" hidden>Öva igen</button></div>' +
+      '<button class="btn" type="button" id="btnShow" hidden>' + (ex.type === "code" ? "Visa lösning" : "Visa svaret") + "</button>" +
+      '<button class="btn" type="button" id="btnRetry" hidden>Öva igen</button>' +
+      '<button class="btn" type="button" id="btnTry" hidden>▶ Prova koden i editorn</button></div>' +
       '<div id="fb"></div>' +
       '<div class="nav"><button class="btn" type="button" id="btnPrev">← Föregående</button>' +
       '<button class="btn" type="button" id="btnNext">Nästa →</button></div>';
@@ -542,9 +686,14 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     $("btnNext").disabled = p.pos === EX.length - 1;
     $("btnPrev").onclick = function () { go(p.pos - 1); };
     $("btnNext").onclick = function () { go(p.pos + 1); };
-    $("btnCheck").onclick = check;
-    $("btnShow").onclick = reveal;
+    $("btnCheck").onclick = ex.type === "code" ? checkCode : check;
+    $("btnShow").onclick = ex.type === "code" ? revealCode : reveal;
     $("btnRetry").onclick = function () { renderCard(true); focusFirst(); };
+    $("btnTry").onclick = function () {
+      setScratch(ex.code);
+      if (isNarrow()) $("right").scrollIntoView({ behavior: "smooth" });
+      runInteractive();
+    };
 
     if (ex.type === "mc") {
       card.querySelector(".opts").addEventListener("click", function (e) {
@@ -573,14 +722,18 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
       if (e.key === "Enter" && (single || e.ctrlKey || e.metaKey)) { e.preventDefault(); check(); }
     });
 
-    if (st && !retry) showSolved(st);
+    if (ex.type === "code") {
+      var a = p.answers[ex.id];
+      if (st) feedback(st === "v" ? "seen" : "ok", "<p>" + (ex.explain || "") + "</p><p class=\"small muted\">Du kan fortsätta ändra och kontrollera koden – uppgiften räknas redan som klarad.</p>");
+      else if (a && a.n >= 2) $("btnShow").hidden = false;
+      $("btnRetry").hidden = true;
+    } else if (st && !retry) showSolved(st);
   }
 
   function focusFirst() {
     var f = $("card").querySelector("input,textarea,select,.opt");
     if (f) f.focus();
   }
-
   function drawOrder() {
     var ex = ui.ex, pool = shuffled(ex.lines.length, ex.id).filter(function (i) { return ui.order.indexOf(i) < 0; });
     function btn(i) { return '<li><button type="button" data-l="' + i + '"' + (ui.locked ? " disabled" : "") + ">" + esc(ex.lines[i]) + "</button></li>"; }
@@ -588,7 +741,7 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     $("pool").innerHTML = pool.length ? pool.map(btn).join("") : '<li class="empty">Alla rader är placerade. Klicka på en rad ovan för att flytta tillbaka den.</li>';
   }
 
-  /* Rättning: ger {ok, msg} */
+  /* Rättning av frågor (inte kod) */
   function grade() {
     var ex = ui.ex, card = $("card");
     if (ex.type === "mc") {
@@ -596,7 +749,7 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
       return { ok: ui.sel === ex.answer };
     }
     if (ex.type === "output") {
-      var raw = $("outTxt").value, got = normOut(raw), want = normOut(ex.answer);
+      var got = normOut($("outTxt").value), want = normOut(ex.answer);
       if (!got) return { empty: true, msg: "Skriv vad programmet skriver ut." };
       if (got === want) return { ok: true };
       var near = ex.near || {};
@@ -655,12 +808,10 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     } else {
       markOptions(false);
       if (!already) commit();
-      var tip = res.msg || ex.hint || "Läs frågan och koden en gång till.";
-      feedback("bad", '<p><b class="h">Inte riktigt.</b> ' + tip + "</p>");
+      feedback("bad", '<p><b class="h">Inte riktigt.</b> ' + (res.msg || ex.hint || "Läs frågan och koden en gång till.") + "</p>");
       if (!already && a.n >= 2) $("btnShow").hidden = false;
     }
   }
-
   function markOptions(ok) {
     if (ui.ex.type !== "mc") return;
     var b = $("card").querySelector('.opt[data-o="' + ui.sel + '"]');
@@ -668,7 +819,6 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     if (ok) b.classList.add("right");
     else { b.classList.add("wrong"); b.disabled = true; b.setAttribute("aria-pressed", "false"); ui.sel = -1; }
   }
-
   function reveal() {
     var p = me(), ex = ui.ex, a = p.answers[ex.id] || (p.answers[ex.id] = { n: 0 });
     if (!a.s) { a.s = "v"; a.t = Date.now(); }
@@ -677,7 +827,6 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     feedback("seen", '<p><b class="h">Så här blir det:</b> ' + (ex.explain || "") + "</p>" + partDoneMsg(ex));
     lockAfter();
   }
-
   function commit() {
     var p = me();
     p.updated = Date.now();
@@ -687,59 +836,331 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     if (st && !h2.querySelector(".badge")) h2.insertAdjacentHTML("beforeend", ' <span class="badge ' + st + '">' + STATUS_TEXT[st] + "</span>");
     scheduleSync();
   }
-
   function lockAfter() {
     ui.locked = true;
-    var card = $("card");
-    card.querySelectorAll("input,textarea,select,.opt").forEach(function (el) { el.disabled = true; });
+    $("card").querySelectorAll("input,textarea,select,.opt").forEach(function (el) { el.disabled = true; });
     if (ui.ex.type === "order") drawOrder();
     $("btnShow").hidden = true;
     $("btnRetry").hidden = false;
+    $("btnTry").hidden = !ui.ex.code || ui.ex.type === "fill";
     var last = me().pos === EX.length - 1;
     $("btnCheck").textContent = last ? "Klar!" : "Nästa uppgift →";
     $("btnCheck").disabled = last;
-    if (!last) $("btnCheck").focus();
+    if (!last) $("btnCheck").focus({ preventScroll: true });
   }
-
   function showSolved(st) {
     fillAnswer();
     feedback(st === "v" ? "seen" : "ok", "<p>" + (ui.ex.explain || "") + "</p>");
     lockAfter();
   }
-
-  /* Visa rätt svar i kortet */
   function fillAnswer() {
     var ex = ui.ex, card = $("card");
     if (ex.type === "mc") {
-      card.querySelectorAll(".opt").forEach(function (o) {
-        o.classList.toggle("right", +o.dataset.o === ex.answer);
-        o.setAttribute("aria-pressed", "false");
-      });
+      card.querySelectorAll(".opt").forEach(function (o) { o.classList.toggle("right", +o.dataset.o === ex.answer); o.setAttribute("aria-pressed", "false"); });
     } else if (ex.type === "output") {
       var t = $("outTxt"); t.value = ex.answer; t.classList.remove("wrong"); t.classList.add("right");
     } else if (ex.type === "fill") {
-      card.querySelectorAll(".blank").forEach(function (inp) {
-        inp.value = ex.blanks[+inp.dataset.b][0]; inp.classList.remove("wrong"); inp.classList.add("right");
-      });
+      card.querySelectorAll(".blank").forEach(function (inp) { inp.value = ex.blanks[+inp.dataset.b][0]; inp.classList.remove("wrong"); inp.classList.add("right"); });
     } else if (ex.type === "match") {
-      card.querySelectorAll(".match select").forEach(function (s) {
-        s.value = s.dataset.m; s.classList.remove("wrong"); s.classList.add("right");
-      });
+      card.querySelectorAll(".match select").forEach(function (s) { s.value = s.dataset.m; s.classList.remove("wrong"); s.classList.add("right"); });
     } else if (ex.type === "order") {
       ui.order = ex.lines.map(function (_, i) { return i; });
       drawOrder();
     }
   }
-
   function feedback(kind, html) { $("fb").innerHTML = '<div class="fb ' + kind + '">' + html + "</div>"; }
-
   function partDoneMsg(ex) {
     var p = me(), list = partEx(ex.part);
     if (!list.every(function (e) { return statusOf(p, e); })) return "";
-    var allDone = EX.every(function (e) { return statusOf(p, e); });
-    var title = PARTS.filter(function (x) { return x.id === ex.part; })[0].title;
-    return allDone ? "<p><b>Alla uppgifter klara – snyggt jobbat!</b> Gå gärna tillbaka till de gula och grå och öva igen.</p>"
-      : "<p><b>Du har klarat hela delen " + esc(title) + ".</b></p>";
+    if (EX.every(function (e) { return statusOf(p, e); })) return "<p><b>Alla uppgifter klara – snyggt jobbat!</b> Gå gärna tillbaka till de gula och grå och öva igen.</p>";
+    return "<p><b>Du har klarat hela delen " + esc(partTitle(ex.part)) + ".</b></p>";
+  }
+
+  /* ---------- Editor ---------- */
+  var cm = null, docs = {}, edKey = null;
+  function initEditor() {
+    if (cm || !window.CodeMirror) return;
+    cm = CodeMirror($("editor"), {
+      value: "", mode: { name: "python", version: 3 }, theme: "pyai", lineNumbers: true, indentUnit: 4, tabSize: 4,
+      indentWithTabs: false, matchBrackets: true, styleActiveLine: true, autofocus: false,
+      extraKeys: {
+        Tab: function (c) { if (c.somethingSelected()) c.indentSelection("add"); else c.replaceSelection("    ", "end"); },
+        "Shift-Tab": function (c) { c.indentSelection("subtract"); },
+        "Ctrl-Enter": function () { runInteractive(); }, "Cmd-Enter": function () { runInteractive(); }
+      }
+    });
+    cm.on("change", function () {
+      var p = me();
+      if (!p || !edKey) return;
+      p.code[edKey] = cm.getValue();
+      saveSoon();
+    });
+  }
+  function editorKey() {
+    var p = me(), ex = EX[p.pos];
+    return p.tab === "tasks" && ex.type === "code" && ex.part === p.part ? ex.id : "scratch";
+  }
+  function docFor(key) {
+    if (!docs[key]) {
+      var p = me(), ex = EX.filter(function (e) { return e.id === key; })[0];
+      var v = p.code[key] != null ? p.code[key] : ex ? ex.starter : SCRATCH;
+      docs[key] = CodeMirror.Doc(v, { name: "python", version: 3 });
+    }
+    return docs[key];
+  }
+  function saveEditor() { var p = me(); if (p && cm && edKey) { p.code[edKey] = cm.getValue(); save(); } }
+  function syncEditor() {
+    if (!cm) return;
+    var key = editorKey();
+    if (key !== edKey) {
+      saveEditor();
+      edKey = key;
+      cm.swapDoc(docFor(key));
+    }
+    var ex = key === "scratch" ? null : EX[me().pos];
+    $("edLabel").innerHTML = ex ? esc(ex.title) + "<small>Uppgift · del " + partNo(ex.part) + "</small>" : "Fri lek<small>Prova exempel och egen kod</small>";
+    $("btnReset").hidden = !ex;
+    $("btnCheckTop").hidden = !ex;
+    setTimeout(function () { cm.refresh(); }, 0);
+  }
+  function setScratch(code) {
+    if (edKey !== "scratch") { saveEditor(); edKey = "scratch"; cm.swapDoc(docFor("scratch")); syncEditor(); }
+    // Ersätt innehållet men behåll ångra-historiken (Ctrl+Z tar tillbaka det gamla)
+    cm.replaceRange(code, CodeMirror.Pos(cm.firstLine(), 0), CodeMirror.Pos(cm.lastLine()));
+  }
+  $("btnReset").addEventListener("click", function () {
+    var ex = EX[me().pos];
+    if (ex.type !== "code" || !confirm("Ersätta din kod med startkoden? (Ctrl+Z i editorn ångrar.)")) return;
+    cm.replaceRange(ex.starter, CodeMirror.Pos(cm.firstLine(), 0), CodeMirror.Pos(cm.lastLine()));
+    cm.focus();
+  });
+  $("btnRun").addEventListener("click", function () { runInteractive(); });
+  $("btnCheckTop").addEventListener("click", function () { checkCode(); });
+  $("btnClear").addEventListener("click", function () { conClear(); });
+
+  /* ---------- Konsol ---------- */
+  function conClear() { $("console").textContent = ""; }
+  function conWrite(text, cls) {
+    var c = $("console"), span = document.createElement("span");
+    if (cls) span.className = cls;
+    span.textContent = text;
+    c.appendChild(span);
+    c.scrollTop = c.scrollHeight;
+  }
+
+  /* ---------- Python (Pyodide) ---------- */
+  var pyPromise = null, running = false, loadedPkgs = {};
+  var SETUP = [
+    "import sys, builtins, js",
+    "class _W:",
+    "    def write(self, s):",
+    "        js.pyaiWrite(s)",
+    "        return len(s)",
+    "    def flush(self):",
+    "        pass",
+    "    def isatty(self):",
+    "        return False",
+    "class _E(_W):",
+    "    def write(self, s):",
+    "        js.pyaiErr(s)",
+    "        return len(s)",
+    "sys.stdout = _W()",
+    "sys.stderr = _E()",
+    "def _input(prompt=''):",
+    "    prompt = str(prompt)",
+    "    sys.stdout.write(prompt)",
+    "    v = js.pyaiInput(prompt)",
+    "    if v is None:",
+    "        raise EOFError('Ingen indata gavs')",
+    "    v = str(v)",
+    "    sys.stdout.write(v + '\\n')",
+    "    return v",
+    "builtins.input = _input"
+  ].join("\n");
+  function setPy(text, s) { var el = $("pyStatus"); el.textContent = text; el.dataset.s = s || ""; }
+  function loadScript(src) {
+    return new Promise(function (res, rej) {
+      var s = document.createElement("script");
+      s.src = src; s.onload = res; s.onerror = function () { rej(new Error("Kunde inte ladda " + src)); };
+      document.head.appendChild(s);
+    });
+  }
+  function loadPy() {
+    if (pyPromise) return pyPromise;
+    setPy("Laddar Python…", "busy");
+    pyPromise = (window.loadPyodide ? Promise.resolve() : loadScript(PYODIDE + "pyodide.js"))
+      .then(function () { return window.loadPyodide({ indexURL: PYODIDE }); })
+      .then(function (py) {
+        window.pyaiWrite = function () {};
+        window.pyaiErr = function () {};
+        window.pyaiInput = function () { return null; };
+        py.runPython(SETUP);
+        Object.keys(D.files || {}).forEach(function (name) { py.FS.writeFile(name, D.files[name]); });
+        setPy("Python redo");
+        return py;
+      })
+      .catch(function (e) {
+        pyPromise = null;
+        setPy("Kunde inte ladda Python – kolla nätet", "err");
+        throw e;
+      });
+    return pyPromise;
+  }
+  var PKG_NAMES = { pandas: "pandas", sklearn: "scikit-learn", numpy: "numpy", matplotlib: "matplotlib" };
+  function neededPackages(code) {
+    var need = [], re = /^\s*(?:import|from)\s+([A-Za-z_]\w*)/gm, m;
+    while ((m = re.exec(code))) if (PKG_NAMES[m[1]] && !loadedPkgs[m[1]] && need.indexOf(m[1]) < 0) need.push(m[1]);
+    return need;
+  }
+  function cleanErr(msg) {
+    var lines = String(msg).replace(/\s+$/, "").split("\n");
+    var i = -1;
+    for (var k = 0; k < lines.length; k++) if (/File "<program>"/.test(lines[k])) { i = k; break; }
+    var last = lines[lines.length - 1];
+    if (i < 0) return last;
+    var body = lines.slice(i);
+    return (/^(SyntaxError|IndentationError|TabError)/.test(last) ? "" : "Traceback (most recent call last):\n") + body.join("\n");
+  }
+  function errType(err) { var m = /^(\w+)/.exec(err.split("\n").pop()); return m ? m[1] : ""; }
+
+  // Kör kod. opts.inputs: lista med svar till input() (annars frågar vi användaren), opts.echo: skriv till konsolen.
+  function runPython(code, opts) {
+    return loadPy().then(function (py) {
+      var need = neededPackages(code);
+      if (!need.length) return py;
+      setPy("Laddar " + need.join(", ") + "… (första gången tar en stund)", "busy");
+      if (opts.echo) conWrite("Laddar " + need.map(function (n) { return PKG_NAMES[n]; }).join(", ") + " … första gången kan det ta upp till en halv minut.\n", "sys");
+      return py.loadPackagesFromImports(code).then(function () {
+        need.forEach(function (n) { loadedPkgs[n] = true; });
+        setPy("Python redo");
+        return py;
+      });
+    }).then(function (py) {
+      var out = "", errBuf = "", queue = opts.inputs ? opts.inputs.slice() : null;
+      window.pyaiWrite = function (s) { out += s; if (opts.echo) conWrite(s); };
+      window.pyaiErr = function (s) { errBuf += s; };
+      window.pyaiInput = function (prompt) {
+        if (queue) return queue.length ? String(queue.shift()) : null;
+        var v = window.prompt(prompt || "Indata till programmet:", "");
+        return v == null ? null : v;
+      };
+      var ns = py.globals.get("dict")();
+      ns.set("__name__", "__main__");
+      setPy("Kör…", "busy");
+      return py.runPythonAsync(code, { globals: ns, filename: "<program>" })
+        .then(function () {
+          // Varningar (t.ex. från bibliotek) utan att programmet kraschade
+          if (errBuf.trim() && opts.echo) conWrite(errBuf.replace(/\n?$/, "\n"), "sys");
+          return null;
+        }, function (e) {
+          var msg = String(e && e.message || e);
+          return cleanErr(/File "<program>"/.test(errBuf) || !/File "<program>"/.test(msg) && errBuf.trim() ? errBuf : msg);
+        })
+        .then(function (error) {
+          setPy("Python redo");
+          return { out: out, error: error, ns: ns, py: py };
+        });
+    });
+  }
+
+  function runInteractive() {
+    if (running || !cm) return;
+    running = true; setBusy(true);
+    conClear();
+    var code = cm.getValue();
+    runPython(code, { echo: true }).then(function (res) {
+      if (res.error) showError(res.error);
+      else if (!res.out) conWrite("(Programmet kördes klart men skrev inte ut något.)\n", "sys");
+      res.ns.destroy();
+    }).catch(function () {
+      conWrite("Python kunde inte startas. Kontrollera internetanslutningen och ladda om sidan.\n", "err");
+    }).then(function () { running = false; setBusy(false); });
+  }
+  function showError(err) {
+    conWrite((/\n$/.test($("console").textContent) || !$("console").textContent ? "" : "\n") + err + "\n", "err");
+    var hint = ERR_HINT[errType(err)];
+    if (hint) conWrite("💡 " + hint + "\n", "hint");
+  }
+  function setBusy(b) {
+    $("btnRun").disabled = b; $("btnCheckTop").disabled = b;
+    var c = $("btnCheck"); if (c && ui && ui.ex.type === "code") c.disabled = b;
+  }
+
+  /* ---------- Kodupppgifter ---------- */
+  function runTest(res, test, code) {
+    res.ns.set("_out", res.out);
+    res.ns.set("_code", code);
+    var errBuf = "";
+    window.pyaiErr = function (s) { errBuf += s; };
+    try { res.py.runPython(test, { globals: res.ns }); return null; }
+    catch (e) {
+      var msg = errBuf.trim() ? errBuf : String(e && e.message || e);
+      var last = msg.replace(/\s+$/, "").split("\n").pop();
+      var m = /^AssertionError:?\s*(.*)$/.exec(last);
+      if (m) return esc(m[1] || "Testet gick inte igenom.");
+      return "Testet kunde inte köras: <code>" + esc(last) + "</code>";
+    }
+  }
+  function checkCode() {
+    var ex = EX[me().pos];
+    if (running || !cm || ex.type !== "code") return;
+    running = true; setBusy(true);
+    var code = cm.getValue(), runs = ex.runs || [{}], i = 0, fail = null;
+    conClear();
+    feedback("wait", "<p>Kör testerna …</p>");
+    function next() {
+      if (i >= runs.length || fail) return Promise.resolve();
+      var r = runs[i], n = i + 1;
+      conWrite("── Test " + n + " av " + runs.length + (r.inputs && r.inputs.length ? " (indata: " + r.inputs.join(", ") + ")" : "") + " ──\n", "sys");
+      return runPython(code, { inputs: r.inputs || [], echo: true }).then(function (res) {
+        var where = runs.length > 1 ? "Test " + n + " av " + runs.length + (r.inputs && r.inputs.length ? " (indata: " + esc(r.inputs.join(", ")) + ")" : "") + ": " : "";
+        if (res.error) {
+          showError(res.error);
+          var t = errType(res.error);
+          fail = where + "Programmet kraschade med <code>" + esc(t || "fel") + "</code>." + (ERR_HINT[t] ? " " + esc(ERR_HINT[t]) : "") + " Läs felmeddelandet under editorn.";
+        } else {
+          if (!res.out.length || !/\n$/.test(res.out)) conWrite("\n");
+          if (r.expect != null && normOut(res.out) !== normOut(r.expect))
+            fail = where + "Utskriften blev inte rätt. Den ska vara:<pre>" + esc(r.expect) + "</pre>";
+          (r.contains || []).forEach(function (c) { if (!fail && res.out.indexOf(c) < 0) fail = where + "Utskriften ska innehålla <code>" + esc(c) + "</code>."; });
+          (r.excludes || []).forEach(function (c) { if (!fail && res.out.indexOf(c) >= 0) fail = where + "Utskriften ska <b>inte</b> innehålla <code>" + esc(c) + "</code>."; });
+          if (!fail && r.test) { var tf = runTest(res, r.test, code); if (tf) fail = where + tf; }
+        }
+        res.ns.destroy();
+        i++;
+        return next();
+      });
+    }
+    next().then(function () {
+      var p = me(), a = p.answers[ex.id] || (p.answers[ex.id] = { n: 0 }), already = !!a.s;
+      a.n = (a.n || 0) + 1;
+      if (!fail) {
+        conWrite("✓ Alla tester klarade!\n", "sys");
+        if (!already) { a.s = a.n === 1 ? "c" : "s"; a.t = Date.now(); }
+        commit();
+        feedback("ok", '<p><b class="h">' + (already || a.n === 1 ? "Snyggt – det fungerar!" : "Det fungerar – bra kämpat!") + "</b> " + (ex.explain || "") + "</p>" + partDoneMsg(ex));
+        var last = p.pos === EX.length - 1;
+        $("btnCheck").textContent = last ? "Klar!" : "Nästa uppgift →";
+        $("btnCheck").onclick = last ? null : function () { go(me().pos + 1); };
+        $("btnShow").hidden = true;
+      } else {
+        if (!already) commit();
+        feedback("bad", '<p><b class="h">Inte än.</b> ' + fail + "</p>" + (ex.hint && a.n >= 2 ? '<p class="small">Ledtråd: ' + ex.hint + "</p>" : ""));
+        if (!already && a.n >= 2) $("btnShow").hidden = false;
+      }
+    }).catch(function () {
+      feedback("bad", "<p>Python kunde inte startas. Kontrollera internetanslutningen och ladda om sidan.</p>");
+    }).then(function () { running = false; setBusy(false); });
+  }
+  function revealCode() {
+    var ex = EX[me().pos];
+    if (!confirm("Lösningen ersätter koden i editorn. (Ctrl+Z i editorn tar tillbaka din kod.) Visa lösningen?")) return;
+    var p = me(), a = p.answers[ex.id] || (p.answers[ex.id] = { n: 0 });
+    if (!a.s) { a.s = "v"; a.t = Date.now(); }
+    cm.replaceRange(ex.solution, CodeMirror.Pos(cm.firstLine(), 0), CodeMirror.Pos(cm.lastLine()));
+    commit();
+    feedback("seen", '<p><b class="h">Lösningen finns nu i editorn.</b> Kör den och läs koden rad för rad. ' + (ex.explain || "") + "</p>" + partDoneMsg(ex));
+    $("btnShow").hidden = true;
   }
 
   /* ---------- Framstegskod ---------- */
@@ -765,6 +1186,7 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
   });
   $("btnClose").addEventListener("click", function () { $("codeDlg").close(); });
 
+  window.addEventListener("beforeunload", saveEditor);
   if (me()) start(); else showLogin();
 })();
 </script>

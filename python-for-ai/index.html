@@ -102,7 +102,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 }
 
 /* Delar och flikar */
-.parts{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px}
+.parts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
 .part{text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 9px;cursor:pointer;display:flex;flex-direction:column;gap:3px}
 .part:hover{border-color:var(--muted)}
 .part[aria-current="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
@@ -110,7 +110,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .part .t{font-weight:700;font-size:.86rem;line-height:1.2;min-height:2.4em}
 .part .bar{height:5px}
 .part.done .num::after{content:" ✓";color:var(--ok)}
-@media (max-width:1250px){.part .t{display:none}.part .num{font-size:.95rem;color:var(--ink)}}
+@media (max-width:760px){.part .t{display:none}.part .num{font-size:.95rem;color:var(--ink)}}
 .tabs{display:flex;gap:4px;border-bottom:1.5px solid var(--line);margin-bottom:16px}
 .tab{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-1.5px;padding:8px 12px;font-weight:700;color:var(--muted);cursor:pointer}
 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
@@ -504,7 +504,7 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     if (!p) return showLogin();
     if (!p.code) p.code = {};
     if (!(p.pos >= 0 && p.pos < EX.length)) p.pos = 0;
-    if (!p.part) p.part = EX[p.pos].part;
+    if (!p.part || !partNo(p.part)) p.part = EX[p.pos].part;
     if (!p.tab) p.tab = "learn";
     $("login").hidden = true;
     $("app").hidden = false;

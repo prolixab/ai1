@@ -23,9 +23,7 @@ window.PYAI = {
   parts: [
     { id: "p1", title: "Varför Python?" },
     { id: "p2", title: "Grunderna" },
-    { id: "p3", title: "Bibliotek och data" },
-    { id: "p4", title: "Din första AI-modell" },
-    { id: "p5", title: "Felsökning och tips" }
+    { id: "p4", title: "Din första AI-modell" }
   ],
   // Datafiler som finns i editorns "mapp" (kan läsas med pd.read_csv m.m.)
   files: {
@@ -50,7 +48,7 @@ window.PYAI = {
           "<tr><td><code>scikit-learn</code></td><td>Klassisk maskininlärning – perfekt att börja med</td></tr>" +
           "<tr><td><code>PyTorch</code> / <code>TensorFlow</code></td><td>Neurala nätverk och djupinlärning</td></tr>" +
           "<tr><td><code>transformers</code></td><td>Färdiga språk- och bildmodeller från Hugging Face</td></tr></tbody></table>" +
-          "<p>Du behöver inte kunna alla nu. I den här lektionen provar vi <code>pandas</code> och <code>scikit-learn</code>.</p>"
+          "<p>Du behöver inte kunna dem – men namnen dyker upp överallt när man pratar om AI. I sista delen provar vi <code>scikit-learn</code>.</p>"
       },
       {
         title: "Kodmiljö",
@@ -117,33 +115,15 @@ window.PYAI = {
         code: 'elever = ["Ali", "Sara"]\nfor elev in elever:\n    print(f"Hej {elev}!")\nfor epok in range(2):\n    print("Tränar, varv", epok)'
       },
       {
-        title: "Funktioner är återanvändbar kod",
-        html: "<ul><li>Med <code>def</code> skapar du en egen funktion – ett recept du kan använda igen.</li>" +
-          "<li>Det inom parentesen är <b>parametrar</b>, alltså det du skickar in.</li><li><code>return</code> skickar tillbaka svaret.</li></ul>" +
-          "<p><code>print()</code> och <code>len()</code> är också funktioner – färdiga sådana. AI-bibliotek har funktioner som <code>fit()</code> och <code>predict()</code>.</p>",
-        code: 'def medel(lista):\n    return sum(lista) / len(lista)\n\nklass_a = [72, 85, 90]\nklass_b = [60, 95, 70, 83]\nprint(medel(klass_a))\nprint(medel(klass_b))'
-      },
-      {
-        title: "Ordböcker kopplar nyckel till värde",
-        html: "<ul><li>En dictionary skrivs med <code>{ }</code> och par av <code>nyckel: värde</code>.</li><li>Du slår upp med nyckeln, inte med en siffra.</li>" +
-          "<li><b>AI-koppling:</b> svar från AI-tjänster (JSON) ser ut precis så här.</li></ul>",
-        code: 'elev = {\n    "namn": "Sara",\n    "poang": 85\n}\nprint(elev["namn"])\nelev["klass"] = "TE24"\nprint(elev)'
-      }
-    ],
-    p3: [
-      {
-        title: "Bibliotek – stå på jättarnas axlar",
-        html: "<p>Ett bibliotek är färdig kod som någon annan har skrivit. Du hämtar in det med <code>import</code>. Vissa ingår i Python, andra installerar du först med <code>pip</code>.</p>" +
-          "<p><b>Här i webbläsaren</b> laddas pandas och scikit-learn automatiskt när du importerar dem (första gången tar det en stund). På din egen dator:</p>" +
-          "<ul><li><b>Thonny:</b> Verktyg → Hantera paket → sök och installera.</li><li><b>VS Code:</b> skriv i terminalen <code>pip install pandas scikit-learn</code> (fungerar inte det i Windows: <code>py -m pip install …</code>).</li></ul>",
-        code: 'import math\nprint(math.sqrt(16))   # 4.0'
-      },
-      {
-        title: "Läs in data med pandas",
-        html: "<p>pandas gör om en CSV- eller Excel-fil till en tabell som kallas <b>DataFrame</b>. Filen <code>elever.csv</code> finns redan i editorns mapp:</p>" +
-          "<pre class=\"code\"><code>namn,timmar,poang\nAli,2,55\nSara,8,91\nLeo,5,74</code></pre>" +
-          "<p><code>head()</code> visar de första fem raderna. All AI börjar med data – och att titta på den först.</p>",
-        code: 'import pandas as pd\ndf = pd.read_csv("elever.csv")\nprint(df.head())\nprint(df["poang"].mean())'
+        title: "Felmeddelanden är dina vänner",
+        html: "<p>Alla får fel hela tiden – även proffs. Läs <b>sista raden först</b>: där står vilken typ av fel det är, och raden ovanför visar var.</p>" +
+          "<table><thead><tr><th>Fel</th><th>Vanlig orsak</th></tr></thead><tbody>" +
+          "<tr><td><code>SyntaxError</code></td><td>Glömt kolon, parentes eller citattecken</td></tr>" +
+          "<tr><td><code>IndentationError</code></td><td>Fel indrag efter if eller for</td></tr>" +
+          "<tr><td><code>NameError</code></td><td>Stavat fel på en variabel</td></tr>" +
+          "<tr><td><code>TypeError</code></td><td>Blandar text och tal, t.ex. <code>\"5\" + 3</code></td></tr></tbody></table>" +
+          "<p><b>Tips:</b> skriv några rader i taget och kör ofta. Fråga gärna en AI <i>varför</i> du får ett fel – men be om en ledtråd, inte hela lösningen.</p>",
+        code: 'print("5" + 3)'
       }
     ],
     p4: [
@@ -167,32 +147,6 @@ window.PYAI = {
           "<tr><td><code>fit()</code></td><td><b>Träning</b> – modellen letar efter mönster som kopplar X till y.</td></tr>" +
           "<tr><td><code>predict()</code></td><td><b>Förutsägelse</b> – modellen gissar svaret för helt nya exempel.</td></tr></tbody></table>" +
           "<p>Sex exempel är för lite för en riktig AI. Ju mer och bättre data, desto bättre modell – och dålig data ger dåliga svar. Vad händer om exemplen inte är representativa?</p>"
-      }
-    ],
-    p5: [
-      {
-        title: "Felmeddelanden är dina vänner",
-        html: "<p>Läs <b>sista raden först</b> – där står vilken typ av fel det är, och raden ovanför visar var.</p>" +
-          "<table><thead><tr><th>Fel</th><th>Vanlig orsak</th></tr></thead><tbody>" +
-          "<tr><td><code>SyntaxError</code></td><td>Glömt kolon, parentes eller citattecken</td></tr>" +
-          "<tr><td><code>IndentationError</code></td><td>Fel indrag efter if, for eller def</td></tr>" +
-          "<tr><td><code>NameError</code></td><td>Stavat fel på en variabel eller funktion</td></tr>" +
-          "<tr><td><code>TypeError</code></td><td>Blandar text och tal, t.ex. <code>\"5\" + 3</code></td></tr>" +
-          "<tr><td><code>ModuleNotFoundError</code></td><td>Biblioteket är inte installerat – kör pip install</td></tr></tbody></table>",
-        code: 'print("5" + 3)'
-      },
-      {
-        title: "Fyra vanor som gör dig bättre",
-        html: "<ul><li><b>Skriv koden själv.</b> Att skriva av för hand bygger förståelse. Kopiera inte bara.</li>" +
-          "<li><b>Små steg, kör ofta.</b> Skriv några rader och testa direkt. Då hittar du felen snabbt.</li>" +
-          "<li><b>Felsök med print().</b> Skriv ut variabler för att se vad som faktiskt händer.</li>" +
-          "<li><b>AI som handledare.</b> Be AI förklara och ge ledtrådar – inte skriva hela lösningen. Fråga t.ex. \"Varför får jag det här felet?\" eller \"Ge mig en ledtråd\".</li></ul>"
-      },
-      {
-        title: "Nästa steg",
-        html: "<p>Nu kan du grunderna: variabler, datatyper och listor, villkor, loopar och funktioner, bibliotek och pip, pandas och <code>fit()</code>/<code>predict()</code>.</p>" +
-          "<p>Fortsätt med: visualisera data med matplotlib, dela upp data i tränings- och testdata, mät hur bra modellen är och prova neurala nätverk.</p>",
-        code: 'print("Bra jobbat!")'
       }
     ]
   },
@@ -221,27 +175,6 @@ window.PYAI = {
       ],
       answer: 0,
       explain: "Miljontals använder Python. Den som har fastnat hittar nästan alltid någon som löst samma sak."
-    },
-    {
-      id: "p1-bibliotek", part: "p1", type: "match", title: "AI-verktygslådan",
-      q: "Para ihop varje bibliotek med vad det används till.",
-      pairs: [
-        ["numpy", "Snabba beräkningar med stora mängder tal"],
-        ["pandas", "Läsa och bearbeta tabeller, t.ex. CSV-filer"],
-        ["matplotlib", "Rita diagram och visualisera data"],
-        ["scikit-learn", "Klassisk maskininlärning – bra att börja med"],
-        ["PyTorch / TensorFlow", "Neurala nätverk och djupinlärning"],
-        ["transformers", "Färdiga språk- och bildmodeller från Hugging Face"]
-      ],
-      code: true,
-      explain: "Du behöver inte kunna alla nu – i den här lektionen provar vi <code>pandas</code> och <code>scikit-learn</code>."
-    },
-    {
-      id: "p1-idag", part: "p1", type: "mc", title: "Dagens bibliotek",
-      q: "Vilka två bibliotek provar vi i den här lektionen?",
-      options: ["pandas och scikit-learn", "numpy och matplotlib", "PyTorch och transformers", "math och random"],
-      answer: 0,
-      explain: "<code>pandas</code> för att läsa in data och <code>scikit-learn</code> för att träna en modell."
     },
     {
       id: "p1-path", part: "p1", type: "mc", title: "Installera Python",
@@ -306,14 +239,6 @@ assert "#" in _code, "Glöm inte kommentaren – den börjar med #."
       explain: "<code>=</code> betyder tilldela, inte \"är lika med\". Högersidan <code>17 + 1</code> räknas ut och läggs i <code>alder</code>."
     },
     {
-      id: "p2-flera", part: "p2", type: "output", title: "print med flera delar",
-      q: "Vad skriver programmet ut?",
-      code: 'namn = "Sara"\nalder = 17\nprint(namn, "är", alder, "år")',
-      answer: "Sara är 17 år",
-      hint: "<code>print()</code> skriver ut värdet i variablerna – inte deras namn – och sätter mellanslag mellan delarna.",
-      explain: "Kommatecknen i <code>print()</code> blir mellanslag i utskriften."
-    },
-    {
       id: "p2-kod-variabler", part: "p2", type: "code", title: "Skapa egna variabler",
       q: "Skapa variablerna <code>namn</code> (en text) och <code>alder</code> (ett heltal) med dina egna uppgifter, så att sista raden skriver ut t.ex. <code>Sara är 17 år</code>.",
       starter: '# Skapa variablerna namn och alder här\n\n\nprint(namn, "är", alder, "år")\n',
@@ -329,41 +254,11 @@ assert f"{namn} är {alder} år" in _out, "Utskriften ska bli: namn är ålder �
       explain: "<code>namn</code> är en <code>str</code> och <code>alder</code> en <code>int</code>. <code>print()</code> skriver ut värdena – inte variabelnamnen."
     },
     {
-      id: "p2-kod-fodelsedag", part: "p2", type: "code", title: "Ny födelsedag",
-      q: "Lägg till en rad som ökar <code>alder</code> med 1, så att programmet skriver ut <code>18</code>. Låt Python räkna – skriv inte 18 själv.",
-      starter: "alder = 17\n# Öka alder med 1 här\n\nprint(alder)\n",
-      solution: "alder = 17\nalder = alder + 1\nprint(alder)",
-      hint: "<code>alder = alder + 1</code> räknar ut högersidan och lägger svaret i lådan igen.",
-      runs: [{ expect: "18", test: `
-assert "18" not in _code, "Skriv inte 18 i koden – låt Python räkna ut det."
-` }],
-      explain: "<code>=</code> betyder tilldela: först räknas <code>alder + 1</code> ut, sedan sparas svaret i <code>alder</code>."
-    },
-    {
       id: "p2-typer", part: "p2", type: "match", title: "Fyra datatyper",
       q: "Vilken datatyp har varje värde?",
       pairs: [["42", "int"], ["3.14", "float"], ['"hej"', "str"], ["True", "bool"]],
       code: true, codeRight: true,
       explain: "<code>int</code> heltal, <code>float</code> decimaltal, <code>str</code> text och <code>bool</code> sant/falskt."
-    },
-    {
-      id: "p2-komma", part: "p2", type: "mc", title: "Decimaltal",
-      q: "Kim skriver <code>pi = 3,14</code>. Vad är problemet?",
-      options: [
-        "Decimaltal skrivs med punkt: <code>3.14</code>",
-        "<code>pi</code> får inte användas som variabelnamn",
-        "Det måste stå <code>int</code> framför",
-        "Det är inget problem"
-      ],
-      answer: 0,
-      explain: "Vanligt nybörjarfel! Med komma blir det två separata tal, inte ett decimaltal. I AI är nästan all data <code>float</code>."
-    },
-    {
-      id: "p2-type", part: "p2", type: "mc", title: "Vilken typ?",
-      q: "Du är osäker på vilken typ variabeln <code>x</code> har. Hur tar du reda på det?",
-      options: ["<code>print(type(x))</code>", "<code>print(x.typ)</code>", "<code>type x</code>", '<code>print("type", x)</code>'],
-      answer: 0,
-      explain: "<code>type(x)</code> ger typen och <code>print()</code> visar den, t.ex. <code>&lt;class 'float'&gt;</code>."
     },
     {
       id: "p2-input-typ", part: "p2", type: "mc", title: "Svaret från input()",
@@ -416,14 +311,6 @@ assert "18" not in _code, "Skriv inte 18 i koden – låt Python räkna ut det."
       explain: "<code>poang[0]</code> är 72, <code>poang[1]</code> är 85 och <code>poang[2]</code> är 90."
     },
     {
-      id: "p2-negindex", part: "p2", type: "output", title: "Negativt index",
-      q: "Vad skriver programmet ut?",
-      code: "poang = [72, 85, 90]\nprint(poang[-1])",
-      answer: "90",
-      hint: "Negativa index räknar bakifrån.",
-      explain: "<code>[-1]</code> är alltid det sista elementet, <code>[-2]</code> det näst sista och så vidare."
-    },
-    {
       id: "p2-append", part: "p2", type: "output", title: "append, len och max",
       q: "Vad skriver programmet ut? (Två rader.)",
       code: "poang = [72, 85, 90]\npoang.append(64)    # lägg till\nprint(len(poang))\nprint(max(poang))",
@@ -457,13 +344,6 @@ assert poang == [72, 85, 90, 64], "Lägg till 64 sist i listan med poang.append(
       options: ["<code>if x == 5:</code>", "<code>if x = 5:</code>", "<code>if x == 5</code>", "<code>if x =&gt; 5:</code>"],
       answer: 0,
       explain: "<code>==</code> jämför och <code>=</code> tilldelar. Villkoret måste också sluta med kolon."
-    },
-    {
-      id: "p2-kolon", part: "p2", type: "mc", title: "Kolon och indrag",
-      q: "Vad måste stå sist på raden <code>if poang &gt;= 60</code>?",
-      options: ["Ett kolon <code>:</code>", "Ett semikolon <code>;</code>", "Ordet <code>then</code>", "Ingenting"],
-      answer: 0,
-      explain: "Varje villkor slutar med kolon, och koden som hör till får indrag (fyra mellanslag eller Tab)."
     },
     {
       id: "p2-ordna-if", part: "p2", type: "order", title: "Bygg en betygskoll",
@@ -502,13 +382,6 @@ assert poang == [72, 85, 90, 64], "Lägg till 64 sist i listan med poang.append(
       explain: "<code>range(3)</code> ger 0, 1, 2 – tre tal, men det börjar på 0."
     },
     {
-      id: "p2-epok", part: "p2", type: "mc", title: "Epok",
-      q: "En AI-modell tränas genom att loopa över datan om och om igen. Vad kallas ett sådant varv?",
-      options: ["En epok", "En etikett", "En dictionary", "En parameter"],
-      answer: 0,
-      explain: "Ett varv genom all träningsdata kallas en <b>epok</b>."
-    },
-    {
       id: "p2-for", part: "p2", type: "output", title: "Loopa över en lista",
       q: "Vad skriver programmet ut?",
       code: 'elever = ["Ali", "Sara"]\nfor elev in elever:\n    print(f"Hej {elev}!")',
@@ -532,209 +405,28 @@ assert all(p in it for p in [7 * i for i in range(1, 11)]), "Utskriften ska inne
       explain: "Loopen kör den indragna raden tio gånger, en gång för varje tal från <code>range(1, 11)</code>."
     },
     {
-      id: "p2-def", part: "p2", type: "fill", title: "Skriv en funktion",
-      q: "Fyll i de två nyckelorden så att funktionen räknar ut medelvärdet.",
-      code: "{{0}} medel(lista):\n    {{1}} sum(lista) / len(lista)\n\nprint(medel([4, 6, 8]))",
-      blanks: [["def"], ["return"]],
-      hint: "Ett ord skapar en funktion, ett annat skickar tillbaka svaret.",
-      explain: "<code>def</code> skapar funktionen och <code>return</code> skickar tillbaka svaret till den som anropade."
-    },
-    {
-      id: "p2-medel", part: "p2", type: "output", title: "Anropa en funktion",
-      q: "Vad skriver programmet ut?",
-      code: "def medel(lista):\n    return sum(lista) / len(lista)\n\nprint(medel([60, 95, 70, 83]))",
-      answer: "77.0",
-      near: { "77": "Nästan! Division med <code>/</code> ger alltid ett decimaltal (<code>float</code>)." },
-      hint: "Summan är 308 och det finns 4 tal. Tänk på att <code>/</code> ger ett decimaltal.",
-      explain: "308 / 4 = 77, men eftersom <code>/</code> alltid ger <code>float</code> skrivs det ut som <code>77.0</code>."
-    },
-    {
-      id: "p2-kod-medel", part: "p2", type: "code", title: "Din egen medel-funktion",
-      q: "Skriv klart funktionen <code>medel(lista)</code> så att den <b>returnerar</b> medelvärdet av talen i listan.",
-      starter: "def medel(lista):\n    pass   # byt ut den här raden\n\n\nprint(medel([72, 85, 90]))\n",
-      solution: "def medel(lista):\n    return sum(lista) / len(lista)\n\n\nprint(medel([72, 85, 90]))",
-      hint: "<code>sum(lista)</code> ger summan och <code>len(lista)</code> antalet. Glöm inte <code>return</code>.",
-      runs: [{ test: `
-assert "medel" in dir(), "Funktionen medel saknas."
-r = medel([72, 85, 90])
-assert r is not None, "Funktionen returnerar inget – använd return."
-assert abs(r - 82.3333) < 0.01, "medel([72, 85, 90]) ska bli ungefär 82.33."
-assert medel([60, 95, 70, 83]) == 77, "medel([60, 95, 70, 83]) ska bli 77.0."
-assert medel([5]) == 5, "medel([5]) ska bli 5.0."
-` }],
-      explain: "Testet anropade din funktion med flera olika listor – det är det fina med funktioner."
-    },
-    {
-      id: "p2-dict", part: "p2", type: "output", title: "Slå upp i en ordbok",
-      q: "Vad skriver programmet ut?",
-      code: 'elev = {"namn": "Sara", "poang": 85}\nprint(elev["poang"])',
-      answer: "85",
-      hint: "Du slår upp värdet som hör till nyckeln <code>\"poang\"</code>.",
-      explain: "En dictionary kopplar nyckel till värde. Nyckeln <code>\"poang\"</code> har värdet 85."
-    },
-    {
-      id: "p2-dict-ny", part: "p2", type: "fill", title: "Lägg till i en ordbok",
-      q: "Fyll i luckan så att utskriften blir <code>{'namn': 'Sara', 'poang': 85, 'klass': 'TE24'}</code>",
-      code: 'elev = {"namn": "Sara", "poang": 85}\nelev[{{0}}] = "TE24"\nprint(elev)',
-      blanks: [['"klass"', "'klass'"]],
-      hint: "Nyckeln är text – glöm inte citattecknen.",
-      explain: "<code>elev[\"klass\"] = \"TE24\"</code> lägger till ett nytt par nyckel: värde."
-    },
-    {
-      id: "p2-dict-varfor", part: "p2", type: "mc", title: "Dictionary",
-      q: "Hur hämtar du ett värde ur en dictionary?",
-      options: [
-        "Med nyckeln, t.ex. <code>elev[\"namn\"]</code>",
-        "Med positionen, t.ex. <code>elev[0]</code>",
-        "Med <code>elev.append(\"namn\")</code>",
-        "Det går inte – man kan bara skriva ut hela"
-      ],
+      id: "p5-sista", part: "p2", type: "mc", title: "Läs felmeddelandet",
+      q: "Var i ett felmeddelande ska du börja läsa?",
+      options: ["Sista raden", "Första raden", "Mitten", "Ingenstans – starta om programmet"],
       answer: 0,
-      explain: "Precis som i en riktig ordbok slår du upp ordet (nyckeln) och får förklaringen (värdet). Svar från AI-tjänster (JSON) ser ut så här."
+      explain: "På sista raden står vilken typ av fel det är. Raden ovanför visar på vilken rad i koden."
     },
     {
-      id: "p2-kod-dict", part: "p2", type: "code", title: "Din egen ordbok",
-      q: "Skapa en dictionary <code>elev</code> med nycklarna <code>\"namn\"</code> och <code>\"poang\"</code>. Lägg sedan till nyckeln <code>\"klass\"</code> och skriv ut elevens namn.",
-      starter: "",
-      solution: 'elev = {"namn": "Sara", "poang": 85}\nelev["klass"] = "TE24"\nprint(elev["namn"])',
-      hint: 'Skapa med <code>{"namn": "Sara", "poang": 85}</code>, lägg till med <code>elev["klass"] = …</code>.',
-      runs: [{ test: `
-assert "elev" in dir() and isinstance(elev, dict), "Skapa en dictionary som heter elev."
-for k in ("namn", "poang", "klass"):
-    assert k in elev, f'Nyckeln "{k}" saknas i elev.'
-assert str(elev["namn"]) in _out, "Skriv ut elevens namn med print(elev[\\"namn\\"])."
-` }],
-      explain: "Du slår upp och lägger till värden med nyckeln."
-    },
-    {
-      id: "p2-kod-betygsraknare", part: "p2", type: "code", title: "Övning: betygsräknare",
-      q: "Bygg en betygsräknare – ett steg i taget, och kör efter varje steg:<ol>" +
-        "<li>Fråga efter tre provresultat med <code>input()</code> och spara dem i en lista.</li>" +
-        "<li>Skriv en funktion som räknar ut medelvärdet.</li>" +
-        "<li>Skriv ut ett betyg på <b>sista raden</b>: A (90+), B (80+), C (70+), D (60+), E (50+), annars F.</li></ol>" +
-        "<b>Extra:</b> använd en loop så att användaren kan mata in hur många resultat som helst.",
-      starter: "# Steg 1: fråga efter tre resultat och spara i en lista\n\n\n# Steg 2: funktion för medelvärde\n\n\n# Steg 3: skriv ut betyget\n",
-      solution: 'resultat = []\nfor i in range(3):\n    resultat.append(int(input("Resultat? ")))\n\ndef medel(lista):\n    return sum(lista) / len(lista)\n\nm = medel(resultat)\nif m >= 90:\n    print("A")\nelif m >= 80:\n    print("B")\nelif m >= 70:\n    print("C")\nelif m >= 60:\n    print("D")\nelif m >= 50:\n    print("E")\nelse:\n    print("F")',
-      hint: "Gör ett steg i taget och kör efter varje. Medelvärdet av 80, 70 och 75 är 75 – det ska bli C.",
-      runs: [
-        { inputs: ["95", "90", "92"], test: "import re\nlast = _out.strip().split('\\n')[-1]\nassert re.search(r'\\bA\\b', last), 'Med 95, 90 och 92 ska sista raden visa betyget A.'\nassert 'def' in _code, 'Använd en egen funktion (def) för medelvärdet.'" },
-        { inputs: ["80", "70", "75"], test: "import re\nlast = _out.strip().split('\\n')[-1]\nassert re.search(r'\\bC\\b', last), 'Med 80, 70 och 75 (medel 75) ska sista raden visa betyget C.'" },
-        { inputs: ["40", "50", "30"], test: "import re\nlast = _out.strip().split('\\n')[-1]\nassert re.search(r'\\bF\\b', last), 'Med 40, 50 och 30 (medel 40) ska sista raden visa betyget F.'" }
-      ],
-      explain: "Här kombinerade du input, listor, funktioner och villkor – grunderna i ett och samma program."
-    },
-
-    /* ---------- 03 Bibliotek och data ---------- */
-    {
-      id: "p3-import", part: "p3", type: "fill", title: "import",
-      q: "Fyll i luckan så att programmet kan använda matematikbiblioteket.",
-      code: "{{0}} math\nprint(math.sqrt(16))",
-      blanks: [["import"]],
-      explain: "Med <code>import</code> hämtar du in ett bibliotek – färdig kod som någon annan har skrivit."
-    },
-    {
-      id: "p3-sqrt", part: "p3", type: "output", title: "math.sqrt",
-      q: "Vad skriver programmet ut?",
-      code: "import math\nprint(math.sqrt(16))",
-      answer: "4.0",
-      near: { "4": "Nästan! <code>math.sqrt()</code> ger alltid ett decimaltal." },
-      hint: "Roten ur 16 – och svaret är en <code>float</code>.",
-      explain: "<code>math.sqrt(16)</code> ger <code>4.0</code> – ett decimaltal."
-    },
-    {
-      id: "p3-kod-math", part: "p3", type: "code", title: "Använd ett bibliotek",
-      q: "Importera <code>math</code> och skriv ut kvadratroten ur 81.",
-      starter: "",
-      solution: "import math\nprint(math.sqrt(81))",
-      hint: "<code>import math</code> överst, sedan <code>math.sqrt(…)</code>.",
-      runs: [{ expect: "9.0", test: `
-assert "import math" in _code, "Börja med import math."
-` }],
-      explain: "<code>math.sqrt()</code> ger alltid ett decimaltal, därför 9.0."
-    },
-    {
-      id: "p3-pip", part: "p3", type: "mc", title: "pip install",
-      q: "Hur installerar du pandas och scikit-learn från terminalen i VS Code?",
-      options: [
-        "<code>pip install pandas scikit-learn</code>",
-        "<code>import pandas scikit-learn</code>",
-        "<code>python install pandas</code>",
-        "<code>download pandas scikit-learn</code>"
-      ],
+      id: "p5-type", part: "p2", type: "mc", title: "Vilket fel?",
+      q: "Vilket fel ger den här koden?",
+      code: 'print("5" + 3)',
+      options: ["TypeError", "SyntaxError", "NameError", "IndentationError"],
       answer: 0,
-      explain: "I Thonny: <i>Verktyg → Hantera paket</i>. Fungerar inte <code>pip</code> i Windows kan du prova <code>py -m pip install …</code>."
+      explain: "<code>\"5\"</code> är text och <code>3</code> är ett tal – de går inte att lägga ihop."
     },
     {
-      id: "p3-pip-import", part: "p3", type: "mc", title: "pip eller import?",
-      q: "Vad är skillnaden mellan <code>pip install</code> och <code>import</code>?",
-      options: [
-        "pip installerar biblioteket på datorn en gång – import hämtar in det i ditt program",
-        "De gör exakt samma sak",
-        "import installerar biblioteket – pip kör programmet",
-        "pip används bara för bibliotek som ingår i Python"
-      ],
-      answer: 0,
-      explain: "Vissa bibliotek (som <code>math</code>) ingår i Python. Andra måste installeras med <code>pip</code> först, och sedan importeras i varje program."
-    },
-    {
-      id: "p3-read-csv", part: "p3", type: "fill", title: "Läs in en CSV-fil",
-      q: "Fyll i luckorna så att filen <code>elever.csv</code> läses in.",
-      code: 'import pandas {{0}} pd\ndf = pd.{{1}}("elever.csv")\nprint(df.head())',
-      blanks: [["as"], ["read_csv"]],
-      hint: "Det första ordet ger biblioteket ett kortare namn. Funktionen heter <i>läs csv</i> på engelska.",
-      explain: "<code>import pandas as pd</code> ger kortnamnet <code>pd</code>, och <code>pd.read_csv()</code> läser in filen."
-    },
-    {
-      id: "p3-dataframe", part: "p3", type: "mc", title: "DataFrame",
-      q: "Vad kallas tabellen som pandas skapar när du läser in en fil?",
-      options: ["DataFrame", "Lista", "Dictionary", "CSV-objekt"],
-      answer: 0,
-      explain: "pandas gör om en CSV- eller Excel-fil till en tabell som kallas <b>DataFrame</b>."
-    },
-    {
-      id: "p3-head", part: "p3", type: "mc", title: "df.head()",
-      q: "Vad visar <code>df.head()</code>?",
-      options: ["De första fem raderna i tabellen", "Bara rubrikraden", "Hela tabellen", "Den sista raden"],
-      answer: 0,
-      explain: "<code>head()</code> visar de första fem raderna – ett snabbt sätt att titta på datan. All AI börjar med att titta på datan."
-    },
-    {
-      id: "p3-mean", part: "p3", type: "mc", title: "Medelvärde av en kolumn",
-      q: "Tabellen har kolumnerna <code>namn</code>, <code>timmar</code> och <code>poang</code>. Vad räknar <code>df[\"poang\"].mean()</code> ut?",
-      options: ["Medelvärdet av kolumnen poang", "Antalet rader i tabellen", "Det högsta värdet i poang", "Summan av alla kolumner"],
-      answer: 0,
-      explain: "<code>df[\"poang\"]</code> väljer kolumnen och <code>.mean()</code> ger medelvärdet."
-    },
-    {
-      id: "p3-kod-pandas", part: "p3", type: "code", title: "Läs in elever.csv",
-      q: "Läs in <code>elever.csv</code> med pandas, visa tabellen med <code>head()</code> och skriv ut medelvärdet av kolumnen <code>poang</code>.",
-      starter: "import pandas as pd\n\n",
-      solution: 'import pandas as pd\ndf = pd.read_csv("elever.csv")\nprint(df.head())\nprint(df["poang"].mean())',
-      hint: '<code>pd.read_csv("elever.csv")</code> och <code>df["poang"].mean()</code>. Första körningen laddar pandas – det tar en stund.',
-      runs: [{ test: `
-assert "read_csv" in _code, "Läs in filen med pd.read_csv."
-assert "73.3" in _out, "Skriv ut medelvärdet av poang (ca 73.3)."
-` }],
-      explain: "(55 + 91 + 74) / 3 ≈ 73.3. All AI börjar med att titta på datan."
-    },
-    {
-      id: "p3-kod-max", part: "p3", type: "code", title: "Vem pluggade mest?",
-      q: "Läs in <code>elever.csv</code> och skriv ut det <b>största</b> värdet i kolumnen <code>timmar</code> på sista raden.",
-      starter: "import pandas as pd\n\n",
-      solution: 'import pandas as pd\ndf = pd.read_csv("elever.csv")\nprint(df["timmar"].max())',
-      hint: 'Precis som <code>.mean()</code> finns <code>.max()</code>.',
-      runs: [{ test: `
-assert "read_csv" in _code, "Läs in filen med pd.read_csv."
-assert _out.strip().split("\\n")[-1].strip() == "8", "Sista raden ska vara det största värdet i timmar (8)."
-` }],
-      explain: "<code>df[\"timmar\"].max()</code> ger 8 – det var Sara."
-    },
-    {
-      id: "p3-mapp", part: "p3", type: "mc", title: "Var ligger filen?",
-      q: "Var ska <code>elever.csv</code> ligga för att <code>pd.read_csv(\"elever.csv\")</code> ska hitta den?",
-      options: ["I samma mapp som din kod", "På skrivbordet", "I papperskorgen", "Var som helst – Python söker igenom hela datorn"],
-      answer: 0,
-      explain: "Med bara filnamnet letar Python i samma mapp som programmet."
+      id: "p5-kod-name", part: "p2", type: "code", title: "Laga felet",
+      q: "Kör programmet, läs felmeddelandet och laga felet så att det skriver ut <code>Hej Ali!</code>",
+      starter: 'namn = "Ali"\nprint(f"Hej {nman}!")\n',
+      solution: 'namn = "Ali"\nprint(f"Hej {namn}!")',
+      hint: "Läs sista raden i felmeddelandet. Vilket namn känner Python inte till?",
+      runs: [{ expect: "Hej Ali!" }],
+      explain: "<code>NameError</code> – variabeln var felstavad."
     },
 
     /* ---------- 04 Din första AI-modell ---------- */
@@ -773,25 +465,6 @@ assert _out.strip().split("\\n")[-1].strip() == "8", "Sista raden ska vara det s
       ],
       code: true,
       explain: "Samma fyra steg används i nästan all maskininlärning, från beslutsträd till stora neurala nätverk."
-    },
-    {
-      id: "p4-rad", part: "p4", type: "mc", title: "Ett exempel i X",
-      q: "I modellen är <code>X = [[1, 5], [2, 6], [3, 4], …]</code> med kommentaren <code># [timmar plugg, timmar sömn]</code>. Vad betyder <code>[1, 5]</code>?",
-      options: [
-        "En elev som pluggat 1 timme och sovit 5 timmar",
-        "En elev som fått betyget 1 av 5",
-        "Elev nummer 1 till 5",
-        "Att modellen ska tränas 1 till 5 gånger"
-      ],
-      answer: 0,
-      explain: "Varje inre lista är ett exempel, och varje tal i den är en egenskap."
-    },
-    {
-      id: "p4-antal", part: "p4", type: "mc", title: "Lika många svar",
-      q: "<code>X</code> innehåller 6 exempel. Hur många etiketter måste <code>y</code> innehålla?",
-      options: ["6", "2", "1", "12"],
-      answer: 0,
-      explain: "Varje exempel i <code>X</code> behöver sitt rätta svar i <code>y</code> – lika många."
     },
     {
       id: "p4-fit", part: "p4", type: "fill", title: "Träna och gissa",
@@ -841,18 +514,6 @@ assert "'G'" in _out, "Skriv ut förutsägelsen för [[6, 7]] – den ska bli ['
       explain: "Elever som pluggat och sovit mycket var godkända i exemplen – modellen har lärt sig det mönstret."
     },
     {
-      id: "p4-trad", part: "p4", type: "mc", title: "Beslutsträd",
-      q: "Vad gör ett beslutsträd (<code>DecisionTreeClassifier</code>)?",
-      options: [
-        "Lär sig enkla ja/nej-frågor ur exemplen",
-        "Ritar ett diagram över datan",
-        "Sorterar listor i bokstavsordning",
-        "Laddar ner färdiga språkmodeller"
-      ],
-      answer: 0,
-      explain: "Trädet ställer frågor som \"pluggade eleven mer än 5 timmar?\" och kommer fram till ett svar."
-    },
-    {
       id: "p4-data", part: "p4", type: "mc", title: "Mer och bättre data",
       q: "Vad gör oftast en modell bättre?",
       options: ["Mer och bättre data", "Kortare variabelnamn", "Färre exempel", "Att köra programmet flera gånger"],
@@ -896,139 +557,6 @@ assert all(len(r) == 3 for r in X), "Varje exempel i X ska ha tre egenskaper."
 assert "modell" in dir() and getattr(modell, "n_features_in_", 0) == 3, "Träna modellen på dina nya X och y."
 ` }],
       explain: "Samma fyra steg – X, y, fit, predict – fungerar för alla problem. Ju mer och bättre data, desto bättre modell."
-    },
-
-    /* ---------- 05 Felsökning och tips ---------- */
-    {
-      id: "p5-sista", part: "p5", type: "mc", title: "Läs felmeddelandet",
-      q: "Var i ett felmeddelande ska du börja läsa?",
-      options: ["Sista raden", "Första raden", "Mitten", "Ingenstans – starta om programmet"],
-      answer: 0,
-      explain: "På sista raden står vilken typ av fel det är. Raden ovanför visar på vilken rad i koden."
-    },
-    {
-      id: "p5-fel", part: "p5", type: "match", title: "Vanliga fel",
-      q: "Para ihop felet med den vanligaste orsaken.",
-      pairs: [
-        ["SyntaxError", "Glömt kolon, parentes eller citattecken"],
-        ["IndentationError", "Fel indrag efter if, for eller def"],
-        ["NameError", "Stavat fel på en variabel eller funktion"],
-        ["TypeError", "Blandar text och tal, t.ex. \"5\" + 3"],
-        ["ModuleNotFoundError", "Biblioteket är inte installerat"]
-      ],
-      code: true,
-      explain: "Felmeddelanden är dina vänner – även proffs får dem hela dagarna."
-    },
-    {
-      id: "p5-type", part: "p5", type: "mc", title: "Vilket fel? (1)",
-      q: "Vilket fel ger den här koden?",
-      code: 'print("5" + 3)',
-      options: ["TypeError", "SyntaxError", "NameError", "IndentationError"],
-      answer: 0,
-      explain: "<code>\"5\"</code> är text och <code>3</code> är ett tal – de går inte att lägga ihop."
-    },
-    {
-      id: "p5-syntax", part: "p5", type: "mc", title: "Vilket fel? (2)",
-      q: "Vilket fel ger den här koden?",
-      code: 'poang = 72\nif poang > 60\n    print("Godkänt")',
-      options: ["SyntaxError", "TypeError", "NameError", "ModuleNotFoundError"],
-      answer: 0,
-      explain: "Kolonet saknas efter villkoret."
-    },
-    {
-      id: "p5-name", part: "p5", type: "mc", title: "Vilket fel? (3)",
-      q: "Vilket fel ger den här koden?",
-      code: 'namn = "Ali"\nprint(nman)',
-      options: ["NameError", "SyntaxError", "TypeError", "IndentationError"],
-      answer: 0,
-      explain: "<code>nman</code> är felstavat – Python känner bara till <code>namn</code>."
-    },
-    {
-      id: "p5-indent", part: "p5", type: "mc", title: "Vilket fel? (4)",
-      q: "Vilket fel ger den här koden?",
-      code: "for i in range(3):\nprint(i)",
-      options: ["IndentationError", "NameError", "TypeError", "ModuleNotFoundError"],
-      answer: 0,
-      explain: "Raden efter <code>for</code> måste ha indrag. I Python är indraget en del av språket."
-    },
-    {
-      id: "p5-kod-syntax", part: "p5", type: "code", title: "Laga felet (1)",
-      q: "Kör programmet, läs felmeddelandet och laga felet så att det skriver ut <code>Godkänt</code>.",
-      starter: 'poang = 72\nif poang >= 60\n    print("Godkänt")\n',
-      solution: 'poang = 72\nif poang >= 60:\n    print("Godkänt")',
-      hint: "Vad ska stå sist på en rad med <code>if</code>?",
-      runs: [{ expect: "Godkänt" }],
-      explain: "<code>SyntaxError</code> – kolonet saknades."
-    },
-    {
-      id: "p5-kod-name", part: "p5", type: "code", title: "Laga felet (2)",
-      q: "Kör programmet, läs felmeddelandet och laga felet så att det skriver ut <code>Hej Ali!</code>",
-      starter: 'namn = "Ali"\nprint(f"Hej {nman}!")\n',
-      solution: 'namn = "Ali"\nprint(f"Hej {namn}!")',
-      hint: "Läs sista raden i felmeddelandet. Vilket namn känner Python inte till?",
-      runs: [{ expect: "Hej Ali!" }],
-      explain: "<code>NameError</code> – variabeln var felstavad."
-    },
-    {
-      id: "p5-kod-type", part: "p5", type: "code", title: "Laga felet (3)",
-      q: "Kör programmet (skriv t.ex. 16), läs felmeddelandet och laga felet.",
-      starter: 'alder = input("Ålder? ")\nprint("Om 10 år är du", alder + 10)\n',
-      solution: 'alder = int(input("Ålder? "))\nprint("Om 10 år är du", alder + 10)',
-      hint: "Svaret från <code>input()</code> är text. Hur gör man om text till ett tal?",
-      runs: [{ inputs: ["16"], contains: ["26"] }, { inputs: ["3"], contains: ["13"] }],
-      explain: "<code>TypeError</code> – det gick inte att lägga ihop text och tal."
-    },
-    {
-      id: "p5-kod-indent", part: "p5", type: "code", title: "Laga felet (4)",
-      q: "Kör programmet, läs felmeddelandet och laga felet så att det skriver ut 0, 1 och 2.",
-      starter: "for i in range(3):\nprint(i)\n",
-      solution: "for i in range(3):\n    print(i)",
-      hint: "Raden efter <code>for</code> behöver indrag – fyra mellanslag eller Tab.",
-      runs: [{ expect: "0\n1\n2" }],
-      explain: "<code>IndentationError</code> – i Python är indraget en del av språket."
-    },
-    {
-      id: "p5-modul", part: "p5", type: "mc", title: "Saknat bibliotek",
-      q: "Du får felet <code>ModuleNotFoundError: No module named 'pandas'</code>. Vad gör du?",
-      options: ["Kör <code>pip install pandas</code>", "Byter namn på filen", "Lägger till ett kolon", "Tar bort <code>import</code>-raden"],
-      answer: 0,
-      explain: "Biblioteket finns inte installerat än – installera det med <code>pip</code> (eller via Thonnys pakethanterare)."
-    },
-    {
-      id: "p5-print", part: "p5", type: "mc", title: "Felsök med print()",
-      q: "Programmet ger fel svar men inget felmeddelande. Vad är ett bra första steg?",
-      options: [
-        "Skriv ut variablerna med <code>print()</code> för att se vad som händer",
-        "Radera allt och börja om",
-        "Lägg till fler kommentarer",
-        "Vänta och kör igen"
-      ],
-      answer: 0,
-      explain: "Med <code>print()</code> ser du vad som faktiskt finns i variablerna."
-    },
-    {
-      id: "p5-steg", part: "p5", type: "mc", title: "Små steg",
-      q: "Varför ska du köra koden ofta, efter bara några rader?",
-      options: [
-        "Då hittar du felen snabbt och vet ungefär var de sitter",
-        "Datorn blir snabbare av det",
-        "Annars sparas inte filen",
-        "Python kräver det"
-      ],
-      answer: 0,
-      explain: "Små steg, kör ofta: skriver du några rader i taget vet du att felet finns bland dem."
-    },
-    {
-      id: "p5-ai", part: "p5", type: "mc", title: "AI som handledare",
-      q: "Vilken fråga till en AI-assistent följer tipsen från lektionen bäst?",
-      options: [
-        "\"Varför får jag det här felet? Ge mig en ledtråd.\"",
-        "\"Skriv hela betygsräknaren åt mig.\"",
-        "\"Gör klart min uppgift.\"",
-        "\"Skriv om all min kod så att den fungerar.\""
-      ],
-      answer: 0,
-      explain: "Be AI förklara och ge ledtrådar – inte skriva hela lösningen. Då lär du dig mer."
     }
   ]
 };

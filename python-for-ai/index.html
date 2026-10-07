@@ -151,16 +151,35 @@ pre.code code{font-size:inherit;background:none;padding:0}
 .card h2{margin-bottom:.45em}
 .badge{display:inline-block;font-size:.78rem;font-weight:700;padding:2px 10px;border-radius:99px;color:var(--paper);background:var(--ok);vertical-align:middle}
 .badge.s{background:var(--warn)}.badge.v{background:var(--seen)}
-.q{font-size:1.02rem}
+.q{font-size:1.08rem;line-height:1.5;font-weight:600}
+.q li,.q ul,.q ol,.q small{font-weight:400}
 .q ol{padding-left:1.3em;margin:.4em 0}
 .codehint{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--accent) 9%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));margin:0 0 14px;font-size:.92rem}
 .codehint b{white-space:nowrap}
-details.theory{margin:0 0 16px;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;background:var(--paper);padding:10px 14px}
-details.theory>summary{cursor:pointer;font-weight:700;list-style-position:outside}
-details.theory>summary small{font-weight:400;color:var(--muted);margin-left:6px}
-details.theory[open]>summary{margin-bottom:8px}
+/* Genomgången i uppgiftskortet: en lugn referenspanel, underordnad själva uppgiften */
+details.theory{margin:0 0 18px;border-radius:10px;background:color-mix(in srgb,var(--accent) 6%,var(--surface));font-size:.94rem}
+details.theory>summary{display:flex;align-items:center;gap:8px;cursor:pointer;list-style:none;padding:9px 14px;border-radius:10px;color:var(--muted)}
+details.theory>summary::-webkit-details-marker{display:none}
+details.theory>summary:hover{background:color-mix(in srgb,var(--accent) 6%,transparent)}
+details.theory>summary .lbl{font-weight:700;color:var(--ink)}
+details.theory>summary .sub{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+details.theory>summary .tg{margin-left:auto;flex:none;font-weight:700;font-size:.86rem;color:var(--accent)}
+details.theory>summary .tg::after{content:"Visa ▾"}
+details.theory[open]>summary .tg::after{content:"Dölj ▴"}
+details.theory .body{padding:0 14px 12px}
+details.theory .prose p{margin:0 0 .6em}
+details.theory .prose ul,details.theory .prose ol{margin:0 0 .6em;padding-left:1.15em}
+details.theory .prose li{margin-bottom:.15em}
 details.theory .prose>:last-child{margin-bottom:0}
-details.theory pre.code{margin:.6em 0 0}
+details.theory .prose code{background:color-mix(in srgb,var(--ink) 5%,transparent);padding:0 4px}
+details.theory .prose table{font-size:.9rem}
+/* Exemplet i genomgången är ljust – den mörka kodrutan betyder alltid "det här är uppgiften" */
+pre.code.light{margin:.7em 0 0;background:var(--surface);color:var(--ink);border:1px solid var(--line);font-size:.84rem;padding:9px 12px;
+  --tk-k:#A3480F;--tk-s:#2F6B22;--tk-n:#1D5F9E;--tk-c:#6B7785;--tk-f:#7A5C00}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) pre.code.light{--tk-k:#F2A65A;--tk-s:#A6D58F;--tk-n:#7FC8F8;--tk-c:#8E9BA6;--tk-f:#E8CF72}
+}
+:root[data-theme="dark"] pre.code.light{--tk-k:#F2A65A;--tk-s:#A6D58F;--tk-n:#7FC8F8;--tk-c:#8E9BA6;--tk-f:#E8CF72}
 details.tip{margin:0 0 14px}
 details.tip summary{cursor:pointer;font-weight:700;color:var(--accent)}
 details.tip p{margin:.4em 0 0}
@@ -280,7 +299,7 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
           <input id="inKlass" name="klasskod" maxlength="12" placeholder="Från läraren" style="text-transform:uppercase;letter-spacing:.12em" autocapitalize="characters" spellcheck="false">
         </label>
         <label class="field">Smeknamn
-          <input id="inName" name="smeknamn" required maxlength="24" placeholder="Inte ditt riktiga namn">
+          <input id="inName" name="smeknamn" required maxlength="24">
         </label>
       </div>
       <p class="small" id="loginMsg" aria-live="polite" style="margin:0 0 10px;color:var(--bad)"></p>
@@ -684,12 +703,22 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     for (var i = 0; i < ls.length; i++) if ((ls[i].tasks || []).indexOf(ex.id) >= 0) return ls[i];
     return null;
   }
+  function normTitle(t) { return String(t).toLowerCase().replace(/[^a-zåäö0-9]+/g, ""); }
+  // Öppen på första uppgiften till en genomgång (tills den är klarad), annars ihopfälld.
+  // Fäller eleven upp eller ihop panelen kommer sidan ihåg det för just den uppgiften.
+  function theoryOpen(ex, l) {
+    var o = (me().theoryOpen || {})[ex.id];
+    if (o != null) return o;
+    return (l.tasks || [])[0] === ex.id && !statusOf(me(), ex);
+  }
   function theoryBox(ex) {
     var l = lessonFor(ex);
     if (!l) return "";
-    var closed = (me().theoryClosed || {})[l.title];
-    return '<details class="theory" id="theory"' + (closed ? "" : " open") + '><summary>Läs först: ' + esc(l.title) + "<small>(klicka för att " + (closed ? "visa" : "dölja") + ")</small></summary>" +
-      '<div class="prose">' + l.html + "</div>" + (l.code ? codeBlock(l.code) : "") + "</details>";
+    var a = normTitle(l.title), b = normTitle(ex.title);
+    var sub = a.indexOf(b) >= 0 || b.indexOf(a) >= 0 ? "" : '<span class="sub">· ' + esc(l.title) + "</span>";
+    return '<details class="theory" id="theory"' + (theoryOpen(ex, l) ? " open" : "") + ">" +
+      '<summary><span aria-hidden="true">📖</span><span class="lbl">Genomgång</span>' + sub + '<span class="tg" aria-hidden="true"></span></summary>' +
+      '<div class="body"><div class="prose">' + l.html + "</div>" + (l.code ? '<pre class="code light"><code>' + hl(l.code) + "</code></pre>" : "") + "</div></details>";
   }
   function renderCard(retry) {
     var p = me(), ex = EX[p.pos], st = statusOf(p, ex);
@@ -748,12 +777,13 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     var card = $("card");
     card.innerHTML = h;
     var th = $("theory");
-    if (th) th.addEventListener("toggle", function () {
-      var l = lessonFor(ex);
-      p.theoryClosed = p.theoryClosed || {};
-      if (th.open) delete p.theoryClosed[l.title]; else p.theoryClosed[l.title] = true;
-      th.querySelector("summary small").textContent = "(klicka för att " + (th.open ? "dölja" : "visa") + ")";
-      save();
+    // Bara elevens egna klick sparas (toggle-händelsen kommer även när kortet ritas)
+    if (th) th.querySelector("summary").addEventListener("click", function () {
+      setTimeout(function () {
+        p.theoryOpen = p.theoryOpen || {};
+        p.theoryOpen[ex.id] = th.open;
+        save();
+      }, 0);
     });
     $("btnPrev").disabled = p.pos === 0;
     $("btnNext").disabled = p.pos === EX.length - 1;

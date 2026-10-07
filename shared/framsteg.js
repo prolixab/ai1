@@ -153,7 +153,7 @@
         '<h2 id="fsTitle">Koppla till din klass</h2>' +
         '<p style="margin:0">Då kan din lärare se hur långt du har kommit.</p>' +
         '<label for="fsCode">Klasskod</label><input id="fsCode" class="code" maxlength="12" autocomplete="off" placeholder="t.ex. K7RM2P">' +
-        '<label for="fsNick">Smeknamn</label><input id="fsNick" maxlength="24" autocomplete="off" placeholder="Hitta på ett – inte ditt riktiga namn">' +
+        '<label for="fsNick">Smeknamn</label><input id="fsNick" maxlength="24" autocomplete="off">' +
         '<p class="fs-note">Använd samma smeknamn i allt material och på alla datorer. Läraren vet vem som är vem.</p>' +
         '<p class="fs-msg" id="fsMsg" aria-live="polite"></p>' +
         '<div class="fs-row"><button type="button" id="fsOff" hidden>Koppla bort</button><span style="flex:1"></span>' +

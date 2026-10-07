@@ -35,7 +35,7 @@ async function load() {
   return { cases, train: split('train'), val: split('val'), test: split('test') };
 }
 
-export async function initReal({ state, scan, drawStrip, pct }) {
+export async function initReal({ state, scan, drawStrip, pct, markDone }) {
   let data;
   try {
     data = await load();
@@ -99,6 +99,7 @@ export async function initReal({ state, scan, drawStrip, pct }) {
     const byId = new Map(data.test.map((c, i) => [c.id, probs[i]]));
     drawStrip($('k8-strip'), stripCases, stripCases.map(c => byId.get(c.id)));
     status.textContent = `Klar! Testad på ${data.test.length} bilder som modellen aldrig sett.`;
+    markDone?.('k8');
     state.busy = false;
     $('k8-train').disabled = false;
   };

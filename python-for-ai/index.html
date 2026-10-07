@@ -259,15 +259,16 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     <form id="loginForm" class="panel" autocomplete="off">
       <h2 style="margin-bottom:.6em">Vem är du?</h2>
       <div class="row2">
-        <label class="field">Namn
-          <input id="inName" name="namn" required maxlength="40" placeholder="Förnamn Efternamn">
+        <label class="field">Klasskod
+          <input id="inKlass" name="klasskod" maxlength="12" placeholder="Från läraren" style="text-transform:uppercase;letter-spacing:.12em" autocapitalize="characters" spellcheck="false">
         </label>
-        <label class="field">Klass <span class="muted" style="font-weight:400">(valfritt)</span>
-          <input id="inKlass" name="klass" maxlength="12" placeholder="t.ex. TE24">
+        <label class="field">Smeknamn
+          <input id="inName" name="smeknamn" required maxlength="24" placeholder="Inte ditt riktiga namn">
         </label>
       </div>
-      <button class="btn primary" type="submit">Börja →</button>
-      <p class="small muted" style="margin:14px 0 0">Dina framsteg och din kod sparas i den här webbläsaren. Använd samma dator och webbläsare nästa gång så fortsätter du där du slutade.</p>
+      <p class="small" id="loginMsg" aria-live="polite" style="margin:0 0 10px;color:var(--bad)"></p>
+      <button class="btn primary" type="submit" id="btnStart">Börja →</button>
+      <p class="small muted" style="margin:14px 0 0">Med klasskoden ser din lärare hur långt du har kommit. Använd samma klasskod och smeknamn i allt material. Din kod sparas i den här webbläsaren – använd samma dator nästa gång så fortsätter du där du slutade.</p>
     </form>
     <div id="profilesBox" class="panel" hidden>
       <h2 style="font-size:1.15rem">Fortsätt som</h2>
@@ -336,6 +337,7 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
+<script src="../shared/framsteg.js"></script>
 <script src="ovningar.js"></script>
 <script>
 (function () {
@@ -343,7 +345,6 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
 
   var D = window.PYAI, EX = D.exercises, PARTS = D.parts;
   var KEY = "pyai-ova-v1";
-  var API = D.api;
   var PYODIDE = "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/";
   var TYPE_LABEL = { mc: "Flerval", output: "Vad skrivs ut?", fill: "Fyll i luckorna", match: "Para ihop", order: "Sortera raderna", code: "Skriv kod" };
   var STATUS_TEXT = { c: "Rätt direkt", s: "Klarad", v: "Svaret visat" };
@@ -427,26 +428,31 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
   function isNarrow() { return window.matchMedia("(max-width:900px)").matches; }
 
   /* ---------- Synk till läraren ---------- */
-  var syncTimer = null, syncState = "local";
   function payload(p) {
     var answers = {};
     EX.forEach(function (ex) { var s = statusOf(p, ex); if (s) answers[ex.id] = s; });
     return { quiz: D.quiz, id: p.id, name: p.name, klass: p.klass, answers: answers, total: EX.length, updated: p.updated || Date.now() };
   }
-  function setSync(s) {
-    syncState = s;
-    var chip = $("syncChip");
-    chip.dataset.s = s;
-    chip.textContent = s === "ok" ? "Sparat · läraren ser dina framsteg" : s === "pending" ? "Sparar…" : "Sparat på den här datorn";
+  var SYNC_TEXT = { ok: "Sparat · läraren ser dina framsteg", pending: "Sparar…", offline: "Sparat här · skickas till läraren senare", "no-class": "Klasskoden gäller inte – bara sparat här" };
+  function setSync(st) {
+    var p = me(), chip = $("syncChip");
+    if (!p || !p.klass || !window.Framsteg) st = "local";
+    chip.dataset.s = st === "ok" ? "ok" : st === "pending" ? "pending" : "local";
+    chip.textContent = SYNC_TEXT[st] || "Sparat på den här datorn";
   }
-  function scheduleSync() { clearTimeout(syncTimer); syncTimer = setTimeout(pushSync, 700); }
+  if (window.Framsteg) Framsteg.onStatus(function (st) { if (me()) setSync(st); });
+  var MANIFEST = {
+    id: D.quiz, title: D.title, url: location.origin + location.pathname,
+    groups: PARTS.map(function (pt) { return { id: pt.id, title: pt.title }; }),
+    items: EX.map(function (ex) { return { id: ex.id, title: ex.title, group: ex.part, kind: ex.type }; })
+  };
+  function scheduleSync() { pushSync(); }
   function pushSync() {
     var p = me();
-    if (!p || !API || !window.fetch) return;
-    if (syncState !== "ok") setSync("pending");
-    fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload(p)) })
-      .then(function (r) { setSync(r.ok ? "ok" : "local"); })
-      .catch(function () { setSync("local"); });
+    if (!p || !p.klass || !window.Framsteg) return;
+    var items = {};
+    EX.forEach(function (ex) { var st = statusOf(p, ex); if (st) items[ex.id] = { s: st }; });
+    Framsteg.report(D.quiz, items, MANIFEST, { classCode: p.klass, nick: p.name });
   }
 
   /* ---------- Inloggning ---------- */
@@ -462,7 +468,9 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
         (p.klass ? " · " + esc(p.klass) : "") + "<span>" + done + " / " + EX.length + " klara</span></button>" +
         '<button class="linkish small" type="button" data-del="' + esc(p.id) + '" aria-label="Ta bort ' + esc(p.name) + ' från den här datorn">Ta bort</button></li>';
     }).join("");
-    $("inName").focus();
+    var id = window.Framsteg && Framsteg.identity();
+    if (id && !$("inKlass").value) { $("inKlass").value = id.classCode; $("inName").value = id.nick; }
+    $("inKlass").value ? $("inName").focus() : $("inKlass").focus();
   }
   $("profiles").addEventListener("click", function (e) {
     var b = e.target.closest("button");
@@ -479,8 +487,20 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
   });
   $("loginForm").addEventListener("submit", function (e) {
     e.preventDefault();
-    var name = normBlank($("inName").value), klass = normBlank($("inKlass").value).toUpperCase();
+    var name = normBlank($("inName").value).slice(0, 24), klass = $("inKlass").value.toUpperCase().replace(/[^A-Z0-9]/g, "");
     if (!name) return;
+    if (!klass || !window.Framsteg) return login(name, klass);
+    $("loginMsg").textContent = "";
+    $("btnStart").disabled = true;
+    Framsteg.checkClass(klass).then(function (r) {
+      $("btnStart").disabled = false;
+      if (r.ok) { Framsteg.setIdentity(r.code, name, r.name); return login(name, r.code); }
+      if (r.reason === "unknown") { $("loginMsg").textContent = "Klasskoden finns inte. Kolla stavningen med din lärare."; $("inKlass").focus(); return; }
+      // Ingen kontakt med servern: börja ändå, framstegen skickas när det går.
+      login(name, klass);
+    });
+  });
+  function login(name, klass) {
     var found = null;
     Object.keys(store.profiles).forEach(function (k) {
       var p = store.profiles[k];
@@ -494,7 +514,7 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     save();
     $("loginForm").reset();
     start();
-  });
+  }
   $("btnSwitch").addEventListener("click", function () { saveEditor(); store.current = null; save(); showLogin(); });
 
   /* ---------- Start ---------- */

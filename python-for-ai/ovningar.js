@@ -16,9 +16,6 @@
  */
 window.PYAI = {
   quiz: "python-for-ai",
-  // Vercel-funktionen som sparar elevernas framsteg (api/progress.js i repot prolixab/courses).
-  // Tom sträng = ingen server; då fungerar bara framstegskoderna.
-  api: "https://VERCEL-SAJTEN.vercel.app/api/progress/",
   title: "Python för AI",
   parts: [
     { id: "p1", title: "Varför Python?" },

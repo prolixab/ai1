@@ -36,6 +36,8 @@ export function init() {
     const n = Object.keys(answers).length, right = Object.entries(answers).filter(([i, a]) => QS[i].r === a).length;
     scoreEl.textContent = n ? `${right} av ${QS.length} rätt${n < QS.length ? ` (${n} besvarade)` : ''}` : '';
     if (n === QS.length) markDone('k8');
+    const prev = load().quizScore;
+    if (!prev || prev.right !== right || prev.n !== n) save({ quizScore: { right, n, max: QS.length } });
   };
   function build() {
     host.replaceChildren();

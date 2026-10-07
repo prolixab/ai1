@@ -123,28 +123,13 @@ td.detail{white-space:normal;background:var(--paper)}
 <main class="wrap">
   <section class="sources">
     <div class="panel">
-      <h2>Från servern</h2>
-      <p class="small muted">Elevernas framsteg skickas automatiskt till servern (Vercel) och hämtas hit med lärarnyckeln.</p>
-      <form class="row" id="keyForm">
-        <label class="grow"><span class="sr-only">Lärarnyckel</span>
-          <input type="password" id="key" placeholder="Lärarnyckel" autocomplete="current-password" style="width:100%">
-        </label>
-        <button class="btn primary" type="submit">Hämta</button>
-      </form>
-      <label class="small row" style="margin-top:8px"><input type="checkbox" id="auto" checked> Uppdatera automatiskt var 20:e sekund</label>
-      <p class="status" id="srvStatus" data-k="">Ange lärarnyckeln för att hämta elevernas framsteg.</p>
-      <details class="small">
-        <summary>Så slår du på lagringen</summary>
-        <ol>
-          <li>I Vercel: öppna projektet → <b>Storage</b> → lägg till <b>Upstash Redis</b> (gratisnivån räcker) och koppla den till projektet.</li>
-          <li><b>Settings → Environment Variables</b>: lägg till <code>TEACHER_KEY</code> med ett lösenord du väljer.</li>
-          <li>Gör en ny deploy. Kontrollera att <code>api</code> i <code>ovningar.js</code> pekar på Vercel-sajten.</li>
-        </ol>
-      </details>
+      <h2>Lärarpanelen</h2>
+      <p class="small muted">Elever som anger en klasskod skickar sina framsteg automatiskt. Där följer du hela klassen i allt kursmaterial – inte bara Python. Klasskoderna skapar du också där.</p>
+      <p><a class="btn primary" id="dashLink" href="#" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none">Öppna lärarpanelen ↗</a></p>
     </div>
     <div class="panel">
       <h2>Framstegskoder</h2>
-      <p class="small muted">Utan server: be eleverna klicka på <i>Min framstegskod</i> och skicka koden till dig. Klistra in en eller flera koder här (en per rad).</p>
+      <p class="small muted">Utan klasskod: be eleverna klicka på <i>Min framstegskod</i> och skicka koden till dig. Klistra in en eller flera koder här (en per rad).</p>
       <textarea id="codes" rows="4" placeholder="PYAI1.eyJxdWl6Ijoi…" spellcheck="false"></textarea>
       <div class="row" style="margin-top:8px">
         <button class="btn" type="button" id="btnImport">Lägg till</button>
@@ -195,15 +180,15 @@ td.detail{white-space:normal;background:var(--paper)}
   </section>
 </main>
 
+<script src="../shared/framsteg.js"></script>
 <script src="ovningar.js"></script>
 <script>
 (function () {
   "use strict";
 
   var D = window.PYAI, EX = D.exercises, PARTS = D.parts;
-  var API = D.api;
-  var KEY_STORE = "pyai-larare-key", IMP_STORE = "pyai-larare-import-" + D.quiz;
-  var server = [], imported = loadImported(), sort = { col: "done", dir: "descending" }, open = {}, timer = null, serverOk = false;
+  var IMP_STORE = "pyai-larare-import-" + D.quiz;
+  var server = [], imported = loadImported(), sort = { col: "done", dir: "descending" }, open = {};
 
   function $(id) { return document.getElementById(id); }
   function esc(s) {
@@ -213,39 +198,6 @@ td.detail{white-space:normal;background:var(--paper)}
   function set(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
   function loadImported() { try { return JSON.parse(get(IMP_STORE)) || []; } catch (e) { return []; } }
   function status(id, k, msg) { var el = $(id); el.dataset.k = k; el.textContent = msg; }
-
-  /* ---------- Server ---------- */
-  function fetchServer(quiet) {
-    var key = $("key").value.trim();
-    if (!key) return;
-    if (!API) { status("srvStatus", "bad", "Ingen server inställd (api i ovningar.js). Använd framstegskoder."); return; }
-    if (!quiet) status("srvStatus", "", "Hämtar…");
-    fetch(API + "?quiz=" + encodeURIComponent(D.quiz), { headers: { "x-teacher-key": key }, cache: "no-store" })
-      .then(function (r) {
-        return r.json().catch(function () { return {}; }).then(function (j) { return { r: r, j: j }; });
-      })
-      .then(function (x) {
-        if (x.r.ok) {
-          serverOk = true;
-          set(KEY_STORE, key);
-          server = (x.j.students || []).map(function (s) { s.src = "server"; s.ts = s.seen; return s; });
-          status("srvStatus", "ok", server.length + " elever hämtade " + new Date().toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) + ".");
-          render();
-          schedule();
-        } else {
-          serverOk = false;
-          if (x.r.status === 401) set(KEY_STORE, null);
-          status("srvStatus", "bad", x.r.status === 404 ? "Hittar inte servern – stämmer adressen i ovningar.js?" : (x.j.error || "Fel " + x.r.status));
-        }
-      })
-      .catch(function () { serverOk = false; status("srvStatus", "bad", "Kunde inte nå servern."); });
-  }
-  function schedule() {
-    clearTimeout(timer);
-    if ($("auto").checked && serverOk) timer = setTimeout(function () { fetchServer(true); }, 20000);
-  }
-  $("keyForm").addEventListener("submit", function (e) { e.preventDefault(); fetchServer(false); });
-  $("auto").addEventListener("change", schedule);
 
   /* ---------- Framstegskoder ---------- */
   function decode(code) {
@@ -429,14 +381,10 @@ td.detail{white-space:normal;background:var(--paper)}
 
   function removeStudent(id) {
     var s = students().filter(function (x) { return x.id === id; })[0];
-    if (!s || !confirm("Ta bort " + s.name + " från listan?" + (s.src === "server" ? " Elevens framsteg raderas från servern (eleven har dem kvar i sin webbläsare)." : ""))) return;
+    if (!s || !confirm("Ta bort " + s.name + " från listan?")) return;
     imported = imported.filter(function (x) { return x.id !== id; });
     set(IMP_STORE, JSON.stringify(imported));
-    if (s.src === "server") {
-      fetch(API + "?quiz=" + encodeURIComponent(D.quiz) + "&id=" + encodeURIComponent(id), { method: "DELETE", headers: { "x-teacher-key": $("key").value.trim() } })
-        .then(function (r) { if (!r.ok) throw 0; server = server.filter(function (x) { return x.id !== id; }); render(); })
-        .catch(function () { status("srvStatus", "bad", "Kunde inte ta bort eleven från servern."); });
-    } else render();
+    render();
   }
 
   function renderExercises(list) {
@@ -480,8 +428,7 @@ td.detail{white-space:normal;background:var(--paper)}
   // Uppdatera "senast aktiv" även utan ny hämtning
   setInterval(function () { if (students().length) render(); }, 60000);
 
-  var saved = get(KEY_STORE);
-  if (saved) { $("key").value = saved; fetchServer(false); }
+  if (window.Framsteg) $("dashLink").href = Framsteg.api.replace(/\/api\/progress$/, "/teacher/progress");
   render();
 })();
 </script>

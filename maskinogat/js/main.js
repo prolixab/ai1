@@ -2,6 +2,7 @@ import { makeCase, makeDataset, render, paint } from './generator.js';
 import { INPUT, yieldUI, pixelsOf, buildModel, train, predict, explain } from './model.js';
 import { lineChart, histogram, cssVar } from './charts.js';
 import { initReal } from './real.js';
+import { initProgress, markDone, markWhenRead, setRadiologScore } from './progress.js';
 
 const $ = id => document.getElementById(id);
 const DISPLAY = 96;
@@ -71,6 +72,8 @@ $('k2-check').onclick = () => {
   }
   txt += `</p><p>I verkligheten är ”facit” ofta ett vävnadsprov (biopsi) som visar om det är cancer. Erfarna radiologer är inte heller alltid överens – och etiketterna en modell tränas på är aldrig helt perfekta.</p>`;
   $('k2-result').innerHTML = txt;
+  setRadiologScore(right, 12);
+  markDone('k2');
   $('k2-result').hidden = false;
 };
 k2New();
@@ -133,7 +136,7 @@ function k3Apply(f) {
 }
 FILTERS.forEach(f => {
   const b = Object.assign(document.createElement('button'), { className: 'ghost', textContent: f.name });
-  b.onclick = () => k3Apply(f);
+  b.onclick = () => { k3Apply(f); markDone('k3'); };
   $('k3-filters').append(b);
 });
 k3Apply(FILTERS[2]);
@@ -195,6 +198,7 @@ async function trainMain(n = +$('k4-n').value, epochs = +$('k4-epochs').value, d
   $('k4-train').disabled = false; $('k4-stop').hidden = true;
   document.querySelectorAll('[data-train]').forEach(b => (b.disabled = false));
   refreshModelChapters();
+  markDone('k4');
 }
 $('k4-train').onclick = () => trainMain();
 $('k4-stop').onclick = () => { stopReq = true; };
@@ -227,7 +231,7 @@ function k5Update() {
   $('m-acc').textContent = pct((tp + tn) / k5.probs.length);
   histogram($('k5-hist'), k5.probs, k5.cases.map(c => c.malignant), t);
 }
-$('k5-t').oninput = k5Update;
+$('k5-t').oninput = () => { k5Update(); if (state.model) markDone('k5'); };
 
 // ---------- Kapitel 6: var tittar modellen? ----------
 const HEAT = [[0, 0, 4], [75, 11, 107], [170, 40, 90], [226, 64, 29], [250, 150, 20], [255, 226, 89]];
@@ -278,7 +282,7 @@ function k6Show() {
   $('k6-cap').textContent = `Facit: ${c.malignant ? 'elakartad' : 'godartad'} · Modellen: ${pct(p)} säker på elakartad`;
   [...$('k6-strip').children].forEach((d, i) => d.classList.toggle('sel', i === k6.sel));
 }
-$('k6-heat').onchange = k6Show;
+$('k6-heat').onchange = () => { k6Show(); if (state.model) markDone('k6'); };
 
 function refreshModelChapters() {
   document.querySelectorAll('.needs-model[data-needs="main"]').forEach(d => (d.hidden = true));
@@ -288,7 +292,7 @@ function refreshModelChapters() {
   k5Update();
   k6.cases = cases.slice(0, 8);
   drawStrip($('k6-strip'), k6.cases, k5.probs.slice(0, 8));
-  [...$('k6-strip').children].forEach((d, i) => (d.onclick = () => { k6.sel = i; k6Show(); }));
+  [...$('k6-strip').children].forEach((d, i) => (d.onclick = () => { k6.sel = i; k6Show(); markDone('k6'); }));
   $('k6-body').hidden = false;
   k6.sel = 1;
   k6Show();
@@ -317,6 +321,7 @@ $('k7-train').onclick = async () => {
   $('k7-a').textContent = pct(acc(testA));
   $('k7-b').textContent = pct(acc(testB));
   st.textContent = 'Klar! Jämför sjukhus A och B.';
+  markDone('k7');
   $('k7-body').hidden = false;
   drawExplained($('k7-view'), biasModel, testA[1]);
   state.busy = false;
@@ -324,4 +329,7 @@ $('k7-train').onclick = async () => {
 };
 
 // ---------- Kapitel 8: riktiga bilder ----------
-initReal({ state, scan, drawStrip, pct });
+initReal({ state, scan, drawStrip, pct, markDone });
+
+markWhenRead(['k1', 'k9']);
+initProgress();

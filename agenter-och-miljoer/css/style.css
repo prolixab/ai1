@@ -215,3 +215,4 @@ footer { padding: 20px 0 50px; color: var(--muted); font-size: .88rem; }
   .bar { grid-template-columns: 110px 1fr 48px; }
   h2 { font-size: 1.4rem; }
 }
+.hero-links { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 18px; }

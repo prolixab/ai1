@@ -131,3 +131,5 @@ footer { padding: 10px 16px 40px; }
   .strip { grid-template-columns: repeat(4, 1fr); }
   .metrics.wide { grid-template-columns: 1fr 1fr; }
 }
+.toc a.done::after { content: " ✓"; color: #7ee2a8; }
+.hero-links { margin-top: 18px; }

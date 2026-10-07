@@ -16,7 +16,7 @@
   "use strict";
 
   // Lärarpanelen (exit-ticket-platform på Vercel).
-  var PROD_API = "https://EXIT-TICKET-SAJTEN.vercel.app/api/progress";
+  var PROD_API = "https://exitticket.teed.se/api/progress";
   var LOCAL = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
   var API = LOCAL ? "http://localhost:3000/api/progress" : PROD_API;
 

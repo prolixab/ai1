@@ -155,6 +155,12 @@ pre.code code{font-size:inherit;background:none;padding:0}
 .q ol{padding-left:1.3em;margin:.4em 0}
 .codehint{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--accent) 9%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));margin:0 0 14px;font-size:.92rem}
 .codehint b{white-space:nowrap}
+details.theory{margin:0 0 16px;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;background:var(--paper);padding:10px 14px}
+details.theory>summary{cursor:pointer;font-weight:700;list-style-position:outside}
+details.theory>summary small{font-weight:400;color:var(--muted);margin-left:6px}
+details.theory[open]>summary{margin-bottom:8px}
+details.theory .prose>:last-child{margin-bottom:0}
+details.theory pre.code{margin:.6em 0 0}
 details.tip{margin:0 0 14px}
 details.tip summary{cursor:pointer;font-weight:700;color:var(--accent)}
 details.tip p{margin:.4em 0 0}
@@ -647,6 +653,19 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     if (isNarrow()) $("tasks").scrollIntoView({ block: "start" }); else $("left").scrollTop = 0;
   }
 
+  // Genomgången som hör till uppgiften visas överst i uppgiftskortet.
+  function lessonFor(ex) {
+    var ls = (D.lessons || {})[ex.part] || [];
+    for (var i = 0; i < ls.length; i++) if ((ls[i].tasks || []).indexOf(ex.id) >= 0) return ls[i];
+    return null;
+  }
+  function theoryBox(ex) {
+    var l = lessonFor(ex);
+    if (!l) return "";
+    var closed = (me().theoryClosed || {})[l.title];
+    return '<details class="theory" id="theory"' + (closed ? "" : " open") + '><summary>Läs först: ' + esc(l.title) + "<small>(klicka för att " + (closed ? "visa" : "dölja") + ")</small></summary>" +
+      '<div class="prose">' + l.html + "</div>" + (l.code ? codeBlock(l.code) : "") + "</details>";
+  }
   function renderCard(retry) {
     var p = me(), ex = EX[p.pos], st = statusOf(p, ex);
     var list = partEx(ex.part), k = list.indexOf(ex);
@@ -654,6 +673,7 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
 
     var h = '<div class="meta"><span>Del ' + partNo(ex.part) + " · Uppgift " + (k + 1) + " av " + list.length + "</span><span>" + TYPE_LABEL[ex.type] + "</span></div>" +
       "<h2>" + esc(ex.title) + (st ? ' <span class="badge ' + st + '">' + STATUS_TEXT[st] + "</span>" : "") + "</h2>" +
+      theoryBox(ex) +
       '<div class="q">' + ex.q + "</div>";
 
     if (ex.type === "code") {
@@ -702,6 +722,14 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
 
     var card = $("card");
     card.innerHTML = h;
+    var th = $("theory");
+    if (th) th.addEventListener("toggle", function () {
+      var l = lessonFor(ex);
+      p.theoryClosed = p.theoryClosed || {};
+      if (th.open) delete p.theoryClosed[l.title]; else p.theoryClosed[l.title] = true;
+      th.querySelector("summary small").textContent = "(klicka för att " + (th.open ? "dölja" : "visa") + ")";
+      save();
+    });
     $("btnPrev").disabled = p.pos === 0;
     $("btnNext").disabled = p.pos === EX.length - 1;
     $("btnPrev").onclick = function () { go(p.pos - 1); };

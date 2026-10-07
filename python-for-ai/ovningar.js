@@ -31,6 +31,7 @@ window.PYAI = {
     p1: [
       {
         title: "Python är det gemensamma språket för AI",
+        tasks: ["p1-skal", "p1-gemenskap"],
         html: "<p>ChatGPT, bildigenkänning, självkörande bilar – forskarna och företagen bakom dem använder Python. Tre skäl:</p>" +
           "<ul><li><b>Lättläst.</b> Koden ser nästan ut som engelska, så du kan fokusera på problemet i stället för krånglig syntax.</li>" +
           "<li><b>Färdiga verktyg.</b> Tusentals gratis bibliotek för data, grafer och maskininlärning.</li>" +
@@ -49,6 +50,7 @@ window.PYAI = {
       },
       {
         title: "Kodmiljö",
+        tasks: ["p1-path", "p1-kor"],
         html: "<p>Editorn till höger kör Python direkt i webbläsaren – du behöver inte installera något för att öva här.</p>" +
           "<p>På din egen dator:</p><ol>" +
           "<li><b>Välj editor.</b> Thonny (thonny.org) är enklast, Python ingår. VS Code är mer kraftfull och används av proffs.</li>" +
@@ -57,6 +59,7 @@ window.PYAI = {
       },
       {
         title: "Ditt första program",
+        tasks: ["p1-kod-hej"],
         html: "<p>Klicka på <b>Kör i editorn</b>. Koden hamnar till höger och körs – utskriften syns under editorn. Ändra sedan texten och kör igen med <b>▶ Kör</b> eller <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.</p>",
         code: 'print("Hej, AI!")'
       }
@@ -64,28 +67,34 @@ window.PYAI = {
     p2: [
       {
         title: "print() och kommentarer",
+        tasks: ["p2-print", "p2-kod-print"],
         html: "<ul><li><code>print()</code> skriver ut något på skärmen.</li><li>Text kallas <b>sträng</b> och skrivs alltid inom citattecken.</li>" +
           "<li>Rader som börjar med <code>#</code> är kommentarer – Python hoppar över dem.</li></ul>",
         code: '# Mitt första program\nprint("Hej världen!")\nprint("Jag lär mig Python.")'
       },
       {
         title: "Variabler sparar information",
+        tasks: ["p2-namn", "p2-tilldela", "p2-kod-variabler"],
         html: "<p>En variabel är som en låda med en etikett. Med <code>=</code> lägger du något i lådan – det betyder <i>tilldela</i>, inte \"är lika med\" som i matten.</p>" +
           "<p><b>Regler för namn:</b> inga mellanslag (använd <code>_</code>), får inte börja med en siffra, undvik å, ä och ö.</p>",
         code: 'namn = "Sara"\nalder = 17\nlangd = 1.68\nprint(namn, "är", alder, "år")\nalder = alder + 1   # ny födelsedag\nprint(alder)'
       },
       {
         title: "Fyra datatyper",
-        html: "<table><thead><tr><th>Typ</th><th>Exempel</th><th>Betyder</th></tr></thead><tbody>" +
+        tasks: ["p2-typer"],
+        html: "<p>Allt som lagras i en variabel har en <b>datatyp</b>. Typen talar om vilken sorts värde det är – och därmed vad du kan göra med det. Tal kan du räkna med, text kan du skriva ut och sätta ihop, men <code>\"5\" + 3</code> går inte eftersom det blandar text och tal.</p>" +
+          "<table><thead><tr><th>Typ</th><th>Exempel</th><th>Betyder</th></tr></thead><tbody>" +
           "<tr><td><code>int</code></td><td><code>42</code></td><td>Heltal</td></tr>" +
           "<tr><td><code>float</code></td><td><code>3.14</code></td><td>Decimaltal – med punkt, inte komma!</td></tr>" +
           "<tr><td><code>str</code></td><td><code>\"hej\"</code></td><td>Text (sträng)</td></tr>" +
           "<tr><td><code>bool</code></td><td><code>True</code> / <code>False</code></td><td>Sant eller falskt</td></tr></tbody></table>" +
+          "<p>Python ser typen på hur värdet är skrivet: citattecken betyder text (<code>\"42\"</code> är alltså en <code>str</code>), en punkt betyder decimaltal, och <code>True</code>/<code>False</code> skrivs med stor bokstav och utan citattecken.</p>" +
           "<p>Osäker på vilken typ något är? <code>print(type(x))</code> berättar.</p>",
         code: 'print(type(42))\nprint(type(3.14))\nprint(type("hej"))\nprint(type(True))'
       },
       {
         title: "Prata med användaren",
+        tasks: ["p2-input-typ", "p2-int", "p2-fstring", "p2-kod-input", "p2-kod-alder10"],
         html: "<ul><li><code>input()</code> frågar användaren och väntar på svar. Här öppnas en ruta där du skriver svaret.</li>" +
           "<li>Svaret är <b>alltid text</b>. Vill du räkna – gör om det med <code>int()</code>.</li>" +
           "<li>Ett <code>f</code> före citattecknet låter dig stoppa in variabler med <code>{ }</code>.</li></ul>" +
@@ -94,12 +103,14 @@ window.PYAI = {
       },
       {
         title: "Listor håller många värden",
+        tasks: ["p2-index", "p2-append", "p2-kod-lista"],
         html: "<ul><li>En lista skrivs med <code>[ ]</code> och kommatecken mellan värdena.</li><li>Räkningen börjar på 0 – första elementet är <code>[0]</code>.</li>" +
           "<li><b>AI-koppling:</b> träningsdata är i grunden långa listor med tal.</li></ul><p>Vad skriver <code>poang[1]</code> ut? Och <code>poang[-1]</code>? Prova!</p>",
         code: 'poang = [72, 85, 90]\nprint(poang[0])\npoang.append(64)   # lägg till\nprint(len(poang))\nprint(max(poang))'
       },
       {
         title: "Villkor låter programmet välja",
+        tasks: ["p2-if", "p2-jamfor", "p2-ordna-if", "p2-kod-betyg"],
         html: "<ul><li><code>if</code> = om, <code>elif</code> = annars om, <code>else</code> = annars.</li><li>Varje villkor slutar med kolon <code>:</code></li>" +
           "<li>Koden som hör till villkoret får <b>indrag</b> – fyra mellanslag eller Tab. I Python är indraget en del av språket.</li>" +
           "<li>Jämförelser: <code>==</code> <code>!=</code> <code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code>. Obs: <code>=</code> tilldelar, <code>==</code> jämför.</li></ul>",
@@ -107,12 +118,14 @@ window.PYAI = {
       },
       {
         title: "Loopar upprepar arbetet",
+        tasks: ["p2-range", "p2-for", "p2-kod-sjugang"],
         html: "<ul><li><code>for</code> går igenom något, ett element i taget.</li><li><code>range(3)</code> ger talen 0, 1 och 2.</li>" +
           "<li><b>AI-koppling:</b> en modell tränas genom att loopa över datan om och om igen – varje varv kallas en <b>epok</b>.</li></ul>",
         code: 'elever = ["Ali", "Sara"]\nfor elev in elever:\n    print(f"Hej {elev}!")\nfor epok in range(2):\n    print("Tränar, varv", epok)'
       },
       {
         title: "Felmeddelanden är dina vänner",
+        tasks: ["p5-sista", "p5-type", "p5-kod-name"],
         html: "<p>Alla får fel hela tiden – även proffs. Läs <b>sista raden först</b>: där står vilken typ av fel det är, och raden ovanför visar var.</p>" +
           "<table><thead><tr><th>Fel</th><th>Vanlig orsak</th></tr></thead><tbody>" +
           "<tr><td><code>SyntaxError</code></td><td>Glömt kolon, parentes eller citattecken</td></tr>" +
@@ -126,6 +139,7 @@ window.PYAI = {
     p4: [
       {
         title: "Vad är maskininlärning?",
+        tasks: ["p4-ml", "p4-spam"],
         html: "<p>I stället för att du skriver reglerna låter du datorn hitta reglerna själv i exempel.</p>" +
           "<table><tbody><tr><td><b>Vanlig programmering</b></td><td>Regler + Data → Svar</td></tr>" +
           "<tr><td><b>Maskininlärning</b></td><td>Data + Svar → Regler (= modell)</td></tr></tbody></table>" +
@@ -133,12 +147,14 @@ window.PYAI = {
       },
       {
         title: "Träna en modell på 8 rader",
+        tasks: ["p4-ordna", "p4-kod-modell", "p4-kod-fraga", "p4-kod-egen"],
         html: "<p>Kan datorn förutsäga om någon klarar provet utifrån plugg och sömn? Vi använder ett <b>beslutsträd</b> från scikit-learn – det lär sig enkla ja/nej-frågor ur exemplen.</p>" +
           "<p>Modellen har aldrig sett en elev med 6 timmar plugg och 7 timmar sömn – ändå gissar den. Ändra värdena i <code>predict</code> och kör igen!</p>",
         code: 'from sklearn.tree import DecisionTreeClassifier\n\n# Indata: [timmar plugg, timmar sömn]\nX = [[1, 5], [2, 6], [3, 4], [7, 8], [8, 7], [9, 8]]\n# Facit: U = underkänd, G = godkänd\ny = ["U", "U", "U", "G", "G", "G"]\n\nmodell = DecisionTreeClassifier()\nmodell.fit(X, y)                  # träna\nprint(modell.predict([[6, 7]]))   # gissa'
       },
       {
         title: "Vad hände egentligen?",
+        tasks: ["p4-begrepp", "p4-fit", "p4-monster", "p4-data", "p4-partisk"],
         html: "<table><tbody><tr><td><code>X</code></td><td><b>Indata</b> – egenskaperna vi mäter, här plugg och sömn.</td></tr>" +
           "<tr><td><code>y</code></td><td><b>Facit</b> – rätt svar för varje exempel, så kallade etiketter.</td></tr>" +
           "<tr><td><code>fit()</code></td><td><b>Träning</b> – modellen letar efter mönster som kopplar X till y.</td></tr>" +

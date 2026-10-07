@@ -13,6 +13,9 @@
  *   order   sortera rader  lines: rätt ordning, deps: [[i, j], …] (rad i före rad j)
  *   code    skriv kod      starter, solution, runs: [{inputs, expect, contains, excludes, test}]
  *           test är Python som körs efter elevens kod; _out = utskriften, _code = koden.
+ *           sim (i stället för runs): elevens kod definierar agent(percept) som styr dammsugaren
+ *           i världen från Agenter och miljöer. sim: { world, steps, runs: [{seed | dirt, start, label}],
+ *           goal: { clean, avgClean, noBump, suckDirty, alive } }
  */
 window.PYAI = {
   quiz: "python-for-ai",
@@ -20,6 +23,8 @@ window.PYAI = {
   parts: [
     { id: "p1", title: "Varför Python?" },
     { id: "p2", title: "Grunderna" },
+    // sim = världen som visas när koden i Fri lek definierar en agent
+    { id: "p3", title: "Programmera en agent", sim: { world: { map: "lagenhet", observable: "partial" }, steps: 120, runs: [{ seed: 1 }] } },
     { id: "p4", title: "Din första AI-modell" }
   ],
   // Datafiler som finns i editorns "mapp" (kan läsas med pd.read_csv m.m.)
@@ -134,6 +139,62 @@ window.PYAI = {
           "<tr><td><code>TypeError</code></td><td>Blandar text och tal, t.ex. <code>\"5\" + 3</code></td></tr></tbody></table>" +
           "<p><b>Tips:</b> skriv några rader i taget och kör ofta. Fråga gärna en AI <i>varför</i> du får ett fel – men be om en ledtråd, inte hela lösningen.</p>",
         code: 'print("5" + 3)'
+      }
+    ],
+    p3: [
+      {
+        title: "Agenten är en funktion",
+        tasks: ["p3-vad", "p3-handling", "p3-kod-tvarum"],
+        html: "<p>I temat <a href=\"../agenter-och-miljoer/\" target=\"_blank\">Agenter och miljöer</a> såg du dammsugaren städa. Nu skriver <b>du</b> agentprogrammet. I Python är en agent helt enkelt en funktion:</p>" +
+          "<ul><li>In kommer ett <b>percept</b> – det agenten uppfattar just nu.</li><li>Ut kommer en <b>handling</b> – en text som <code>\"sug\"</code> eller <code>\"höger\"</code>.</li>" +
+          "<li>Världen anropar funktionen en gång per steg: percept → agent → handling → ny värld → nytt percept …</li></ul>" +
+          "<p>Perceptet är en <b>ordbok</b> (dictionary). Du hämtar ett värde med nyckeln inom hakparenteser, t.ex. <code>percept[\"smutsig\"]</code>.</p>" +
+          "<table><thead><tr><th>Nyckel</th><th>Värde</th></tr></thead><tbody>" +
+          "<tr><td><code>\"smutsig\"</code></td><td><code>True</code> om rutan agenten står på är smutsig</td></tr>" +
+          "<tr><td><code>\"fritt\"</code></td><td>Lista med hållen utan vägg, t.ex. <code>[\"upp\", \"höger\"]</code></td></tr>" +
+          "<tr><td><code>\"x\"</code>, <code>\"y\"</code></td><td>Var agenten står (x åt höger, y nedåt)</td></tr>" +
+          "<tr><td><code>\"batteri\"</code>, <code>\"laddare\"</code></td><td>Batterinivå och laddarens ruta – används i sista uppgiften</td></tr></tbody></table>" +
+          "<p><b>Handlingar:</b> <code>\"sug\"</code>, <code>\"upp\"</code>, <code>\"ner\"</code>, <code>\"höger\"</code>, <code>\"vänster\"</code> och <code>\"vänta\"</code>.</p>" +
+          "<p>Kör exemplet: världen ritas ovanför utskriften. Vad händer när agenten kommer fram till väggen?</p>",
+        code: 'def agent(percept):\n    if percept["smutsig"]:\n        return "sug"\n    return "höger"'
+      },
+      {
+        title: "Regler med if och listan fritt",
+        tasks: ["p3-in", "p3-kod-reflex", "p3-loop"],
+        html: "<p>En <b>enkel reflexagent</b> är en lista med regler: <i>OM detta – GÖR det</i>. Den första regeln som passar bestämmer.</p>" +
+          "<ul><li>Med <code>in</code> kollar du om något finns i en lista: <code>\"höger\" in percept[\"fritt\"]</code> är <code>True</code> om det inte är vägg till höger.</li>" +
+          "<li>Ordningen på <code>if</code> och <code>elif</code> är ordningen på reglerna.</li>" +
+          "<li>Agenten har <b>inget minne</b> – den ser bara rutan den står på och väggarna runt den.</li></ul>" +
+          "<p>Kör och titta på spåret efter agenten. Blir lägenheten helt ren?</p>",
+        code: 'def agent(percept):\n    if percept["smutsig"]:\n        return "sug"\n    elif "höger" in percept["fritt"]:\n        return "höger"\n    elif "ner" in percept["fritt"]:\n        return "ner"\n    else:\n        return "vänster"'
+      },
+      {
+        title: "Slumpen kan hjälpa",
+        tasks: ["p3-kod-slump"],
+        html: "<p>En reflexagent utan minne gör alltid samma sak i samma situation – därför kan den fastna i en loop. Ett enkelt knep: låt agenten <b>slumpa</b> när den inte vet bättre.</p>" +
+          "<ul><li><code>import random</code> hämtar slumpbiblioteket.</li><li><code>random.choice(lista)</code> väljer ett slumpat element ur listan.</li>" +
+          "<li><code>random.choice(percept[\"fritt\"])</code> blir alltså ett slumpat håll utan vägg.</li></ul>" +
+          "<p>Slumpagenten fastnar inte, men den slösar steg på rutor den redan har städat.</p>",
+        code: 'import random\n\ndef agent(percept):\n    if percept["smutsig"]:\n        return "sug"\n    return random.choice(percept["fritt"])'
+      },
+      {
+        title: "Minne gör agenten smartare",
+        tasks: ["p3-tupel", "p3-kod-minne"],
+        html: "<p>En <b>modellbaserad agent</b> kommer ihåg saker om världen. Vi ger agenten en lista med rutor den har besökt.</p>" +
+          "<ul><li>En ruta skrivs som ett par <code>(x, y)</code> – en <b>tupel</b>. <code>(2, 1)</code> är rutan med x = 2 och y = 1.</li>" +
+          "<li>Listan skapas <b>utanför</b> funktionen. Då finns den kvar mellan stegen i stället för att bli tom varje gång agenten anropas.</li>" +
+          "<li><code>(x, y) not in besokta</code> är <code>True</code> om rutan inte finns i listan.</li>" +
+          "<li>Strategi: gå till en fri granne som du inte har besökt. Finns ingen sådan – slumpa.</li></ul>",
+        code: 'besokta = []\n\ndef agent(percept):\n    plats = (percept["x"], percept["y"])\n    if plats not in besokta:\n        besokta.append(plats)\n        print("Ny ruta:", plats, "– har besökt", len(besokta))\n    if percept["smutsig"]:\n        return "sug"\n    return "höger"'
+      },
+      {
+        title: "Batteriet – att väga mål mot varandra",
+        tasks: ["p3-kod-batteri", "p3-nytta"],
+        html: "<p>Nu har dammsugaren ett batteri. Varje steg och varje sugning kostar 1. Står den på laddaren (blixten) och väljer <code>\"vänta\"</code> laddas den med 8, upp till 40. Tar batteriet slut står agenten still för alltid.</p>" +
+          "<ul><li><code>percept[\"batteri\"]</code> är batterinivån och <code>percept[\"laddare\"]</code> laddarens ruta.</li>" +
+          "<li><code>lx, ly = percept[\"laddare\"]</code> plockar isär paret i två variabler.</li>" +
+          "<li><code>abs(x - lx) + abs(y - ly)</code> är antalet steg hem i ett rum utan väggar. <code>abs</code> tar bort minustecknet.</li></ul>" +
+          "<p>Agenten måste alltså <b>väga</b> två saker: att städa mer – och att hinna hem. Det är tanken bakom en <b>nyttobaserad agent</b>.</p>"
       }
     ],
     p4: [
@@ -440,6 +501,147 @@ assert all(p in it for p in [7 * i for i in range(1, 11)]), "Utskriften ska inne
       hint: "Läs sista raden i felmeddelandet. Vilket namn känner Python inte till?",
       runs: [{ expect: "Hej Ali!" }],
       explain: "<code>NameError</code> – variabeln var felstavad."
+    },
+
+    /* ---------- 03 Programmera en agent ---------- */
+    {
+      id: "p3-vad", part: "p3", type: "mc", title: "Vad är agenten?",
+      q: "Vad gör funktionen <code>agent</code> i den här delen?",
+      options: [
+        "Den får ett percept – det agenten uppfattar – och returnerar en handling",
+        "Den ritar dammsugaren på skärmen",
+        "Den räknar ut hur ren lägenheten är",
+        "Den bestämmer var smutsen ska ligga"
+      ],
+      answer: 0,
+      explain: "Världen anropar <code>agent(percept)</code> en gång per steg och utför handlingen som funktionen returnerar."
+    },
+    {
+      id: "p3-handling", part: "p3", type: "output", title: "Vilken handling?",
+      q: "Vad skriver programmet ut?",
+      code: 'def agent(percept):\n    if percept["smutsig"]:\n        return "sug"\n    return "höger"\n\nprint(agent({"smutsig": True, "x": 0}))\nprint(agent({"smutsig": False, "x": 0}))',
+      answer: "sug\nhöger",
+      explain: "Första anropet får ett smutsigt percept och returnerar <code>sug</code>. Andra gången är rutan ren, så <code>if</code> hoppas över och funktionen returnerar <code>höger</code>."
+    },
+    {
+      id: "p3-kod-tvarum", part: "p3", type: "code", title: "Två rum",
+      q: "Världen har två rutor: rum A (<code>x</code> = 0) och rum B (<code>x</code> = 1). Skriv en agent som städar båda:<ul>" +
+        "<li>Är rutan smutsig – returnera <code>\"sug\"</code>.</li><li>Annars: står du i A – gå <code>\"höger\"</code>, står du i B – gå <code>\"vänster\"</code>.</li></ul>" +
+        "Båda rummen ska vara rena inom 6 steg, oavsett var agenten startar och var smutsen ligger.",
+      starter: 'def agent(percept):\n    # percept["smutsig"] är True om rutan är smutsig\n    # percept["x"] är 0 i rum A och 1 i rum B\n    return "vänta"\n',
+      solution: 'def agent(percept):\n    if percept["smutsig"]:\n        return "sug"\n    elif percept["x"] == 0:\n        return "höger"\n    else:\n        return "vänster"',
+      hint: "Tre fall: <code>if percept[\"smutsig\"]:</code>, <code>elif percept[\"x\"] == 0:</code> och <code>else:</code> – med en <code>return</code> i varje.",
+      sim: {
+        world: { map: "tvarum" }, steps: 6,
+        runs: [
+          { dirt: [1, 1], start: [0, 0], label: "smuts i båda rummen, start i A" },
+          { dirt: [0, 1], start: [0, 0], label: "smuts i B, start i A" },
+          { dirt: [1, 0], start: [1, 0], label: "smuts i A, start i B" },
+          { dirt: [1, 1], start: [1, 0], label: "smuts i båda rummen, start i B" }
+        ],
+        goal: { clean: 1 }
+      },
+      explain: "Det här är världens mest kända agent – den finns i nästan varje lärobok om AI. Tre regler räcker för två rum."
+    },
+    {
+      id: "p3-in", part: "p3", type: "output", title: "Finns det i listan?",
+      q: "Vad skriver programmet ut? (Två rader.)",
+      code: 'fritt = ["upp", "vänster"]\nif "höger" in fritt:\n    print("höger")\nelif "upp" in fritt:\n    print("upp")\nelse:\n    print("vänta")\nprint(len(fritt))',
+      answer: "upp\n2",
+      explain: "<code>\"höger\" in fritt</code> är <code>False</code>, men <code>\"upp\" in fritt</code> är <code>True</code>. Listan har två element."
+    },
+    {
+      id: "p3-kod-reflex", part: "p3", type: "code", title: "En reflexagent i lägenheten",
+      q: "Nu städar agenten en hel lägenhet. Skriv en enkel reflexagent:<ol>" +
+        "<li>Är rutan smutsig – <code>\"sug\"</code>.</li><li>Annars: gå åt första fria hållet i ordningen <b>höger, ner, vänster, upp</b>. Använd <code>in percept[\"fritt\"]</code>.</li></ol>" +
+        "Agenten får aldrig köra in i en vägg och ska alltid suga upp smuts den står på. Kör och titta på spåret – blir lägenheten ren?",
+      starter: 'def agent(percept):\n    if percept["smutsig"]:\n        return "sug"\n    # Gå åt första fria hållet: höger, ner, vänster, upp\n    return "höger"\n',
+      solution: 'def agent(percept):\n    if percept["smutsig"]:\n        return "sug"\n    elif "höger" in percept["fritt"]:\n        return "höger"\n    elif "ner" in percept["fritt"]:\n        return "ner"\n    elif "vänster" in percept["fritt"]:\n        return "vänster"\n    else:\n        return "upp"',
+      hint: "En <code>elif</code> per håll, t.ex. <code>elif \"ner\" in percept[\"fritt\"]:</code> följt av <code>return \"ner\"</code>.",
+      sim: {
+        world: { map: "lagenhet", observable: "partial" }, steps: 150,
+        runs: [{ seed: 1, label: "lägenhet 1" }, { seed: 2, label: "lägenhet 2" }, { seed: 3, label: "lägenhet 3" }],
+        goal: { noBump: true, suckDirty: true }
+      },
+      explain: "Agenten följer sina regler perfekt – men titta på slutet: den åker fram och tillbaka på samma ställe och blir aldrig klar."
+    },
+    {
+      id: "p3-loop", part: "p3", type: "mc", title: "Varför blev den inte klar?",
+      q: "Reflexagenten städade bara en del av lägenheten och åkte sedan fram och tillbaka på samma ställe. Varför?",
+      options: [
+        "Den har inget minne – samma percept ger alltid samma handling, så den hamnar i samma loop",
+        "Batteriet tog slut",
+        "Python är för långsamt för att städa en hel lägenhet",
+        "Den kan inte se smuts"
+      ],
+      answer: 0,
+      explain: "En enkel reflexagent ser bara nuet. När den kommer tillbaka till samma ruta med samma percept gör den exakt samma sak igen – och fastnar i en loop."
+    },
+    {
+      id: "p3-kod-slump", part: "p3", type: "code", title: "Slumpagenten",
+      q: "Låt agenten slumpa: suger den inte ska den gå åt ett slumpat fritt håll med <code>random.choice(percept[\"fritt\"])</code>. " +
+        "Den ska i snitt få lägenheterna minst <b>85 % rena</b> på 300 steg.",
+      starter: 'import random\n\ndef agent(percept):\n    if percept["smutsig"]:\n        return "sug"\n    # Välj ett slumpat håll bland de fria\n    return "höger"\n',
+      solution: 'import random\n\ndef agent(percept):\n    if percept["smutsig"]:\n        return "sug"\n    return random.choice(percept["fritt"])',
+      hint: "Byt sista raden mot <code>return random.choice(percept[\"fritt\"])</code>.",
+      sim: {
+        world: { map: "lagenhet", observable: "partial" }, steps: 300,
+        runs: [{ seed: 1, label: "lägenhet 1" }, { seed: 2, label: "lägenhet 2" }, { seed: 3, label: "lägenhet 3" }],
+        goal: { noBump: true, suckDirty: true, avgClean: 0.85 }
+      },
+      explain: "Slumpen tar agenten ur loopen. Men titta på spåret: den passerar samma rutor många gånger. Med minne kan den göra bättre."
+    },
+    {
+      id: "p3-tupel", part: "p3", type: "output", title: "En lista med rutor",
+      q: "Vad skriver programmet ut? (Tre rader.)",
+      code: 'besokta = []\nbesokta.append((2, 1))\nbesokta.append((3, 1))\nprint((3, 1) in besokta)\nprint((4, 1) in besokta)\nprint(len(besokta))',
+      answer: "True\nFalse\n2",
+      explain: "Rutan <code>(3, 1)</code> finns i listan men inte <code>(4, 1)</code>. Listan innehåller två rutor."
+    },
+    {
+      id: "p3-kod-minne", part: "p3", type: "code", title: "En agent med minne",
+      q: "Startkoden kommer redan ihåg vilka rutor agenten har besökt. Gör agenten smartare:<ol>" +
+        "<li>Gå igenom hållen i <code>percept[\"fritt\"]</code> med en <code>for</code>-loop.</li>" +
+        "<li>Använd <code>granne(x, y, hall)</code> för att se vilken ruta hållet leder till. Är den inte besökt – gå dit.</li>" +
+        "<li>Finns ingen obesökt granne – slumpa som förut.</li></ol>" +
+        "Agenten ska i snitt få lägenheterna minst <b>92 % rena</b> på bara 100 steg. (Slumpagenten klarar ungefär 85 %.)",
+      starter: 'import random\n\nbesokta = []   # rutor agenten har varit på – finns kvar mellan stegen\n\ndef granne(x, y, hall):\n    # Vilken ruta hamnar agenten på om den går åt hållet hall?\n    if hall == "upp":\n        return (x, y - 1)\n    elif hall == "ner":\n        return (x, y + 1)\n    elif hall == "höger":\n        return (x + 1, y)\n    else:\n        return (x - 1, y)\n\ndef agent(percept):\n    x = percept["x"]\n    y = percept["y"]\n    if (x, y) not in besokta:\n        besokta.append((x, y))\n    if percept["smutsig"]:\n        return "sug"\n    # Gå till en fri granne som inte finns i besokta\n\n    return random.choice(percept["fritt"])\n',
+      solution: 'import random\n\nbesokta = []\n\ndef granne(x, y, hall):\n    if hall == "upp":\n        return (x, y - 1)\n    elif hall == "ner":\n        return (x, y + 1)\n    elif hall == "höger":\n        return (x + 1, y)\n    else:\n        return (x - 1, y)\n\ndef agent(percept):\n    x = percept["x"]\n    y = percept["y"]\n    if (x, y) not in besokta:\n        besokta.append((x, y))\n    if percept["smutsig"]:\n        return "sug"\n    for hall in percept["fritt"]:\n        if granne(x, y, hall) not in besokta:\n            return hall\n    return random.choice(percept["fritt"])',
+      hint: "<code>for hall in percept[\"fritt\"]:</code> och inuti <code>if granne(x, y, hall) not in besokta:</code> följt av <code>return hall</code>.",
+      sim: {
+        world: { map: "lagenhet", observable: "partial" }, steps: 100,
+        runs: [{ seed: 1, label: "lägenhet 1" }, { seed: 2, label: "lägenhet 2" }, { seed: 3, label: "lägenhet 3" }],
+        goal: { noBump: true, suckDirty: true, avgClean: 0.92 }
+      },
+      explain: "Med en enkel modell av världen – listan med besökta rutor – utforskar agenten systematiskt i stället för att irra runt."
+    },
+    {
+      id: "p3-kod-batteri", part: "p3", type: "code", title: "Hinn hem innan batteriet tar slut",
+      q: "I det här rummet räcker batteriet bara till 40 handlingar, men agenten ska städa i 300 steg. Lägg till två regler <b>först</b> i agenten:<ol>" +
+        "<li>Står agenten på laddaren (<code>avstand == 0</code>) och batteriet är under 40 – <code>\"vänta\"</code> (då laddas den).</li>" +
+        "<li>Är batteriet nere på <code>avstand + 3</code> eller lägre – gå hem med <code>hem(x, y, lx, ly)</code>.</li></ol>" +
+        "Batteriet får aldrig ta slut, och rummen ska i snitt bli minst <b>90 % rena</b>.",
+      starter: 'import random\n\nbesokta = []\n\ndef granne(x, y, hall):\n    if hall == "upp":\n        return (x, y - 1)\n    elif hall == "ner":\n        return (x, y + 1)\n    elif hall == "höger":\n        return (x + 1, y)\n    else:\n        return (x - 1, y)\n\ndef hem(x, y, lx, ly):\n    # Ett steg närmare laddaren (rummet har inga väggar i vägen)\n    if x > lx:\n        return "vänster"\n    elif x < lx:\n        return "höger"\n    elif y > ly:\n        return "upp"\n    else:\n        return "ner"\n\ndef agent(percept):\n    x = percept["x"]\n    y = percept["y"]\n    lx, ly = percept["laddare"]\n    batteri = percept["batteri"]\n    avstand = abs(x - lx) + abs(y - ly)\n\n    # Lägg till dina två batteriregler här\n\n    if (x, y) not in besokta:\n        besokta.append((x, y))\n    if percept["smutsig"]:\n        return "sug"\n    for hall in percept["fritt"]:\n        if granne(x, y, hall) not in besokta:\n            return hall\n    return random.choice(percept["fritt"])\n',
+      solution: 'import random\n\nbesokta = []\n\ndef granne(x, y, hall):\n    if hall == "upp":\n        return (x, y - 1)\n    elif hall == "ner":\n        return (x, y + 1)\n    elif hall == "höger":\n        return (x + 1, y)\n    else:\n        return (x - 1, y)\n\ndef hem(x, y, lx, ly):\n    if x > lx:\n        return "vänster"\n    elif x < lx:\n        return "höger"\n    elif y > ly:\n        return "upp"\n    else:\n        return "ner"\n\ndef agent(percept):\n    x = percept["x"]\n    y = percept["y"]\n    lx, ly = percept["laddare"]\n    batteri = percept["batteri"]\n    avstand = abs(x - lx) + abs(y - ly)\n\n    if avstand == 0 and batteri < 40:\n        return "vänta"\n    if batteri <= avstand + 3:\n        return hem(x, y, lx, ly)\n\n    if (x, y) not in besokta:\n        besokta.append((x, y))\n    if percept["smutsig"]:\n        return "sug"\n    for hall in percept["fritt"]:\n        if granne(x, y, hall) not in besokta:\n            return hall\n    return random.choice(percept["fritt"])',
+      hint: "<code>if avstand == 0 and batteri &lt; 40:</code> → <code>return \"vänta\"</code>. Sedan <code>if batteri &lt;= avstand + 3:</code> → <code>return hem(x, y, lx, ly)</code>.",
+      sim: {
+        world: { map: "oppen", observable: "partial", battery: true }, steps: 300,
+        runs: [{ seed: 1, label: "rum 1" }, { seed: 2, label: "rum 2" }, { seed: 3, label: "rum 3" }],
+        goal: { alive: true, noBump: true, avgClean: 0.9 }
+      },
+      explain: "Agenten väger nu att städa mot risken att bli stående. Marginalen <code>+ 3</code> är ett val – vad händer med <code>+ 0</code>? Prova!"
+    },
+    {
+      id: "p3-nytta", part: "p3", type: "mc", title: "Mål eller nytta?",
+      q: "Varför räcker det inte att agenten har målet \"städa allt\" när den har ett batteri?",
+      options: [
+        "Den måste väga nyttan av att städa mer mot risken att batteriet tar slut",
+        "Med batteri kan agenten inte se smutsen",
+        "Målet blir lättare att nå med batteri",
+        "Det räcker – batteriet spelar ingen roll"
+      ],
+      answer: 0,
+      explain: "En nyttobaserad agent jämför hur bra olika val är. Att städa en ruta till är bra – men inte om agenten då aldrig kommer hem."
     },
 
     /* ---------- 04 Din första AI-modell ---------- */

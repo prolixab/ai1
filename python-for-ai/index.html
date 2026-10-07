@@ -102,7 +102,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 }
 
 /* Delar och flikar */
-.parts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+.parts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
 .part{text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 9px;cursor:pointer;display:flex;flex-direction:column;gap:3px}
 .part:hover{border-color:var(--muted)}
 .part[aria-current="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
@@ -110,7 +110,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .part .t{font-weight:700;font-size:.86rem;line-height:1.2;min-height:2.4em}
 .part .bar{height:5px}
 .part.done .num::after{content:" ✓";color:var(--ok)}
-@media (max-width:760px){.part .t{display:none}.part .num{font-size:.95rem;color:var(--ink)}}
+@media (max-width:1100px){.part .t{display:none}.part .num{font-size:.95rem;color:var(--ink)}}
 .tabs{display:flex;gap:4px;border-bottom:1.5px solid var(--line);margin-bottom:16px}
 .tab{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-1.5px;padding:8px 12px;font-weight:700;color:var(--muted);cursor:pointer}
 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
@@ -219,11 +219,22 @@ textarea.out.right{border-color:var(--ok)}textarea.out.wrong{border-color:var(--
 .pystatus{color:var(--code-muted);font-size:.8rem;white-space:nowrap}
 .pystatus[data-s="busy"]{color:var(--tk-k)}
 .pystatus[data-s="err"]{color:var(--tk-err)}
-.edbar .btn,.conbar .btn{border-color:var(--code-line);background:transparent;color:var(--code-ink)}
+.edbar .btn,.conbar .btn,.simbar .btn,.simbar select{border-color:var(--code-line);background:transparent;color:var(--code-ink)}
 .edbar .btn:hover:not(:disabled),.conbar .btn:hover:not(:disabled){border-color:var(--code-muted)}
 .edbar .btn.run{background:var(--ok);border-color:var(--ok);color:#fff}
 .edbar .btn.check{background:var(--accent);border-color:var(--accent);color:#fff}
 .editor{min-height:0;position:relative}
+.simwrap{display:none;border-top:1px solid var(--code-line);padding:8px 12px 10px;background:#0F161C;flex-direction:column;gap:8px;
+  --floor:#232833;--floor-line:#303744;--wall:#4f5a6b;--dirt:#c08a55;--bot:#f5a23a;--bot-ink:#2a1800;--dog:#c99563;--charger:#4ade80;--plan:#a594ff;--fog:#05070b;--mark:#f2756b}
+.right.has-sim{grid-template-rows:auto minmax(140px,1fr) auto auto minmax(80px,18%)}
+.right.has-sim .simwrap{display:flex}
+.simbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:.85rem}
+.simbar select{padding:3px 8px;border:1.5px solid var(--code-line);border-radius:8px;font-size:.85rem;min-height:30px}
+.simbar select option{background:var(--code);color:var(--code-ink)}
+.simbar .grow{flex:1}
+.simstat{font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.8rem;color:var(--code-muted);font-variant-numeric:tabular-nums}
+.simstat.warn{color:var(--tk-err)}
+#simCanvas{display:block;margin:0 auto;border-radius:6px;background:var(--wall);max-width:100%}
 .CodeMirror{height:100%;background:var(--code);color:var(--code-ink);font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:15px;line-height:1.6}
 .CodeMirror-gutters{background:var(--code);border-right:1px solid var(--code-line)}
 .CodeMirror-linenumber{color:#55636F}
@@ -321,6 +332,14 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
         <button class="btn small run" type="button" id="btnRun" title="Ctrl+Enter">▶ Kör</button>
       </div>
       <div class="editor" id="editor"></div>
+      <div class="simwrap" id="sim" role="region" aria-label="Agentens värld">
+        <div class="simbar"><b>Världen</b><select id="simRun" aria-label="Välj värld" hidden></select><span class="grow"></span>
+          <button class="btn small" type="button" id="simPlay" aria-label="Spela">▶</button>
+          <button class="btn small" type="button" id="simEnd">⏭ Till slutet</button>
+          <select id="simSpeed" aria-label="Hastighet"><option value="1">Långsamt</option><option value="2" selected>Normalt</option><option value="5">Snabbt</option></select></div>
+        <canvas id="simCanvas" role="img" aria-label="Dammsugarvärlden: rutnät med väggar, smuts och dammsugaren"></canvas>
+        <div class="simstat" id="simStat" aria-live="off"></div>
+      </div>
       <div class="conbar"><span>Utskrift</span><span class="grow"></span><button class="btn small" type="button" id="btnClear">Rensa</button></div>
       <pre class="console" id="console" aria-live="polite"><span class="placeholder">Utskriften från ditt program hamnar här. Kör med ▶ Kör eller Ctrl+Enter.</span></pre>
     </section>
@@ -532,6 +551,12 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     if (!(p.pos >= 0 && p.pos < EX.length)) p.pos = 0;
     if (!p.part || !partNo(p.part)) p.part = EX[p.pos].part;
     if (!p.tab) p.tab = "learn";
+    // Länk direkt till en del, t.ex. python-for-ai/#del-p3 från Agenter och miljöer
+    var want = (/^#del-(p\d+)$/.exec(location.hash) || [])[1];
+    if (want && partNo(want)) {
+      p.part = want; p.tab = "learn"; p.pos = EX.indexOf(partEx(want)[0]);
+      history.replaceState(null, "", location.pathname);
+    }
     $("login").hidden = true;
     $("app").hidden = false;
     $("who").innerHTML = "<b>" + esc(p.name) + "</b>" + (p.klass ? ' <span class="muted">· ' + esc(p.klass) + "</span>" : "");
@@ -969,6 +994,7 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     $("edLabel").innerHTML = ex ? esc(ex.title) + "<small>Uppgift · del " + partNo(ex.part) + "</small>" : "Fri lek<small>Prova exempel och egen kod</small>";
     $("btnReset").hidden = !ex;
     $("btnCheckTop").hidden = !ex;
+    simPreview();
     setTimeout(function () { cm.refresh(); }, 0);
   }
   function setScratch(code) {
@@ -1115,7 +1141,11 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     if (running || !cm) return;
     running = true; setBusy(true);
     conClear();
-    var code = cm.getValue();
+    var code = cm.getValue(), simCfg = currentSim();
+    if (simCfg && /^\s*def\s+agent\s*\(/m.test(code)) {
+      running = false; setBusy(false);
+      return runAgentInteractive(code, simCfg, player.cfg === simCfg ? player.runIdx : 0);
+    }
     runPython(code, { echo: true }).then(function (res) {
       if (res.error) showError(res.error);
       else if (!res.out) conWrite("(Programmet kördes klart men skrev inte ut något.)\n", "sys");
@@ -1132,6 +1162,229 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
   function setBusy(b) {
     $("btnRun").disabled = b; $("btnCheckTop").disabled = b;
     var c = $("btnCheck"); if (c && ui && ui.ex.type === "code") c.disabled = b;
+  }
+
+  /* ---------- Agentvärlden (del 3) ---------- */
+  // Världen och ritkoden lånas från Agenter och miljöer. Elevens agent(percept) anropas en gång per steg.
+  var SIM_BASE = "../agenter-och-miljoer/js/";
+  var simMods = null;
+  function loadSim() {
+    if (!simMods) simMods = Promise.all([import(SIM_BASE + "world.js"), import(SIM_BASE + "render.js")])
+      .then(function (m) { return { World: m[0].World, WorldView: m[1].WorldView }; })
+      .catch(function (e) { simMods = null; throw e; });
+    return simMods;
+  }
+  var ACT = { "sug": "SUG", "upp": "N", "ner": "S", "höger": "E", "vänster": "W", "vänta": "VANTA" };
+  var HALL = { upp: "N", "höger": "E", ner: "S", "vänster": "W" };
+  var HALLS = ["upp", "höger", "ner", "vänster"];
+
+  // Vilken värld gäller just nu: uppgiftens, eller delens om eleven leker fritt.
+  function currentSim() {
+    var p = me(); if (!p) return null;
+    var ex = EX[p.pos];
+    if (edKey && edKey !== "scratch") return ex.sim || null;
+    var pt = PARTS[partNo(p.part) - 1];
+    return pt && pt.sim || null;
+  }
+  function runLabel(cfg, i) { var r = cfg.runs[i]; return r.label ? r.label.charAt(0).toUpperCase() + r.label.slice(1) : "Värld " + (i + 1); }
+
+  function makeWorld(M, cfg, run) {
+    var o = {}; Object.keys(cfg.world).forEach(function (k) { o[k] = cfg.world[k]; });
+    o.seed = run.seed || 1;
+    var w = new M.World(o);
+    if (run.dirt) run.dirt.forEach(function (v, i) { w.dirt[w.floor[i]] = v ? 1 : 0; });
+    if (run.start) { w.bot.x = run.start[0]; w.bot.y = run.start[1]; }
+    return w;
+  }
+  function perceptOf(w) {
+    var p = w.percept();
+    return {
+      smutsig: p.dirty,
+      fritt: HALLS.filter(function (h) { return !p.bumps[HALL[h]]; }),
+      x: p.x, y: p.y,
+      laddare: [p.charger.x, p.charger.y],
+      batteri: p.battery,
+      steg: p.t
+    };
+  }
+  function snap(w, a, ev) {
+    var b = w.bot;
+    return { x: b.x, y: b.y, heading: b.heading, battery: b.battery, dead: b.dead, dirt: Uint8Array.from(w.dirt),
+      dog: w.dog ? { x: w.dog.x, y: w.dog.y } : null, t: w.t, a: a, blocked: !!(ev && ev.blocked), clean: w.cleanliness() };
+  }
+  function pyRepr(v) {
+    if (v === undefined || v === null) return "None";
+    if (typeof v === "string") return JSON.stringify(v);
+    try { return String(v); } catch (e) { return "?"; }
+  }
+
+  // Kör en hel värld med agentfunktionen i res.ns och spelar in varje steg.
+  function simulate(M, res, cfg, runIdx) {
+    var run = cfg.runs[runIdx], w = makeWorld(M, cfg, run), fn = res.ns.get("agent");
+    var st = { frames: [snap(w)], world: w, bumps: 0, firstBump: 0, leftDirty: 0, error: null, bad: null, deadAt: 0 };
+    try { res.py.runPython("import random as _slump\n_slump.seed(" + (101 + runIdx) + ")", { globals: res.ns }); } catch (e) { /* */ }
+    for (var t = 0; t < cfg.steps; t++) {
+      var dirtyHere = w.isDirty(w.bot.x, w.bot.y), pp = res.py.toPy(perceptOf(w)), a;
+      try { a = fn(pp); }
+      catch (e) { st.error = cleanErr(String(e && e.message || e)); st.errorAt = t + 1; break; }
+      finally { pp.destroy(); }
+      if (a && typeof a === "object" && a.destroy) { var r = pyRepr(a); a.destroy(); a = { repr: r }; }
+      var act = typeof a === "string" ? ACT[a.trim().toLowerCase()] : null;
+      if (!act) { st.bad = { step: t + 1, value: a && a.repr ? a.repr : pyRepr(a) }; break; }
+      if (dirtyHere && act !== "SUG" && !w.bot.dead && !st.leftDirty) st.leftDirty = t + 1;
+      var ev = w.step(act);
+      if (ev.blocked) { st.bumps++; if (!st.firstBump) st.firstBump = t + 1; }
+      if (w.bot.dead && !st.deadAt) st.deadAt = t + 1;
+      st.frames.push(snap(w, a.trim().toLowerCase(), ev));
+    }
+    fn.destroy();
+    st.clean = w.cleanliness();
+    return st;
+  }
+
+  /* Uppspelning */
+  var player = { M: null, cfg: null, results: {}, runIdx: 0, frames: null, world: null, view: null, i: 0, timer: null };
+  function simVisible(on) { $("right").classList.toggle("has-sim", !!on); if (cm) setTimeout(function () { cm.refresh(); }, 0); }
+  function simStop() { clearInterval(player.timer); player.timer = null; $("simPlay").textContent = "▶"; $("simPlay").setAttribute("aria-label", "Spela"); }
+  function simPlay() {
+    if (!player.frames || player.frames.length < 2) return;
+    if (player.i >= player.frames.length - 1) player.i = 0;
+    clearInterval(player.timer);
+    var speed = +$("simSpeed").value;
+    player.timer = setInterval(function () {
+      player.i = Math.min(player.frames.length - 1, player.i + speed);
+      simDraw();
+      if (player.i >= player.frames.length - 1) simStop();
+    }, 60);
+    $("simPlay").textContent = "⏸"; $("simPlay").setAttribute("aria-label", "Pausa");
+  }
+  function simDraw() {
+    var f = player.frames[player.i], w = player.world, c = $("simCanvas");
+    w.dirt.set(f.dirt);
+    w.bot = { x: f.x, y: f.y, heading: f.heading, battery: f.battery, dead: f.dead };
+    w.dog = f.dog; w.t = f.t;
+    var avail = $("sim").clientWidth - 24, maxH = Math.max(100, Math.min(240, window.innerHeight * 0.22));
+    c.style.width = Math.max(120, Math.min(avail, maxH * w.w / w.h)) + "px";
+    var trail = player.frames.slice(Math.max(0, player.i - 80), player.i + 1).map(function (s) { return [s.x, s.y]; });
+    player.view.draw(w, { trail: trail, noCharger: !w.o.battery });
+    var steps = player.frames.length - 1, txt = "Steg " + f.t + (steps ? " av " + steps : "") + " · " + Math.round(f.clean * 100) + " % rent";
+    if (w.o.battery) txt += " · batteri " + f.battery + "/" + w.o.capacity;
+    if (f.a) txt += " · " + f.a;
+    if (f.blocked) txt += " · krock med vägg!";
+    if (f.dead) txt += " · batteriet slut!";
+    $("simStat").textContent = txt;
+    $("simStat").classList.toggle("warn", f.blocked || f.dead);
+  }
+  function simShow(M, cfg, runIdx, frames) {
+    simStop();
+    player.M = M; player.cfg = cfg; player.runIdx = runIdx;
+    player.world = makeWorld(M, cfg, cfg.runs[runIdx]);
+    if (!player.view) player.view = new M.WorldView($("simCanvas"));
+    player.frames = frames || [snap(player.world)];
+    player.i = 0;
+    var sel = $("simRun");
+    sel.innerHTML = cfg.runs.map(function (r, i) { return '<option value="' + i + '">' + esc(runLabel(cfg, i)) + "</option>"; }).join("");
+    sel.value = String(runIdx);
+    sel.hidden = cfg.runs.length < 2;
+    $("simPlay").disabled = $("simEnd").disabled = !frames;
+    simVisible(true);
+    simDraw();
+    if (frames) simPlay();
+  }
+  // Visa världen (utan agent) när eleven öppnar en agentuppgift.
+  function simPreview() {
+    var cfg = currentSim();
+    if (!cfg) { simStop(); simVisible(false); return; }
+    if (player.cfg === cfg && $("right").classList.contains("has-sim")) return;
+    player.results = {};
+    loadSim().then(function (M) { if (currentSim() === cfg) simShow(M, cfg, 0, null); }).catch(function () { simVisible(false); });
+  }
+  $("simPlay").addEventListener("click", function () { if (player.timer) simStop(); else simPlay(); });
+  $("simEnd").addEventListener("click", function () { if (!player.frames) return; simStop(); player.i = player.frames.length - 1; simDraw(); });
+  $("simSpeed").addEventListener("change", function () { if (player.timer) simPlay(); });
+  $("simRun").addEventListener("change", function () {
+    var i = +$("simRun").value, cfg = player.cfg;
+    if (player.results[i]) simShow(player.M, cfg, i, player.results[i].frames);
+    else if (!running && cm && cm.getValue().indexOf("def agent") >= 0) runAgentInteractive(cm.getValue(), cfg, i);
+    else simShow(player.M, cfg, i, null);
+  });
+  window.addEventListener("resize", function () { if (player.frames && $("right").classList.contains("has-sim")) simDraw(); });
+
+  function noAgentMsg() { return "Det finns ingen funktion som heter agent. Skriv def agent(percept): – den styr dammsugaren."; }
+  function hasAgent(res) { var fn = res.ns.get("agent"); var ok = typeof fn === "function"; if (fn && fn.destroy) fn.destroy(); return ok; }
+
+  function simProblem(st, cfg, i) {
+    var where = cfg.runs.length > 1 ? "I världen <i>" + esc(cfg.runs[i].label || runLabel(cfg, i)) + "</i>: " : "";
+    if (st.error) return where + "Agenten kraschade i steg " + st.errorAt + " med <code>" + esc(errType(st.error) || "fel") + "</code>. Läs felmeddelandet under världen.";
+    if (st.bad) return where + "Agenten returnerade <code>" + esc(st.bad.value) + "</code> i steg " + st.bad.step + ". Den ska returnera en av <code>\"sug\"</code>, <code>\"upp\"</code>, <code>\"ner\"</code>, <code>\"höger\"</code>, <code>\"vänster\"</code> eller <code>\"vänta\"</code>.";
+    var g = cfg.goal || {};
+    if (g.noBump && st.bumps) return where + "Agenten körde in i en vägg i steg " + st.firstBump + ". Kolla att hållet finns i <code>percept[\"fritt\"]</code> innan agenten går dit.";
+    if (g.suckDirty && st.leftDirty) return where + "I steg " + st.leftDirty + " gick agenten från en smutsig ruta utan att suga. Kolla <code>percept[\"smutsig\"]</code> först.";
+    if (g.alive && st.deadAt) return where + "Batteriet tog slut i steg " + st.deadAt + ". Agenten måste hinna hem till laddaren.";
+    if (g.clean != null && st.clean < g.clean - 1e-9) return where + "Efter " + cfg.steps + " steg var det bara " + Math.round(st.clean * 100) + " % rent – det ska vara " + Math.round(g.clean * 100) + " %.";
+    return null;
+  }
+
+  function runAgentInteractive(code, cfg, runIdx) {
+    running = true; setBusy(true);
+    conClear();
+    Promise.all([loadSim(), runPython(code, { echo: true })]).then(function (x) {
+      var M = x[0], res = x[1];
+      if (res.error) { showError(res.error); res.ns.destroy(); return; }
+      if (!hasAgent(res)) { if (!res.out) conWrite(noAgentMsg() + "\n", "sys"); res.ns.destroy(); return; }
+      var st = simulate(M, res, cfg, runIdx);
+      res.ns.destroy();
+      if (st.error) showError(st.error);
+      else if (st.bad) conWrite("Agenten returnerade " + st.bad.value + " i steg " + st.bad.step + " – det är ingen handling världen känner till.\n", "err");
+      else conWrite("Klar: " + (st.frames.length - 1) + " steg · " + Math.round(st.clean * 100) + " % rent" + (st.bumps ? " · " + st.bumps + " krockar med väggar" : "") + (st.deadAt ? " · batteriet tog slut i steg " + st.deadAt : "") + ".\n", "sys");
+      player.results = {}; player.results[runIdx] = st;
+      simShow(M, cfg, runIdx, st.frames);
+    }).catch(function () {
+      conWrite("Python eller världen kunde inte laddas. Kontrollera internetanslutningen och ladda om sidan.\n", "err");
+    }).then(function () { running = false; setBusy(false); });
+  }
+
+  function checkSim(ex) {
+    var cfg = ex.sim, code = cm.getValue(), results = {}, i = 0, fail = null, failIdx = 0;
+    running = true; setBusy(true);
+    conClear();
+    feedback("wait", "<p>Kör agenten i " + (cfg.runs.length > 1 ? cfg.runs.length + " världar" : "världen") + " …</p>");
+    function next(M) {
+      if (i >= cfg.runs.length || fail) return Promise.resolve();
+      var idx = i;
+      return runPython(code, { inputs: [], echo: idx === 0 }).then(function (res) {
+        if (res.error) { showError(res.error); fail = "Programmet kraschade med <code>" + esc(errType(res.error) || "fel") + "</code>. Läs felmeddelandet under editorn."; res.ns.destroy(); return; }
+        if (!hasAgent(res)) { fail = esc(noAgentMsg()); res.ns.destroy(); return; }
+        var st = simulate(M, res, cfg, idx);
+        res.ns.destroy();
+        results[idx] = st;
+        conWrite(runLabel(cfg, idx) + ": " + Math.round(st.clean * 100) + " % rent efter " + (st.frames.length - 1) + " steg" + (st.bumps ? ", " + st.bumps + " krockar" : "") + (st.deadAt ? ", batteriet slut i steg " + st.deadAt : "") + "\n", "sys");
+        if (st.error) showError(st.error);
+        var prob = simProblem(st, cfg, idx);
+        if (prob) { fail = prob; failIdx = idx; }
+        i++;
+        return next(M);
+      });
+    }
+    loadSim().then(function (M) {
+      return next(M).then(function () {
+        var g = cfg.goal || {};
+        if (!fail && g.avgClean != null) {
+          var sum = 0; cfg.runs.forEach(function (_, k) { sum += results[k].clean; });
+          var avg = sum / cfg.runs.length;
+          conWrite("I snitt: " + Math.round(avg * 100) + " % rent (målet är " + Math.round(g.avgClean * 100) + " %).\n", "sys");
+          if (avg < g.avgClean - 1e-9) {
+            fail = "I snitt blev det " + Math.round(avg * 100) + " % rent – målet är minst " + Math.round(g.avgClean * 100) + " %.";
+            failIdx = cfg.runs.reduce(function (b, _, k) { return results[k].clean < results[b].clean ? k : b; }, 0);
+          }
+        }
+        player.results = results;
+        if (results[failIdx]) simShow(M, cfg, failIdx, results[failIdx].frames);
+        finishCheck(ex, fail);
+      });
+    }).catch(function () {
+      feedback("bad", "<p>Python eller världen kunde inte laddas. Kontrollera internetanslutningen och ladda om sidan.</p>");
+    }).then(function () { running = false; setBusy(false); });
   }
 
   /* ---------- Kodupppgifter ---------- */
@@ -1152,6 +1405,7 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
   function checkCode() {
     var ex = EX[me().pos];
     if (running || !cm || ex.type !== "code") return;
+    if (ex.sim) return checkSim(ex);
     running = true; setBusy(true);
     var code = cm.getValue(), runs = ex.runs || [{}], i = 0, fail = null;
     conClear();
@@ -1179,7 +1433,11 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
         return next();
       });
     }
-    next().then(function () {
+    next().then(function () { finishCheck(ex, fail); }).catch(function () {
+      feedback("bad", "<p>Python kunde inte startas. Kontrollera internetanslutningen och ladda om sidan.</p>");
+    }).then(function () { running = false; setBusy(false); });
+  }
+  function finishCheck(ex, fail) {
       var p = me(), a = p.answers[ex.id] || (p.answers[ex.id] = { n: 0 }), already = !!a.s;
       a.n = (a.n || 0) + 1;
       if (!fail) {
@@ -1196,9 +1454,6 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
         feedback("bad", '<p><b class="h">Inte än.</b> ' + fail + "</p>" + (ex.hint && a.n >= 2 ? '<p class="small">Ledtråd: ' + ex.hint + "</p>" : ""));
         if (!already && a.n >= 2) $("btnShow").hidden = false;
       }
-    }).catch(function () {
-      feedback("bad", "<p>Python kunde inte startas. Kontrollera internetanslutningen och ladda om sidan.</p>");
-    }).then(function () { running = false; setBusy(false); });
   }
   function revealCode() {
     var ex = EX[me().pos];

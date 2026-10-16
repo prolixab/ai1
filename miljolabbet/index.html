@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Miljölabbet – AI 1</title>
+<meta name="description" content="Styr en städrobot i 3D och känn efter hur miljöns egenskaper gör uppgiften lättare eller svårare. Kursmaterial för AI 1.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2314112b'/><circle cx='16' cy='16' r='10' fill='%23e8890c'/><circle cx='16' cy='16' r='5' fill='none' stroke='%233a2300' stroke-width='2'/><circle cx='22' cy='16' r='2' fill='%233a2300'/></svg>">
+<style>
+/* Samma färger som lektionen Agenter och miljöer. */
+:root{
+  --paper:#f5f6f8; --surface:#ffffff; --ink:#18202a; --muted:#5d6874; --line:#dde2e8;
+  --ok:#1f8a5b; --warn:#b7791f; --bad:#c8403a; --focus:#5b3fd4; --accent:#5b3fd4; --sky:#e6e8f0;
+  --hero:#14112b;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0f1116; --surface:#171a22; --ink:#e6e9ef; --muted:#98a2b0; --line:#2a2f3b;
+    --ok:#4cc98f; --warn:#f0b34f; --bad:#f2756b; --focus:#a594ff; --accent:#a594ff; --sky:#1e222c;
+    --hero:#0b0a1a;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0f1116; --surface:#171a22; --ink:#e6e9ef; --muted:#98a2b0; --line:#2a2f3b;
+  --ok:#4cc98f; --warn:#f0b34f; --bad:#f2756b; --focus:#a594ff; --accent:#a594ff; --sky:#1e222c;
+  --hero:#0b0a1a;
+}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font:17px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+h1,h2,h3{line-height:1.2;margin:0}
+h3{font-size:1.05rem;margin-bottom:.5em}
+p{margin:0 0 1em}
+a{color:var(--accent)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+.hint{font-size:.9rem;color:var(--muted);margin:8px 0 0}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+.hero{background:var(--hero);color:#ebe8ff;padding:40px 0 28px;
+  background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px),radial-gradient(circle at 85% 20%,#3b2a8f 0,transparent 50%);
+  background-size:32px 32px,32px 32px,auto}
+.hero-inner{max-width:1400px;margin:0 auto;padding:0 20px}
+.hero h1{font-size:clamp(2.3rem,7vw,3.6rem);margin:.2rem 0 .5rem;letter-spacing:-.02em}
+.hero .lede{font-size:1.12rem;max-width:720px;color:#cdc7f0}
+.kicker{text-transform:uppercase;letter-spacing:.12em;font-size:.8rem;color:#b3a6ff;margin:0}
+.back-link{display:inline-block;color:#b3a6ff;text-decoration:none;font-size:.9rem;margin:0 18px 18px 0}
+.back-link:hover{color:#fff}
+.how{display:flex;flex-wrap:wrap;gap:8px 20px;margin:4px 0 0;padding:0;list-style:none;font-size:.95rem;color:#cdc7f0}
+.how b{color:#fff}
+kbd{font-family:inherit;font-size:.82em;font-weight:700;border:1.5px solid #3a3466;border-bottom-width:3px;border-radius:6px;padding:0 6px;background:#221d45;color:#ebe8ff}
+footer{max-width:1400px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:var(--muted)}
+
+.app{max-width:1400px;margin:0 auto;padding:16px 20px 40px}
+.app-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+@media (max-width:1000px){.app-grid{grid-template-columns:1fr}}
+.side{display:grid;gap:16px;min-width:0}
+
+.three-box{position:relative;border-radius:14px;overflow:hidden;background:var(--sky);height:clamp(340px,66vh,720px);border:1px solid var(--line)}
+@media (max-width:700px){.three-box{height:auto;aspect-ratio:1/1}}
+.three-box canvas{display:block;width:100%;height:100%;touch-action:none}
+.banner{position:absolute;left:50%;top:16px;transform:translateX(-50%);width:max-content;max-width:calc(100% - 28px);
+  background:var(--surface);color:var(--ink);border:2px solid var(--ok);border-radius:14px;padding:14px 20px;
+  box-shadow:0 8px 28px rgba(0,0,0,.2);text-align:center}
+.banner[hidden]{display:none}
+.banner b{font-size:1.4rem;display:block}
+.banner .row{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+.toast{position:absolute;left:14px;bottom:14px;max-width:calc(100% - 28px);background:var(--surface);color:var(--ink);
+  border:1.5px solid var(--line);border-radius:10px;padding:6px 12px;font-size:.92rem;font-weight:700;
+  box-shadow:0 4px 14px rgba(0,0,0,.15);transition:opacity .25s}
+.toast.good{border-color:var(--ok);color:var(--ok)} .toast.bad{border-color:var(--bad);color:var(--bad)}
+.toast.hidden{opacity:0}
+
+.under{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:center;margin-top:14px}
+.pad{display:grid;grid-template-columns:repeat(3,58px);grid-template-rows:repeat(3,58px);gap:6px;flex:none}
+.pad button{font:inherit;font-size:1.4rem;font-weight:700;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);cursor:pointer;touch-action:manipulation}
+.pad button:active{background:var(--line)}
+.pad .suck{font-size:.85rem;background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.pad .u{grid-column:2;grid-row:1} .pad .l{grid-column:1;grid-row:2} .pad .suck{grid-column:2;grid-row:2}
+.pad .r{grid-column:3;grid-row:2} .pad .d{grid-column:2;grid-row:3}
+.under .keys{flex:1 1 260px;font-size:.92rem;color:var(--muted)}
+.under .keys p{margin:0 0 .4em}
+
+.btn{font:inherit;font-weight:700;border:0;border-radius:10px;padding:8px 16px;background:var(--ink);color:var(--paper);cursor:pointer;min-height:42px}
+.btn.go{background:var(--ok);color:#fff}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat small{display:block;color:var(--muted);font-size:.8rem}
+.stat b{display:block;font-size:1.6rem;font-variant-numeric:tabular-nums;line-height:1.15}
+.rules{font-size:.88rem;color:var(--muted);margin:10px 0 0;padding-left:1.1em}
+
+.sensor{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:.95rem;margin:0}
+.sensor dt{color:var(--muted)}
+.sensor dd{margin:0;font-weight:700;font-variant-numeric:tabular-nums}
+.log{list-style:none;margin:10px 0 0;padding:0;font-size:.88rem;max-height:11em;overflow:auto}
+.log li{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-top:1px solid var(--line)}
+.log li span:last-child{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.log .plus{color:var(--ok)} .log .minus{color:var(--muted)}
+
+.props{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.props li{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;font-size:.84rem}
+.props span{padding:3px 8px;border-radius:999px;border:1.5px solid transparent;color:var(--muted);text-align:center}
+.props span.on{border-color:var(--accent);color:var(--ink);font-weight:700}
+.props i{font-style:normal;color:var(--line)}
+
+.seed{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.seed input{font:inherit;width:7.5em;padding:6px 10px;border:1.5px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);font-variant-numeric:tabular-nums}
+@media (max-width:520px){.panel{padding:12px}.app,.intro{padding-left:16px;padding-right:16px}.pad{grid-template-columns:repeat(3,52px);grid-template-rows:repeat(3,52px)}}
+@media (prefers-contrast: more){:root{--line:var(--muted)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+            "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+  <a class="back-link" href="../index.html">← Kurssidan AI 1</a>
+  <a class="back-link" href="../agenter-och-miljoer/#k3">← Miljöns egenskaper</a>
+  <p class="kicker">AI 1 · Agenter och miljöer</p>
+  <h1>Miljölabbet</h1>
+  <p class="lede">Du är en städrobot. Sug upp all smuts i rummet och kör sedan tillbaka till laddstationen, på så få drag som möjligt. Här är miljön så lätt den kan bli: du ser hela rummet, allt går som du tänkt och ingenting händer förrän du gör ett drag.</p>
+  <ul class="how">
+    <li><b>Kör:</b> <kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd> eller <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></li>
+    <li><b>Sug:</b> <kbd>Mellanslag</kbd></li>
+    <li><b>Vrid kameran:</b> dra i bilden</li>
+  </ul>
+  </div>
+</header>
+
+<main class="app">
+  <div class="app-grid">
+    <div>
+      <div class="three-box" id="view">
+        <div class="banner" id="banner" hidden role="status">
+          <b id="bannerTitle">Rummet är städat!</b>
+          <span id="bannerText"></span>
+          <div class="row">
+            <button class="btn go" id="againBtn" type="button">Spela samma rum igen</button>
+            <button class="btn ghost" id="newBtn2" type="button">Nytt rum</button>
+          </div>
+        </div>
+        <div class="toast hidden" id="toast" aria-hidden="true"></div>
+      </div>
+      <div class="under">
+        <div class="pad" role="group" aria-label="Styr roboten">
+          <button class="u" data-act="upp" type="button" aria-label="Kör uppåt">↑</button>
+          <button class="l" data-act="vänster" type="button" aria-label="Kör åt vänster">←</button>
+          <button class="suck" data-act="sug" type="button">Sug</button>
+          <button class="r" data-act="höger" type="button" aria-label="Kör åt höger">→</button>
+          <button class="d" data-act="ned" type="button" aria-label="Kör nedåt">↓</button>
+        </div>
+        <div class="keys">
+          <p>Roboten flyttar en ruta per drag. Den suger bara upp smutsen på den ruta den står på, och bara när du trycker <b>Sug</b>.</p>
+          <p>Kör du in i en möbel eller vägg står roboten kvar, men draget räknas ändå.</p>
+        </div>
+      </div>
+    </div>
+
+    <aside class="side">
+      <section class="panel" aria-labelledby="hScore">
+        <h3 id="hScore">Poäng</h3>
+        <div class="stats">
+          <div class="stat"><small>Poäng</small><b id="sScore">0</b></div>
+          <div class="stat"><small>Drag</small><b id="sMoves">0</b></div>
+          <div class="stat"><small>Smuts kvar</small><b id="sDirt">0</b></div>
+        </div>
+        <ul class="rules">
+          <li>+10 för varje smutsig ruta du suger rent</li>
+          <li>−1 för varje drag (även krockar och onödig sugning)</li>
+          <li>+20 när rummet är rent och du står i laddstationen</li>
+        </ul>
+      </section>
+
+      <section class="panel" aria-labelledby="hSensor">
+        <h3 id="hSensor">Vad roboten känner av</h3>
+        <dl class="sensor">
+          <dt>Position</dt><dd id="pPos">–</dd>
+          <dt>Rutan</dt><dd id="pCell">–</dd>
+          <dt>Smuts i rummet</dt><dd id="pSeen">–</dd>
+        </dl>
+        <ol class="log" id="log" aria-label="Senaste händelser" aria-live="polite"></ol>
+      </section>
+
+      <section class="panel" aria-labelledby="hProps">
+        <h3 id="hProps">Miljöns egenskaper just nu</h3>
+        <ul class="props" id="props"></ul>
+        <p class="hint">I nästa version blir de här reglage som du själv kan slå om.</p>
+      </section>
+
+      <section class="panel" aria-labelledby="hRoom">
+        <h3 id="hRoom">Rummet</h3>
+        <div class="seed">
+          <label for="seedIn">Rumsnummer</label>
+          <input id="seedIn" type="text" inputmode="numeric" autocomplete="off">
+          <button class="btn ghost" id="seedBtn" type="button">Hämta</button>
+        </div>
+        <div class="seed" style="margin-top:10px">
+          <button class="btn ghost" id="restartBtn" type="button">Börja om</button>
+          <button class="btn" id="newBtn" type="button">Nytt rum</button>
+        </div>
+        <p class="hint">Samma rumsnummer ger alltid samma rum. Skriv upp numret om hela klassen ska spela samma rum.</p>
+      </section>
+    </aside>
+  </div>
+</main>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+/* =====================================================================
+ * Världsmodell. Ritar ingenting: skapar ett rum från ett frö och räknar
+ * fram nästa läge från en handling. Kan köras och testas utan 3D.
+ * ===================================================================== */
+const N = 8;
+const DIRT_COUNT = 10;
+const ACTIONS = ["upp", "ned", "vänster", "höger", "sug"];
+const MOVES = { upp: [0, -1], ned: [0, 1], "vänster": [-1, 0], "höger": [1, 0] };
+const POINTS = { step: -1, dirt: 10, dock: 20 };
+
+const FURNITURE = [
+  { type: "soffa", name: "soffan", w: 3, h: 1 },
+  { type: "bord", name: "bordet", w: 2, h: 2 },
+  { type: "hylla", name: "bokhyllan", w: 2, h: 1 },
+  { type: "fatolj", name: "fåtöljen", w: 1, h: 1 },
+  { type: "vaxt", name: "krukväxten", w: 1, h: 1 }
+];
+
+// Liten, snabb slumpgenerator med frö (mulberry32).
+function makeRng(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const idx = (x, y) => y * N + x;
+const inside = (x, y) => x >= 0 && y >= 0 && x < N && y < N;
+
+function reachableFrom(blocked, x0, y0) {
+  const seen = new Uint8Array(N * N);
+  const queue = [[x0, y0]];
+  seen[idx(x0, y0)] = 1;
+  let count = 1;
+  while (queue.length) {
+    const [x, y] = queue.shift();
+    for (const [dx, dy] of Object.values(MOVES)) {
+      const nx = x + dx, ny = y + dy;
+      if (inside(nx, ny) && !seen[idx(nx, ny)] && blocked[idx(nx, ny)] < 0) {
+        seen[idx(nx, ny)] = 1; count++; queue.push([nx, ny]);
+      }
+    }
+  }
+  return count;
+}
+
+function createWorld(seed) {
+  const rng = makeRng(seed);
+  const charger = { x: 0, y: N - 1 };
+  for (let attempt = 0; attempt < 500; attempt++) {
+    const blocked = new Int8Array(N * N).fill(-1);
+    const furniture = [];
+    let ok = true;
+    FURNITURE.forEach((def, i) => {
+      if (!ok) return;
+      let placed = false;
+      for (let tries = 0; tries < 60 && !placed; tries++) {
+        const turn = def.w !== def.h && rng() < 0.5;
+        const w = turn ? def.h : def.w, h = turn ? def.w : def.h;
+        const x = Math.floor(rng() * (N - w + 1)), y = Math.floor(rng() * (N - h + 1));
+        let free = true;
+        for (let yy = y; yy < y + h && free; yy++)
+          for (let xx = x; xx < x + w && free; xx++)
+            if (blocked[idx(xx, yy)] >= 0 || Math.abs(xx - charger.x) + Math.abs(yy - charger.y) <= 1) free = false;
+        if (!free) continue;
+        for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) blocked[idx(xx, yy)] = i;
+        furniture.push({ ...def, x, y, w, h });
+        placed = true;
+      }
+      if (!placed) ok = false;
+    });
+    if (!ok) continue;
+    const freeCells = [];
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (blocked[idx(x, y)] < 0) freeCells.push([x, y]);
+    // Alla fria rutor måste gå att nå från laddstationen.
+    if (reachableFrom(blocked, charger.x, charger.y) !== freeCells.length) continue;
+
+    const candidates = freeCells.filter(([x, y]) => !(x === charger.x && y === charger.y));
+    const dirt = new Uint8Array(N * N);
+    for (let k = 0; k < DIRT_COUNT; k++) {
+      const j = k + Math.floor(rng() * (candidates.length - k));
+      [candidates[k], candidates[j]] = [candidates[j], candidates[k]];
+      dirt[idx(candidates[k][0], candidates[k][1])] = 1;
+    }
+    return {
+      seed, n: N, blocked, furniture, charger, dirt,
+      robot: { x: charger.x, y: charger.y, dir: "upp" },
+      score: 0, moves: 0, cleaned: 0, totalDirt: DIRT_COUNT, done: false
+    };
+  }
+  throw new Error("Kunde inte skapa ett rum med frö " + seed);
+}
+
+const dirtLeft = (w) => w.totalDirt - w.cleaned;
+
+// Utför en handling. Ändrar världen och returnerar vad som hände.
+function step(w, action) {
+  if (w.done || !ACTIONS.includes(action)) return null;
+  const r = w.robot;
+  w.moves++;
+  w.score += POINTS.step;
+  let ev;
+  if (action === "sug") {
+    if (w.dirt[idx(r.x, r.y)]) {
+      w.dirt[idx(r.x, r.y)] = 0;
+      w.cleaned++;
+      w.score += POINTS.dirt;
+      ev = { type: "suck", x: r.x, y: r.y, text: "Sög upp smutsen", points: POINTS.dirt + POINTS.step };
+    } else {
+      ev = { type: "suck-empty", text: "Rutan var redan ren", points: POINTS.step };
+    }
+  } else {
+    const [dx, dy] = MOVES[action];
+    const nx = r.x + dx, ny = r.y + dy;
+    r.dir = action;
+    if (!inside(nx, ny)) {
+      ev = { type: "bump", what: "väggen", text: "Krockade med väggen", points: POINTS.step };
+    } else if (w.blocked[idx(nx, ny)] >= 0) {
+      const what = w.furniture[w.blocked[idx(nx, ny)]].name;
+      ev = { type: "bump", what, text: "Krockade med " + what, points: POINTS.step };
+    } else {
+      r.x = nx; r.y = ny;
+      ev = { type: "move", text: "Körde " + action, points: POINTS.step };
+    }
+  }
+  if (dirtLeft(w) === 0 && r.x === w.charger.x && r.y === w.charger.y) {
+    w.done = true;
+    w.score += POINTS.dock;
+    ev.docked = true;
+    ev.points += POINTS.dock;
+  }
+  return ev;
+}
+
+// Det roboten känner av. Rummet är fullt observerbart, så sensorerna ser allt.
+function percept(w) {
+  return { x: w.robot.x, y: w.robot.y, dirty: !!w.dirt[idx(w.robot.x, w.robot.y)], dirtLeft: dirtLeft(w),
+    onCharger: w.robot.x === w.charger.x && w.robot.y === w.charger.y };
+}
+
+// Miljöns egenskaper i den här versionen (blir reglage i etapp 2).
+const PROPERTIES = [
+  ["Fullt observerbar", "Delvis observerbar", 0],
+  ["Deterministisk", "Stokastisk", 0],
+  ["Episodisk", "Sekventiell", 1],
+  ["Statisk", "Dynamisk", 0],
+  ["Diskret", "Kontinuerlig", 0],
+  ["En agent", "Flera agenter", 0]
+];
+
+/* =====================================================================
+ * 3D-vy
+ * ===================================================================== */
+const view = document.getElementById("view");
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.domElement.setAttribute("role", "img");
+renderer.domElement.setAttribute("aria-label", "Rummet i 3D, sett snett ovanifrån. Använd piltangenterna för att styra roboten.");
+view.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+camera.position.set(0, 10.5, 8.6);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0, 0.4);
+controls.enablePan = false;
+controls.enableDamping = true;
+controls.minDistance = 7;
+controls.maxDistance = 20;
+controls.maxPolarAngle = Math.PI * 0.42;
+controls.update();
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0xb8a888, 1.1));
+const sun = new THREE.DirectionalLight(0xffffff, 1.7);
+sun.position.set(4, 10, 4);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6, near: 1, far: 30 });
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+
+const cellPos = (x, y) => new THREE.Vector3(x - N / 2 + 0.5, 0, y - N / 2 + 0.5);
+const matCache = new Map();
+function mat(color, opts = {}) {
+  const key = color + JSON.stringify(opts);
+  if (!matCache.has(key)) matCache.set(key, new THREE.MeshStandardMaterial({ color, roughness: 0.8, ...opts }));
+  return matCache.get(key);
+}
+function box(w, h, d, color, x = 0, y = 0, z = 0) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color));
+  m.position.set(x, y + h / 2, z);
+  m.castShadow = true; m.receiveShadow = true;
+  return m;
+}
+
+// Golv, rutnät och väggar (byggs en gång).
+(function buildRoom() {
+  const tileGeo = new THREE.BoxGeometry(1, 0.06, 1);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const t = new THREE.Mesh(tileGeo, mat((x + y) % 2 ? 0xD6B48A : 0xCDA97C));
+    t.position.copy(cellPos(x, y)).setY(-0.03);
+    t.receiveShadow = true;
+    scene.add(t);
+  }
+  const pts = [];
+  for (let i = 0; i <= N; i++) {
+    const p = i - N / 2;
+    pts.push(p, 0.002, -N / 2, p, 0.002, N / 2, -N / 2, 0.002, p, N / 2, 0.002, p);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+  scene.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0x8C6E4A, transparent: true, opacity: 0.35 })));
+  const wall = 0xE4DED3, t = 0.16, half = N / 2 + t / 2;
+  scene.add(box(N + 2 * t, 0.9, t, wall, 0, -0.06, -half));
+  scene.add(box(t, 0.9, N, wall, -half, -0.06, 0));
+  scene.add(box(t, 0.9, N, wall, half, -0.06, 0));
+  scene.add(box(N + 2 * t, 0.22, t, wall, 0, -0.06, half));
+})();
+
+// Möbler byggs längs x (längd L, djup D) och vrids om de står på tvären.
+function makeFurniture(f) {
+  const g = new THREE.Group();
+  const L = Math.max(f.w, f.h), D = Math.min(f.w, f.h);
+  if (f.type === "soffa") {
+    const c = 0x4F7CAC;
+    g.add(box(L - 0.1, 0.32, D - 0.15, c, 0, 0, 0.02));
+    g.add(box(L - 0.1, 0.42, 0.2, c, 0, 0.3, -D / 2 + 0.16));
+    g.add(box(0.18, 0.26, D - 0.15, c, -L / 2 + 0.14, 0.3, 0.02));
+    g.add(box(0.18, 0.26, D - 0.15, c, L / 2 - 0.14, 0.3, 0.02));
+    for (let i = 0; i < 3; i++) g.add(box(L / 3 - 0.2, 0.08, D - 0.45, 0x6A95C4, (i - 1) * (L / 3 - 0.1), 0.32, 0.1));
+  } else if (f.type === "bord") {
+    const c = 0xA0703C;
+    g.add(box(L - 0.25, 0.07, D - 0.25, c, 0, 0.55, 0));
+    for (const sx of [-1, 1]) for (const sz of [-1, 1])
+      g.add(box(0.08, 0.55, 0.08, 0x7A522A, sx * (L / 2 - 0.25), 0, sz * (D / 2 - 0.25)));
+    g.add(box(0.3, 0.12, 0.3, 0xE8E2D4, 0.2, 0.62, -0.1));
+  } else if (f.type === "hylla") {
+    const c = 0x7A5A3A;
+    g.add(box(L - 0.1, 1.3, D - 0.45, c, 0, 0, -0.18));
+    const books = [0xC8402F, 0x2D68B0, 0xE3B745, 0x2E7D4F, 0x7A4699, 0xE8E2D4];
+    for (let s = 0; s < 3; s++) for (let b = 0; b < 7; b++)
+      g.add(box(0.2, 0.28 - (b % 3) * 0.04, 0.12, books[(b + s * 2) % books.length], -L / 2 + 0.25 + b * 0.24, 0.12 + s * 0.4, 0.12));
+  } else if (f.type === "fatolj") {
+    const c = 0xC9873B;
+    g.add(box(0.8, 0.3, 0.75, c, 0, 0, 0.04));
+    g.add(box(0.8, 0.4, 0.18, c, 0, 0.28, -0.3));
+    g.add(box(0.14, 0.22, 0.75, c, -0.36, 0.28, 0.04));
+    g.add(box(0.14, 0.22, 0.75, c, 0.36, 0.28, 0.04));
+  } else if (f.type === "vaxt") {
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.19, 0.38, 16), mat(0xB5603A));
+    pot.position.y = 0.19; pot.castShadow = true;
+    g.add(pot);
+    for (const [x, y, z, r] of [[0, 0.75, 0, 0.32], [0.14, 0.6, 0.1, 0.22], [-0.13, 0.62, -0.08, 0.22], [0.02, 1.0, 0.02, 0.2]]) {
+      const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), mat(0x3F8F4F, { flatShading: true }));
+      leaf.position.set(x, y, z); leaf.castShadow = true;
+      g.add(leaf);
+    }
+  }
+  if (f.h > f.w) g.rotation.y = Math.PI / 2;
+  // Möblernas "baksida" vänds mot närmaste vägg så att rummet ser ordnat ut.
+  const cx = f.x + f.w / 2, cy = f.y + f.h / 2;
+  if (f.h > f.w) { if (cx > N / 2) g.rotation.y = -Math.PI / 2; }
+  else if (cy > N / 2) g.rotation.y = Math.PI;
+  g.position.set(cx - N / 2, 0, cy - N / 2);
+  return g;
+}
+
+function makeCharger() {
+  const g = new THREE.Group();
+  g.add(box(0.86, 0.03, 0.86, 0x37424D));
+  const pad = box(0.6, 0.012, 0.6, 0x2E7D4F, 0, 0.03, 0);
+  pad.material = new THREE.MeshStandardMaterial({ color: 0x2E7D4F, emissive: 0x2E9D5F, emissiveIntensity: 0.6 });
+  g.add(pad);
+  g.add(box(0.5, 0.3, 0.08, 0x37424D, 0, 0, 0.44));
+  return g;
+}
+
+function makeRobot() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.38, 0.14, 40), mat(0xEEF1F3, { roughness: 0.4 }));
+  body.position.y = 0.09; body.castShadow = true;
+  g.add(body);
+  const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.02, 40), mat(0xE8890C, { roughness: 0.45 }));
+  lid.position.y = 0.17;
+  g.add(lid);
+  const bumper = new THREE.Mesh(new THREE.CylinderGeometry(0.385, 0.385, 0.07, 40, 1, true, Math.PI * 0.7, Math.PI * 0.6),
+    mat(0x55606B, { side: THREE.DoubleSide }));
+  bumper.position.y = 0.08;
+  g.add(bumper);
+  const eye = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 8),
+    new THREE.MeshStandardMaterial({ color: 0x5DFF9A, emissive: 0x2EE070, emissiveIntensity: 1.2 }));
+  eye.position.set(0, 0.185, -0.2);
+  g.add(eye);
+  return g;
+}
+
+const dirtMats = [mat(0x5A4632), mat(0x3D3226), mat(0x7A6650)];
+const dirtGeo = new THREE.SphereGeometry(0.075, 8, 6);
+function makeDirt(x, y, seed) {
+  const g = new THREE.Group();
+  const r = makeRng(seed * 131 + idx(x, y));
+  const count = 6 + Math.floor(r() * 4);
+  for (let i = 0; i < count; i++) {
+    const m = new THREE.Mesh(dirtGeo, dirtMats[Math.floor(r() * dirtMats.length)]);
+    const s = 0.6 + r() * 0.9;
+    m.scale.set(s, s * 0.45, s);
+    m.position.set((r() - 0.5) * 0.6, 0.02, (r() - 0.5) * 0.6);
+    m.castShadow = true;
+    g.add(m);
+  }
+  const p = cellPos(x, y);
+  g.position.set(p.x, 0, p.z);
+  return g;
+}
+
+const DIR_ANGLE = { upp: 0, "höger": -Math.PI / 2, ned: Math.PI, "vänster": Math.PI / 2 };
+
+// Enkla animationer: varje tween får ett värde k från 0 till 1.
+const tweens = [];
+let needsRender = true;
+function tween(dur, update, done) {
+  const t = { t0: performance.now(), dur, update, done };
+  tweens.push(t);
+  return t;
+}
+const ease = (k) => 1 - Math.pow(1 - k, 3);
+
+let world, roomGroup, robot, dirtMeshes;
+let robotTween = null;
+
+function buildWorldMeshes() {
+  if (roomGroup) scene.remove(roomGroup);
+  tweens.length = 0;
+  robotTween = null;
+  roomGroup = new THREE.Group();
+  world.furniture.forEach((f) => roomGroup.add(makeFurniture(f)));
+  const ch = makeCharger();
+  ch.position.copy(cellPos(world.charger.x, world.charger.y));
+  if (world.charger.y === N - 1) ch.rotation.y = 0;
+  roomGroup.add(ch);
+  dirtMeshes = new Map();
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (world.dirt[idx(x, y)]) {
+    const d = makeDirt(x, y, world.seed);
+    dirtMeshes.set(idx(x, y), d);
+    roomGroup.add(d);
+  }
+  robot = makeRobot();
+  robot.position.copy(cellPos(world.robot.x, world.robot.y));
+  robot.rotation.y = DIR_ANGLE[world.robot.dir];
+  roomGroup.add(robot);
+  scene.add(roomGroup);
+  needsRender = true;
+}
+
+function animateRobot(ev) {
+  // Hoppa direkt till förra målet om en ny handling kommer mitt i en animation.
+  if (robotTween) { robotTween.update(1); tweens.splice(tweens.indexOf(robotTween), 1); robotTween = null; }
+  const from = robot.position.clone();
+  const to = cellPos(world.robot.x, world.robot.y);
+  const a0 = robot.rotation.y;
+  let a1 = DIR_ANGLE[world.robot.dir];
+  while (a1 - a0 > Math.PI) a1 -= 2 * Math.PI;
+  while (a1 - a0 < -Math.PI) a1 += 2 * Math.PI;
+  if (ev.type === "bump") {
+    const dir = new THREE.Vector3(-Math.sin(a1), 0, -Math.cos(a1));
+    robotTween = tween(260, (k) => {
+      robot.rotation.y = a0 + (a1 - a0) * ease(Math.min(1, k * 2));
+      const push = Math.sin(Math.min(1, k) * Math.PI) * 0.16;
+      robot.position.copy(from).addScaledVector(dir, push);
+    });
+  } else if (ev.type === "move") {
+    robotTween = tween(170, (k) => {
+      robot.rotation.y = a0 + (a1 - a0) * ease(Math.min(1, k * 1.6));
+      robot.position.lerpVectors(from, to, ease(k));
+    });
+  } else {
+    // Sugning: roboten vickar lite.
+    robotTween = tween(260, (k) => {
+      robot.position.copy(from);
+      robot.position.y = Math.sin(k * Math.PI) * 0.03;
+      robot.rotation.y = a0 + Math.sin(k * Math.PI * 4) * 0.12 * (1 - k);
+    });
+  }
+  if (ev.type === "suck") {
+    const d = dirtMeshes.get(idx(ev.x, ev.y));
+    dirtMeshes.delete(idx(ev.x, ev.y));
+    if (d) {
+      const starts = d.children.map((m) => m.position.clone());
+      tween(320, (k) => {
+        d.children.forEach((m, i) => {
+          m.position.lerpVectors(starts[i], new THREE.Vector3(0, 0.1, 0), ease(k));
+          m.scale.multiplyScalar(0.9);
+        });
+      }, () => roomGroup.remove(d));
+    }
+  }
+}
+
+function resize() {
+  const w = view.clientWidth, h = view.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  // Smal bild: vidga synfältet så att hela rummets bredd fortfarande syns.
+  const tan = Math.tan(THREE.MathUtils.degToRad(38) / 2) * Math.max(1, 1.4 / camera.aspect);
+  camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(tan));
+  camera.updateProjectionMatrix();
+  needsRender = true;
+}
+new ResizeObserver(resize).observe(view);
+
+function applyTheme() {
+  scene.background = new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue("--sky").trim() || "#DCE6EC");
+  needsRender = true;
+}
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme);
+controls.addEventListener("change", () => { needsRender = true; });
+
+function loop(now) {
+  for (let i = tweens.length - 1; i >= 0; i--) {
+    const t = tweens[i];
+    const k = Math.min(1, (now - t.t0) / t.dur);
+    t.update(k);
+    if (k >= 1) {
+      tweens.splice(i, 1);
+      if (t === robotTween) robotTween = null;
+      if (t.done) t.done();
+    }
+    needsRender = true;
+  }
+  if (controls.update()) needsRender = true;
+  if (needsRender) { renderer.render(scene, camera); needsRender = false; }
+  requestAnimationFrame(loop);
+}
+
+/* =====================================================================
+ * Gränssnitt
+ * ===================================================================== */
+const $ = (id) => document.getElementById(id);
+const seedIn = $("seedIn");
+let toastTimer;
+
+function showToast(text, kind) {
+  const t = $("toast");
+  t.textContent = text;
+  t.className = "toast " + (kind || "");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.add("hidden"), 1600);
+}
+
+function updatePanel() {
+  const p = percept(world);
+  $("sScore").textContent = world.score;
+  $("sMoves").textContent = world.moves;
+  $("sDirt").textContent = p.dirtLeft;
+  $("pPos").textContent = "kolumn " + (p.x + 1) + ", rad " + (p.y + 1) + (p.onCharger ? " (laddstationen)" : "");
+  $("pCell").textContent = p.dirty ? "smutsig" : "ren";
+  $("pSeen").textContent = p.dirtLeft === 0 ? "allt rent – kör hem!" : p.dirtLeft + " rutor (syns alla)";
+}
+
+function addLog(ev) {
+  const li = document.createElement("li");
+  const pts = ev.points;
+  li.innerHTML = "<span></span><span class='" + (pts > 0 ? "plus" : "minus") + "'>" + (pts > 0 ? "+" : "−") + Math.abs(pts) + "</span>";
+  li.firstChild.textContent = ev.text + (ev.docked ? ", dockad!" : "");
+  const log = $("log");
+  log.prepend(li);
+  while (log.children.length > 30) log.lastChild.remove();
+}
+
+function act(action) {
+  if (!world) return;
+  const ev = step(world, action);
+  if (!ev) return;
+  animateRobot(ev);
+  addLog(ev);
+  updatePanel();
+  if (ev.type === "bump") showToast("Krock med " + ev.what + "!", "bad");
+  else if (ev.type === "suck") showToast("+10 smuts uppsugen", "good");
+  else if (ev.type === "suck-empty") showToast("Rutan var redan ren", "");
+  if (dirtLeft(world) === 0 && !world.done && ev.type === "suck") showToast("Allt rent! Kör till laddstationen.", "good");
+  if (ev.docked) finish();
+}
+
+function finish() {
+  $("bannerTitle").textContent = "Rummet är städat!";
+  $("bannerText").textContent = world.score + " poäng på " + world.moves + " drag. Kan du klara samma rum på färre drag?";
+  $("banner").hidden = false;
+}
+
+function startWorld(seed) {
+  world = createWorld(seed);
+  seedIn.value = seed;
+  $("banner").hidden = true;
+  $("log").innerHTML = "";
+  const url = new URL(location.href);
+  url.searchParams.set("rum", seed);
+  history.replaceState(null, "", url);
+  buildWorldMeshes();
+  updatePanel();
+}
+
+const randomSeed = () => 1000 + Math.floor(Math.random() * 9000);
+
+function renderProps() {
+  $("props").innerHTML = "";
+  PROPERTIES.forEach(([left, right, on]) => {
+    const li = document.createElement("li");
+    li.innerHTML = "<span></span><i>–</i><span></span>";
+    li.children[0].textContent = left;
+    li.children[2].textContent = right;
+    li.children[on ? 2 : 0].classList.add("on");
+    $("props").appendChild(li);
+  });
+}
+
+const KEYS = {
+  ArrowUp: "upp", KeyW: "upp", ArrowDown: "ned", KeyS: "ned",
+  ArrowLeft: "vänster", KeyA: "vänster", ArrowRight: "höger", KeyD: "höger",
+  Space: "sug", Enter: "sug"
+};
+document.addEventListener("keydown", (e) => {
+  if (e.target.closest("input, textarea, select") || e.altKey || e.ctrlKey || e.metaKey) return;
+  if (e.code === "Enter" && e.target.closest("button, a")) return;
+  const a = KEYS[e.code];
+  if (!a) return;
+  e.preventDefault();
+  act(a);
+});
+document.querySelectorAll(".pad button").forEach((b) => b.addEventListener("click", () => act(b.dataset.act)));
+$("restartBtn").addEventListener("click", () => startWorld(world.seed));
+$("againBtn").addEventListener("click", () => startWorld(world.seed));
+$("newBtn").addEventListener("click", () => startWorld(randomSeed()));
+$("newBtn2").addEventListener("click", () => startWorld(randomSeed()));
+function useSeedInput() {
+  const s = parseInt(seedIn.value, 10);
+  if (Number.isFinite(s) && s >= 0) startWorld(s);
+  else seedIn.value = world.seed;
+}
+$("seedBtn").addEventListener("click", useSeedInput);
+seedIn.addEventListener("keydown", (e) => { if (e.key === "Enter") useSeedInput(); });
+
+// För felsökning och för att testa modellen i konsolen.
+window.miljo = { createWorld, step, percept, get world() { return world; }, act };
+
+renderProps();
+applyTheme();
+const fromUrl = parseInt(new URLSearchParams(location.search).get("rum"), 10);
+startWorld(Number.isFinite(fromUrl) && fromUrl >= 0 ? fromUrl : randomSeed());
+resize();
+requestAnimationFrame(loop);
+</script>
+<footer>Miljön bygger på dammsugarvärlden i Russell &amp; Norvig, <i>Artificial Intelligence: A Modern Approach</i>. Allt körs i din webbläsare. · <a href="../agenter-och-miljoer/">Lektionen Agenter och miljöer</a></footer>
+</body>
+</html>

@@ -66,6 +66,7 @@ footer{max-width:1400px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
   background:var(--surface);color:var(--ink);border:2px solid var(--ok);border-radius:14px;padding:14px 20px;
   box-shadow:0 8px 28px rgba(0,0,0,.2);text-align:center}
 .banner[hidden]{display:none}
+.banner.warn{border-color:var(--warn)}
 .banner b{font-size:1.4rem;display:block}
 .banner .row{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
 .toast{position:absolute;left:14px;bottom:14px;max-width:calc(100% - 28px);background:var(--surface);color:var(--ink);
@@ -84,6 +85,21 @@ footer{max-width:1400px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
 .under .keys{flex:1 1 260px;font-size:.92rem;color:var(--muted)}
 .under .keys p{margin:0 0 .4em}
 
+.modes{display:inline-flex;gap:4px;padding:4px;margin-bottom:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.modes button{font:inherit;font-weight:700;font-size:.95rem;border:0;border-radius:8px;padding:8px 16px;background:transparent;color:var(--muted);cursor:pointer;min-height:40px}
+.modes button[aria-checked="true"]{background:var(--accent);color:#fff}
+.ai-box{margin-top:14px}
+.ai-box[hidden],.under[hidden]{display:none}
+.ai-row{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center}
+.ai-row label{font-weight:700;font-size:.92rem}
+.ai-row select{font:inherit;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-height:42px}
+.ai-row .speed{display:inline-flex;align-items:center;gap:8px}
+.ai-row input[type=range]{width:110px;accent-color:var(--accent)}
+.agent-desc{font-size:.92rem;color:var(--muted);margin:10px 0 0;max-width:62em}
+.think{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:10px 14px}
+.think small{display:block;color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em}
+.think p{margin:.2em 0 0}
+.think-act{font-weight:700}
 .btn{font:inherit;font-weight:700;border:0;border-radius:10px;padding:8px 16px;background:var(--ink);color:var(--paper);cursor:pointer;min-height:42px}
 .btn.go{background:var(--ok);color:#fff}
 .btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
@@ -155,6 +171,10 @@ footer{max-width:1400px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
 <main class="app">
   <div class="app-grid">
     <div>
+      <div class="modes" role="radiogroup" aria-label="Vem styr roboten?">
+        <button type="button" role="radio" data-mode="du" aria-checked="true">🎮 Du styr</button>
+        <button type="button" role="radio" data-mode="ai" aria-checked="false">🤖 AI:n styr</button>
+      </div>
       <div class="three-box" id="view">
         <div class="banner" id="banner" hidden role="status">
           <b id="bannerTitle">Rummet är städat!</b>
@@ -166,7 +186,22 @@ footer{max-width:1400px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
         </div>
         <div class="toast hidden" id="toast" aria-hidden="true"></div>
       </div>
-      <div class="under">
+      <div class="ai-box" id="aiBox" hidden>
+        <div class="ai-row">
+          <label for="agentSel">Agent</label>
+          <select id="agentSel"></select>
+          <button class="btn ghost" id="stepBtn" type="button">Ett steg</button>
+          <button class="btn go" id="runBtn" type="button">▶ Kör</button>
+          <label for="speed" class="speed">Fart <input id="speed" type="range" min="0" max="2" step="1" value="1" aria-valuetext="Normal"></label>
+        </div>
+        <p class="agent-desc" id="agentDesc"></p>
+        <div class="think" aria-live="polite">
+          <small>Agenten tänker</small>
+          <p id="thinkWhy">Tryck på <b>Kör</b> eller <b>Ett steg</b>.</p>
+          <p class="think-act" id="thinkAct"></p>
+        </div>
+      </div>
+      <div class="under" id="humanBox">
         <div class="pad" role="group" aria-label="Styr roboten">
           <button class="u" data-act="upp" type="button" aria-label="Kör uppåt">↑</button>
           <button class="l" data-act="vänster" type="button" aria-label="Kör åt vänster">←</button>
@@ -238,6 +273,7 @@ footer{max-width:1400px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
 <script type="module">
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { AGENTS, KNOW } from "../agenter-och-miljoer/js/agents.js";
 
 /* =====================================================================
  * Världsmodell. Ritar ingenting: skapar ett rum från ett frö och räknar
@@ -245,7 +281,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
  * ===================================================================== */
 const N = 8;
 const DIRT_COUNT = 10;
-const ACTIONS = ["upp", "ned", "vänster", "höger", "sug"];
+const ACTIONS = ["upp", "ned", "vänster", "höger", "sug", "vänta"];
 const MOVES = { upp: [0, -1], ned: [0, 1], "vänster": [-1, 0], "höger": [1, 0] };
 const POINTS = { step: -1, dirt: 10, dock: 20 };
 
@@ -387,7 +423,9 @@ function step(w, action) {
   w.moves++;
   w.score += POINTS.step;
   let ev;
-  if (action === "sug") {
+  if (action === "vänta") {
+    ev = { type: "wait", text: "Väntade", points: POINTS.step };
+  } else if (action === "sug") {
     if (w.dirt[idx(r.x, r.y)] && stochastic && w.chance() < SUCK_FAIL) {
       ev = { type: "suck-fail", chance: true, text: "Sugningen misslyckades", points: POINTS.step };
     } else if (w.dirt[idx(r.x, r.y)]) {
@@ -443,6 +481,77 @@ function percept(w) {
 }
 
 const hardCount = (s) => PROPERTIES.reduce((n, p) => n + (s[p.key] ? 1 : 0), 0);
+
+/* =====================================================================
+ * AI-agenter. Samma agentprogram som i lektionen Agenter och miljöer
+ * (kapitel 4), så att de beter sig likadant på båda ställena.
+ * ===================================================================== */
+const FROM_LESSON = { N: "upp", E: "höger", S: "ned", W: "vänster", SUG: "sug", VANTA: "vänta" };
+const LESSON_DIRS = { N: [0, -1], E: [1, 0], S: [0, 1], W: [-1, 0] };
+const AGENT_INFO = {
+  slump: "Suger om rutan är smutsig, annars kör den åt ett slumpat håll. Den minns ingenting.",
+  reflex: "Följer en fast regellista: sug om rutan är smutsig, annars försök köra höger, ned, vänster och upp i den ordningen. Den minns ingenting.",
+  modell: "Minns var den har varit och kör till den granne den besökte för längst sedan. Den planerar inte.",
+  mal: "Har ett mål: alla rutor rena. Den söker kortaste vägen till närmaste smutsiga eller outforskade ruta.",
+  nytta: "Väger nytta mot kostnad och väljer det mål som ger mest nytta per steg."
+};
+const MAX_AI_MOVES = 300;
+
+// Gör om Miljölabbets värld till det percept som lektionens agenter förväntar sig.
+// I delvis observerbart läge känner agenten bara av sin egen ruta och om den krockar åt sidorna.
+function lessonPercept(w) {
+  const r = w.robot, bumps = {};
+  for (const [d, [dx, dy]] of Object.entries(LESSON_DIRS)) {
+    const nx = r.x + dx, ny = r.y + dy;
+    bumps[d] = !inside(nx, ny) || w.blocked[idx(nx, ny)] >= 0;
+  }
+  return {
+    x: r.x, y: r.y, w: N, h: N, t: w.moves, dirty: !!w.dirt[idx(r.x, r.y)], bumps,
+    charger: { ...w.charger }, onCharger: r.x === w.charger.x && r.y === w.charger.y,
+    battery: null, capacity: 0,
+    full: w.settings.obs === 1 ? null
+      : { walls: Uint8Array.from(w.blocked, (b) => (b >= 0 ? 1 : 0)), dirt: Uint8Array.from(w.dirt), dog: null }
+  };
+}
+
+// Lektionens agenter har inget mål att docka. När en agent med minne säger att den är klar
+// kör vi hem den till laddstationen, med kortaste vägen i dess eget minne.
+function makeDriver(kind, seed) {
+  const agent = AGENTS[kind].make(seed);
+  return {
+    kind, agent,
+    decide(w) {
+      const p = lessonPercept(w);
+      const r = agent.act(p);
+      if (r.a !== "VANTA" || !agent.m || !agent.m.k || p.onCharger) {
+        return { action: FROM_LESSON[r.a], why: r.why, plan: r.plan || null, believesDone: r.a === "VANTA" && p.onCharger };
+      }
+      const b = agent.m.bfs(p.x, p.y);
+      const home = idx(w.charger.x, w.charger.y);
+      if (b.dist[home] < 0) return { action: "vänta", why: r.why + " Hittar ingen väg hem.", plan: null };
+      const plan = agent.m.path(b, home);
+      const [dx, dy] = [plan[1][0] - plan[0][0], plan[1][1] - plan[0][1]];
+      const d = Object.keys(LESSON_DIRS).find((k) => LESSON_DIRS[k][0] === dx && LESSON_DIRS[k][1] === dy);
+      return { action: FROM_LESSON[d], why: r.why + " Kör hem till laddstationen.", plan };
+    },
+    // Agentens minne i Miljölabbets kodning: -1 okänd, 0 ren, 1 smutsig, 2 hinder, 3 fri men smuts okänd.
+    grid(w) {
+      const p = lessonPercept(w);
+      const k = agent.knowledge ? agent.knowledge(p) : null;
+      const g = k ? Int8Array.from(k, (v) => v === KNOW.UNKNOWN ? -1 : v === KNOW.WALL ? 2 : v === KNOW.DIRT ? 1 : v === KNOW.OPEN ? 3 : 0)
+        : new Int8Array(N * N).fill(-1);
+      // Agenten uppdaterar sitt minne först nästa gång den tänker. Lägg därför till det den känner av just nu.
+      g[idx(p.x, p.y)] = p.dirty ? 1 : 0;
+      for (const [d, [dx, dy]] of Object.entries(LESSON_DIRS)) {
+        const nx = p.x + dx, ny = p.y + dy;
+        if (!inside(nx, ny)) continue;
+        if (p.bumps[d]) g[idx(nx, ny)] = 2;
+        else if (g[idx(nx, ny)] === -1) g[idx(nx, ny)] = 3;
+      }
+      return g;
+    }
+  };
+}
 
 /* =====================================================================
  * 3D-vy
@@ -631,7 +740,12 @@ function buildWorldMeshes() {
   tweens.length = 0;
   robotTween = null;
   roomGroup = new THREE.Group();
-  world.furniture.forEach((f) => roomGroup.add(makeFurniture(f)));
+  furnitureMeshes = world.furniture.map((f) => {
+    const group = makeFurniture(f), cells = [];
+    for (let y = f.y; y < f.y + f.h; y++) for (let x = f.x; x < f.x + f.w; x++) cells.push(idx(x, y));
+    roomGroup.add(group);
+    return { group, cells };
+  });
   const ch = makeCharger();
   ch.position.copy(cellPos(world.charger.x, world.charger.y));
   if (world.charger.y === N - 1) ch.rotation.y = 0;
@@ -646,13 +760,14 @@ function buildWorldMeshes() {
   robot.position.copy(cellPos(world.robot.x, world.robot.y));
   robot.rotation.y = DIR_ANGLE[world.robot.dir];
   roomGroup.add(robot);
-  // Dimma: ett högt block över varje okänd ruta och en tunn slöja över rutor
-  // som roboten minns men inte ser just nu.
+  // Dimma: en mörk duk över varje okänd ruta och en tunn slöja över rutor som roboten
+  // minns men inte ser just nu. Duken är låg så att den aldrig skymmer roboten; möbler
+  // och smuts på okända rutor göms i stället.
   fogCells = [];
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     const p = cellPos(x, y);
-    const block = new THREE.Mesh(fogBlockGeo, new THREE.MeshLambertMaterial({ color: 0x8C95A8, transparent: true, opacity: 0 }));
-    block.position.set(p.x, FOG_H / 2, p.z);
+    const block = new THREE.Mesh(fogBlockGeo, new THREE.MeshLambertMaterial({ color: 0x4A5366, transparent: true, opacity: 0 }));
+    block.position.set(p.x, FOG_H / 2 - 0.01, p.z);
     const veil = new THREE.Mesh(fogVeilGeo, new THREE.MeshBasicMaterial({ color: 0x1B2030, transparent: true, opacity: 0, depthWrite: false }));
     veil.rotation.x = -Math.PI / 2;
     veil.position.set(p.x, 0.02, p.z);
@@ -664,7 +779,26 @@ function buildWorldMeshes() {
   needsRender = true;
 }
 
-const FOG_H = 1.6;
+const planGeo = new THREE.CylinderGeometry(0.11, 0.11, 0.02, 20);
+const planMat = new THREE.MeshBasicMaterial({ color: 0x7B5CFF });
+let planGroup = null;
+
+// Visar agentens planerade väg som små lila prickar på golvet.
+function showPlan3D(plan) {
+  if (planGroup) roomGroup.remove(planGroup);
+  planGroup = new THREE.Group();
+  (plan || []).slice(1).forEach(([x, y], i, all) => {
+    const m = new THREE.Mesh(planGeo, planMat);
+    m.position.copy(cellPos(x, y)).setY(0.02);
+    if (i === all.length - 1) m.scale.set(1.8, 1, 1.8);
+    planGroup.add(m);
+  });
+  roomGroup.add(planGroup);
+  needsRender = true;
+}
+
+const FOG_H = 0.12;
+let furnitureMeshes = [];
 const fogBlockGeo = new THREE.BoxGeometry(1.002, FOG_H, 1.002);
 const fogVeilGeo = new THREE.PlaneGeometry(1, 1);
 let fogCells = [];
@@ -672,9 +806,10 @@ let fogCells = [];
 // Sätter dimman efter vad roboten ser (visible) och minns (known).
 function updateFog(animate) {
   const partial = world.settings.obs === 1;
+  const grid = knowGrid(), vis = visibleGrid();
   fogCells.forEach((f, i) => {
-    const b1 = partial && !world.visible[i] && world.known[i] === -1 ? 1 : 0;
-    const v1 = partial && !world.visible[i] && world.known[i] !== -1 ? 0.38 : 0;
+    const b1 = partial && !vis[i] && grid[i] === -1 ? 1 : 0;
+    const v1 = partial && !vis[i] && grid[i] !== -1 ? 0.38 : 0;
     const b0 = f.b, v0 = f.v;
     f.b = b1; f.v = v1;
     const apply = (k) => {
@@ -691,6 +826,9 @@ function updateFog(animate) {
     if (animate && (b0 !== b1 || v0 !== v1)) tween(240, (k) => apply(ease(k)));
     else apply(1);
   });
+  const known = (i) => !partial || vis[i] || grid[i] !== -1;
+  furnitureMeshes.forEach((f) => { f.group.visible = f.cells.some(known); });
+  dirtMeshes.forEach((d, i) => { d.visible = known(i); });
   needsRender = true;
 }
 
@@ -799,6 +937,8 @@ function updatePanel() {
   $("pPos").textContent = "kolumn " + (p.x + 1) + ", rad " + (p.y + 1) + (p.onCharger ? " (laddstationen)" : "");
   $("pCell").textContent = p.dirty ? "smutsig" : "ren";
   if (p.dirtLeft === null) {
+    const kd = knowGrid().reduce((n, v) => n + (v === 1 ? 1 : 0), 0);
+    p.knownDirt = kd;
     $("pSeen").textContent = p.knownDirt + (p.knownDirt === 1 ? " känd smutsig ruta" : " kända smutsiga rutor") + ", resten okänt";
   } else {
     $("pSeen").textContent = p.dirtLeft === 0 ? "allt rent – kör hem!" : p.dirtLeft + " rutor (syns alla)";
@@ -812,9 +952,10 @@ function drawMap() {
   const css = getComputedStyle(document.documentElement);
   const col = (v) => css.getPropertyValue(v).trim();
   const s = c.width / N;
+  const grid = knowGrid(), vis = visibleGrid();
   g.clearRect(0, 0, c.width, c.height);
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-    const k = world.known[idx(x, y)];
+    const k = grid[idx(x, y)];
     const x0 = x * s, y0 = y * s;
     if (k === -1) {
       g.fillStyle = col("--line");
@@ -829,6 +970,12 @@ function drawMap() {
     }
     g.fillStyle = k === 2 ? col("--muted") : (x + y) % 2 ? "#D6B48A" : "#CDA97C";
     g.fillRect(x0, y0, s, s);
+    if (k === 3) {
+      g.fillStyle = "rgba(60,50,40,.55)";
+      g.font = "bold " + Math.round(s * 0.5) + "px system-ui";
+      g.textAlign = "center"; g.textBaseline = "middle";
+      g.fillText("?", x0 + s / 2, y0 + s / 2 + 1);
+    }
     if (k === 1) {
       g.fillStyle = "#4A3A28";
       for (const [dx, dy] of [[0.3, 0.35], [0.62, 0.3], [0.45, 0.62], [0.7, 0.68], [0.25, 0.7]]) {
@@ -840,11 +987,18 @@ function drawMap() {
   g.fillStyle = "#2E7D4F";
   g.fillRect(ch.x * s + s * 0.15, ch.y * s + s * 0.15, s * 0.7, s * 0.7);
   if (world.settings.obs === 1) {
+    // Ram runt det roboten ser just nu.
+    let x1 = N, y1 = N, x2 = -1, y2 = -1;
+    for (let i = 0; i < N * N; i++) if (vis[i]) { const x = i % N, y = (i - x) / N; x1 = Math.min(x1, x); y1 = Math.min(y1, y); x2 = Math.max(x2, x); y2 = Math.max(y2, y); }
     g.strokeStyle = col("--accent");
     g.lineWidth = 2;
-    const vx = Math.max(0, world.robot.x - 1), vy = Math.max(0, world.robot.y - 1);
-    const vw = Math.min(N - 1, world.robot.x + 1) - vx + 1, vh = Math.min(N - 1, world.robot.y + 1) - vy + 1;
-    g.strokeRect(vx * s + 1, vy * s + 1, vw * s - 2, vh * s - 2);
+    g.strokeRect(x1 * s + 1, y1 * s + 1, (x2 - x1 + 1) * s - 2, (y2 - y1 + 1) * s - 2);
+  }
+  if (lastPlan && lastPlan.length > 1) {
+    g.strokeStyle = "#7B5CFF"; g.lineWidth = 3; g.lineJoin = "round";
+    g.beginPath();
+    lastPlan.forEach(([x, y], i) => (i ? g.lineTo : g.moveTo).call(g, (x + 0.5) * s, (y + 0.5) * s));
+    g.stroke();
   }
   g.fillStyle = "#E8890C";
   g.beginPath(); g.arc((world.robot.x + 0.5) * s, (world.robot.y + 0.5) * s, s * 0.32, 0, Math.PI * 2); g.fill();
@@ -861,10 +1015,23 @@ function addLog(ev) {
   while (log.children.length > 30) log.lastChild.remove();
 }
 
+// Vem styr: "du" eller "ai". I AI-läget visar karta och dimma agentens eget minne.
+let mode = "du", driver = null, lastPlan = null, runTimer = null;
+const SPEEDS = [650, 260, 70], SPEED_NAMES = ["Långsam", "Normal", "Snabb"];
+
+function knowGrid() { return mode === "ai" && driver ? driver.grid(world) : world.known; }
+function visibleGrid() {
+  if (mode !== "ai" || world.settings.obs === 0) return world.visible;
+  // Lektionens agenter känner av sin egen ruta och om de fyra grannrutorna är fria.
+  const v = new Uint8Array(N * N), { x, y } = world.robot;
+  for (const [dx, dy] of [[0, 0], [0, -1], [1, 0], [0, 1], [-1, 0]]) if (inside(x + dx, y + dy)) v[idx(x + dx, y + dy)] = 1;
+  return v;
+}
+
 function act(action) {
-  if (!world) return;
+  if (!world) return null;
   const ev = step(world, action);
-  if (!ev) return;
+  if (!ev) return null;
   animateRobot(ev);
   updateFog(true);
   addLog(ev);
@@ -878,15 +1045,74 @@ function act(action) {
   else if (ev.homeNotClean) showToast("Laddstationen: det finns smuts kvar i rummet", "");
   if (dirtLeft(world) === 0 && !world.done && ev.type === "suck") showToast("Allt rent! Kör till laddstationen.", "good");
   if (ev.docked) finish();
+  return ev;
+}
+
+const ACT_TEXT = { upp: "Kör uppåt", ned: "Kör nedåt", "vänster": "Kör åt vänster", "höger": "Kör åt höger", sug: "Sug", "vänta": "Vänta" };
+
+function aiStep() {
+  if (!driver || world.done) { stopRun(); return; }
+  const d = driver.decide(world);
+  lastPlan = d.plan;
+  showPlan3D(d.plan);
+  const ev = act(d.action);
+  $("thinkWhy").textContent = d.why;
+  let actText = "Handling: " + ACT_TEXT[d.action];
+  if (ev && ev.chance) actText += " – men slumpen ändrade utfallet: " + ev.text.toLowerCase() + ".";
+  $("thinkAct").textContent = actText;
+  if (world.done) { stopRun(); return; }
+  if (d.believesDone && dirtLeft(world) > 0) {
+    stopRun();
+    showBanner("Agenten tror att den är klar", "Men det finns " + dirtLeft(world) + " smutsiga rutor kvar som den inte vet om.", "warn");
+  } else if (world.moves >= MAX_AI_MOVES) {
+    stopRun();
+    showBanner("Agenten gav upp", "Efter " + MAX_AI_MOVES + " drag fanns det " + dirtLeft(world) + " smutsiga rutor kvar.", "warn");
+  }
+}
+
+function startRun() {
+  if (runTimer || world.done) return;
+  $("runBtn").textContent = "⏸ Pausa";
+  const tick = () => { aiStep(); if (runTimer) runTimer = setTimeout(tick, SPEEDS[+$("speed").value]); };
+  runTimer = setTimeout(tick, 0);
+}
+function stopRun() {
+  clearTimeout(runTimer);
+  runTimer = null;
+  $("runBtn").textContent = "▶ Kör";
+}
+
+function newDriver() {
+  driver = mode === "ai" ? makeDriver($("agentSel").value, world.seed) : null;
+  lastPlan = null;
+  showPlan3D(null);
+  $("thinkWhy").innerHTML = "Tryck på <b>Kör</b> eller <b>Ett steg</b>.";
+  $("thinkAct").textContent = "";
+  $("agentDesc").textContent = AGENT_INFO[$("agentSel").value] + (world.settings.obs === 1
+    ? " I dimman känner agenten bara av om dess egen ruta är smutsig och om grannrutorna är fria." : "");
+}
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll(".modes button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.mode === m)));
+  $("aiBox").hidden = m !== "ai";
+  $("humanBox").hidden = m === "ai";
+  startWorld(world.seed);
 }
 
 const envWords = (s) => PROPERTIES.filter((p) => p.values).map((p) => (s[p.key] ? p.right : p.left).toLowerCase()).join(", ");
 
-function finish() {
-  $("bannerTitle").textContent = "Rummet är städat!";
-  $("bannerText").textContent = world.score + " poäng på " + world.moves + " drag i en " + envWords(world.settings) +
-    " miljö. Kan du klara samma rum på färre drag?";
+function showBanner(title, text, kind) {
+  $("bannerTitle").textContent = title;
+  $("bannerText").textContent = text;
+  $("banner").className = "banner" + (kind ? " " + kind : "");
   $("banner").hidden = false;
+}
+
+function finish() {
+  const who = mode === "ai" ? "Agenten (" + AGENTS[driver.kind].namn.toLowerCase() + ") fick " : "";
+  showBanner("Rummet är städat!", who + world.score + " poäng på " + world.moves + " drag i en " + envWords(world.settings) +
+    " miljö." + (mode === "ai" ? " Klarar du det bättre själv?" : " Kan du klara samma rum på färre drag?"));
 }
 
 let settings = defaultSettings();
@@ -903,7 +1129,9 @@ function startWorld(seed) {
     else url.searchParams.delete(p.param);
   });
   history.replaceState(null, "", url);
+  stopRun();
   buildWorldMeshes();
+  newDriver();
   updateFog(false);
   updatePanel();
   renderEnv();
@@ -974,7 +1202,7 @@ document.addEventListener("keydown", (e) => {
   if (e.target.closest("input, textarea, select") || e.altKey || e.ctrlKey || e.metaKey) return;
   if (e.code === "Enter" && e.target.closest("button, a")) return;
   const a = KEYS[e.code];
-  if (!a) return;
+  if (!a || mode === "ai") return;
   e.preventDefault();
   act(a);
 });
@@ -992,7 +1220,19 @@ $("seedBtn").addEventListener("click", useSeedInput);
 seedIn.addEventListener("keydown", (e) => { if (e.key === "Enter") useSeedInput(); });
 
 // För felsökning och för att testa modellen i konsolen.
-window.miljo = { createWorld, step, percept, get world() { return world; }, get settings() { return settings; }, act };
+Object.entries(AGENTS).forEach(([k, a]) => {
+  const o = document.createElement("option");
+  o.value = k; o.textContent = a.namn;
+  $("agentSel").appendChild(o);
+});
+$("agentSel").value = "mal";
+$("agentSel").addEventListener("change", () => startWorld(world.seed));
+document.querySelectorAll(".modes button").forEach((b) => b.addEventListener("click", () => { if (b.dataset.mode !== mode) setMode(b.dataset.mode); }));
+$("stepBtn").addEventListener("click", () => { stopRun(); aiStep(); });
+$("runBtn").addEventListener("click", () => (runTimer ? stopRun() : startRun()));
+$("speed").addEventListener("input", () => $("speed").setAttribute("aria-valuetext", SPEED_NAMES[+$("speed").value]));
+
+window.miljo = { createWorld, step, percept, get world() { return world; }, get settings() { return settings; }, get driver() { return driver; }, act, aiStep, setMode };
 
 renderSwitches();
 applyTheme();

@@ -143,7 +143,7 @@ header{
 }
 
 /* Demo layout */
-.demo-grid{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:start;}
+.demo-grid{display:grid;grid-template-columns:minmax(0,382px) 1fr;gap:24px;align-items:start;}
 @media(max-width:720px){.demo-grid{grid-template-columns:1fr;}}
 #plot{display:block;border-radius:var(--r);border:1px solid var(--border);
       cursor:crosshair;max-width:100%;}
@@ -158,6 +158,32 @@ header{
          background:var(--surface2);color:var(--text);cursor:pointer;white-space:nowrap;
          transition:border-color .15s,color .15s;}
 .pre-btn:hover{border-color:var(--amber);color:var(--amber);}
+
+/* Antal ingångar */
+.dim-picker{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:24px 0 12px;}
+@media(max-width:520px){.dim-picker{grid-template-columns:repeat(2,1fr);}}
+.dim-btn{display:flex;flex-direction:column;align-items:center;gap:1px;padding:10px 8px;
+         border-radius:var(--r);border:1px solid var(--border);background:var(--surface);
+         color:var(--muted);cursor:pointer;font-family:var(--fb);font-size:.82rem;transition:all .15s;}
+.dim-btn .dn{font-family:var(--fm);font-size:1.3rem;font-weight:700;color:var(--text);line-height:1.2;}
+.dim-btn .ds{font-family:var(--fm);font-size:.7rem;}
+.dim-btn:hover{border-color:var(--green);}
+.dim-btn.active{border-color:var(--green);background:var(--green-dim);color:var(--green);}
+.dim-btn.active .dn{color:var(--green);}
+.dim-note{font-size:.88rem;color:var(--muted);line-height:1.6;margin-bottom:22px;
+          background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);
+          border-radius:var(--r);padding:12px 16px;}
+.dim-note strong{color:var(--text);}
+.dim-note .vw{color:var(--amber);font-family:var(--fm);}
+.add-pt{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px;
+        font-family:var(--fm);font-size:.78rem;color:var(--muted);}
+.add-pt input{width:60px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);
+              background:var(--surface2);color:var(--text);font-family:var(--fm);font-size:.78rem;}
+.pts-tbl tbody tr{cursor:pointer;}
+.pts-tbl tbody tr:hover td{background:var(--surface2);}
+.pts-tbl tbody tr.sel td{background:var(--green-dim);}
+.pts-tbl .del{border:none;background:none;color:var(--muted);cursor:pointer;font-size:.8rem;}
+.pts-tbl .del:hover{color:var(--red);}
 
 /* Control panel */
 .ctrl{display:flex;flex-direction:column;gap:14px;}
@@ -587,7 +613,7 @@ footer a:hover{color:var(--text);}
 </div>
 
 <!-- ═══════════════════════════════════════════════════
-     TAB 3: PROVA SJÄLV (2D)
+     TAB 3: PROVA SJÄLV (1–4 ingångar)
      ═══════════════════════════════════════════════════ -->
 <div id="tab-demo2d" class="tab-panel">
 <div class="section container">
@@ -596,54 +622,47 @@ footer a:hover{color:var(--text);}
   <div class="problem-card">
     <div>
       <h3>Uppgiften: lär perceptronen att skilja på två klasser</h3>
-      <p>Vi har ett 2D-plan med punkter märkta som <span style="color:var(--red);font-weight:600">klass 0</span> (röda fyrkanter) eller <span style="color:var(--blue);font-weight:600">klass 1</span> (blå cirklar). Perceptronen har två ingångar — x₁ och x₂ — och ska hitta vikter w₁, w₂ och ett tröskelvärde θ så att linjen <strong style="color:var(--amber)">w₁·x₁ + w₂·x₂ = θ</strong> separerar klasserna. Den gröna linjen i diagrammet är denna beslutsyta. Vikterna justeras automatiskt under träning.</p>
+      <p>Punkterna är märkta som <span style="color:var(--red);font-weight:600">klass 0</span> (röda fyrkanter) eller <span style="color:var(--blue);font-weight:600">klass 1</span> (blå cirklar). Perceptronen ska hitta vikter och ett tröskelvärde θ så att gränsen <strong style="color:var(--amber)">w₁·x₁ + … + wₙ·xₙ = θ</strong> skiljer klasserna åt. Börja med <strong>en</strong> ingång och öka till fyra — formeln är densamma hela vägen, det blir bara fler termer i summan.</p>
     </div>
     <ol class="steps-list">
-      <li>Välj ett förval — eller klicka i diagrammet</li>
-      <li>Välj vilken klass du ritar (0 eller 1)</li>
+      <li>Välj antal ingångar (1–4)</li>
+      <li>Välj ett förval — eller lägg till egna punkter</li>
       <li>Tryck "Träna automatiskt"</li>
-      <li>Prova XOR — se vad som händer</li>
+      <li>Prova det omöjliga fallet — se vad som händer</li>
     </ol>
   </div>
+
+  <!-- Number of inputs -->
+  <div class="dim-picker">
+    <button class="dim-btn" data-n="1" onclick="setDim(1)"><span class="dn">1</span>ingång<span class="ds">gräns = punkt</span></button>
+    <button class="dim-btn" data-n="2" onclick="setDim(2)"><span class="dn">2</span>ingångar<span class="ds">gräns = linje</span></button>
+    <button class="dim-btn" data-n="3" onclick="setDim(3)"><span class="dn">3</span>ingångar<span class="ds">gräns = plan</span></button>
+    <button class="dim-btn" data-n="4" onclick="setDim(4)"><span class="dn">4</span>ingångar<span class="ds">gräns = hyperplan</span></button>
+  </div>
+  <div class="dim-note" id="dim-note"></div>
 
   <!-- Demo -->
   <div class="demo-grid">
     <div>
       <canvas id="plot" width="380" height="380"></canvas>
-      <div style="display:flex;gap:16px;margin-top:6px;font-size:.78rem;color:var(--muted);font-family:var(--fm)">
-        <span><span style="color:var(--red);font-size:.9rem">■</span> Klass 0 — fyrkant (röd)</span>
-        <span><span style="color:var(--blue);font-size:.9rem">●</span> Klass 1 — cirkel (blå)</span>
-        <span style="margin-left:auto;font-size:.73rem">Klicka i diagrammet för att lägga till punkter</span>
+      <div style="display:flex;gap:16px;margin-top:6px;font-size:.78rem;color:var(--muted);font-family:var(--fm);flex-wrap:wrap;align-items:center">
+        <span><span style="color:var(--red);font-size:.9rem">■</span> Klass 0</span>
+        <span><span style="color:var(--blue);font-size:.9rem">●</span> Klass 1</span>
+        <button class="pre-btn" id="rot-btn" onclick="toggleRot()" style="display:none">⟳ Auto-rotera</button>
+        <span id="plot-hint" style="margin-left:auto;font-size:.73rem"></span>
       </div>
       <div class="cls-toggle">
         <button class="cls-btn c0 active" id="cls0-btn" onclick="setClass2(0)">■ Klass 0 (röd)</button>
         <button class="cls-btn c1" id="cls1-btn" onclick="setClass2(1)">● Klass 1 (blå)</button>
       </div>
+      <div class="add-pt" id="add-pt" style="display:none"></div>
       <div style="margin-top:12px">
         <div style="font-size:.76rem;color:var(--muted);margin-bottom:6px">Ladda ett exempelproblem:</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px">
-          <button class="pre-btn" onclick="loadPreset2('or')" title="Klass 1 om x₁ > 0 ELLER x₂ > 0" style="display:flex;flex-direction:column;align-items:flex-start;padding:7px 12px">
-            <span style="font-weight:600">Minst ett positivt</span>
-            <span style="font-size:.72rem;color:var(--muted)">x₁ > 0 ELLER x₂ > 0</span>
-          </button>
-          <button class="pre-btn" onclick="loadPreset2('and')" title="Klass 1 bara om BÅDA x₁ > 0 och x₂ > 0" style="display:flex;flex-direction:column;align-items:flex-start;padding:7px 12px">
-            <span style="font-weight:600">Båda positiva</span>
-            <span style="font-size:.72rem;color:var(--muted)">x₁ > 0 OCH x₂ > 0</span>
-          </button>
-          <button class="pre-btn" onclick="loadPreset2('xor')" title="Inte linjärt separerbart — perceptronen klarar det inte!" style="display:flex;flex-direction:column;align-items:flex-start;padding:7px 12px;border-color:var(--amber);color:var(--amber)">
-            <span style="font-weight:600">⚠ Omöjligt fall</span>
-            <span style="font-size:.72rem;color:var(--muted)">Kan ej lösas med en rät linje</span>
-          </button>
-          <button class="pre-btn btn-d" onclick="clearAll2()" style="margin-left:auto;align-self:flex-start;padding:7px 12px">Rensa</button>
-        </div>
-      </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px" id="preset-row"></div>
       </div>
     </div>
     <div class="ctrl">
-      <div class="sg"><label>w₁ <span class="val" id="v-w1">0.30</span></label>
-        <input type="range" id="sl-w1" min="-3" max="3" step="0.01" value="0.30" oninput="onSlider2()"></div>
-      <div class="sg"><label>w₂ <span class="val" id="v-w2">0.30</span></label>
-        <input type="range" id="sl-w2" min="-3" max="3" step="0.01" value="0.30" oninput="onSlider2()"></div>
+      <div id="w-sliders" style="display:flex;flex-direction:column;gap:14px"></div>
       <div class="sg"><label>θ (tröskel) <span class="val" id="v-th">0.00</span></label>
         <input type="range" id="sl-th" min="-3" max="3" step="0.01" value="0.00" oninput="onSlider2()"></div>
       <div class="sg"><label>η (inlärningsh.) <span class="val" id="v-eta">0.10</span></label>
@@ -651,7 +670,8 @@ footer a:hover{color:var(--text);}
 
       <div class="fml-panel">
         <h4>Beräkning</h4>
-        <div class="fml-line" id="fml-net">net = <span class="vw">?</span>·x₁ + <span class="vw">?</span>·x₂</div>
+        <div class="fml-line" id="fml-net"></div>
+        <div class="fml-line" id="fml-x" style="font-size:.78rem"></div>
         <div class="fml-line" id="fml-net2" style="color:var(--muted);font-size:.78rem"></div>
         <div class="fml-line fml-out" id="fml-out">output = ?</div>
       </div>
@@ -663,8 +683,17 @@ footer a:hover{color:var(--text);}
         <button class="btn btn-p" onclick="trainOne2()">Träna 1 epok</button>
         <button class="btn btn-a" id="btn-auto2" onclick="toggleAuto2()">Träna automatiskt</button>
         <button class="btn btn-s" onclick="resetWeights2()">Återställ vikter</button>
+        <button class="btn btn-d" onclick="clearAll2()">Rensa punkter</button>
       </div>
       <div id="status2"></div>
+    </div>
+  </div>
+
+  <!-- Points table (3–4 inputs) -->
+  <div class="log-wrap" id="pts-wrap" style="display:none">
+    <h3>Datapunkter — klicka på en rad för att se uträkningen</h3>
+    <div style="overflow-x:auto">
+      <table class="log-tbl pts-tbl"><thead id="pts-head"></thead><tbody id="pts-body"></tbody></table>
     </div>
   </div>
 
@@ -673,8 +702,8 @@ footer a:hover{color:var(--text);}
     <h3>Inlärningslogg — vikterna uppdateras bara när perceptronen gör fel</h3>
     <div style="overflow-x:auto">
       <table class="log-tbl">
-        <thead><tr><th>Epok</th><th>Punkt</th><th>Kl.</th><th>Nät</th><th>Pred.</th><th>Fel</th><th>Δw₁</th><th>Δw₂</th><th>Δθ</th></tr></thead>
-        <tbody id="log-body2"><tr><td colspan="9" style="color:var(--muted);text-align:center;padding:14px">Lägg till punkter och träna för att se uppdateringar</td></tr></tbody>
+        <thead id="log-head2"></thead>
+        <tbody id="log-body2"></tbody>
       </table>
     </div>
   </div>
@@ -802,7 +831,7 @@ function toggleTheme(){
   document.documentElement.setAttribute('data-theme',next);
   localStorage.setItem('ai1-theme',next);
   updateThemeBtn();
-  draw2d(); drawSpam(); drawWeightMap();
+  drawDemo(); drawSpam(); drawWeightMap();
 }
 function updateThemeBtn(){
   document.getElementById('theme-toggle').textContent=isDark()?'☀':'☽';
@@ -820,7 +849,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     document.getElementById('tab-'+id).classList.add('active');
     btn.classList.add('active');
     if(id==='spam') drawSpam();
-    if(id==='demo2d') draw2d();
+    if(id==='demo2d'){drawDemo(); if(dim===3) startRot();}
     if(id==='bild'){drawPixelCanvas();drawWeightMap();}
   });
 });
@@ -877,11 +906,26 @@ class Perceptron{
 }
 
 /* ═══════════════════════════════════════════════════
-   2D DEMO
+   PROVA SJÄLV — 1 till 4 ingångar
    ═══════════════════════════════════════════════════ */
 const CW=380,CH=380,PAD=36,DMIN=-1.5,DMAX=1.5,DRNG=3,PRNG=CW-2*PAD;
-const p2=new Perceptron(2);
-let pts2=[],curCls2=0,epoch2=0,logRows2=[],autoOn2=false;
+const SUB=['₁','₂','₃','₄'];
+let dim=1,pd=new Perceptron(1);
+let pts=[],curCls2=0,epoch2=0,logRows2=[],autoOn2=false;
+let sel=-1,hoverX=null;            // vald punkt (index) och muspekarens läge i 1D/2D
+let yaw=-.6,pitch=.4,autoRot=true,rotRunning=false,drag=null;
+let screenPts=[];                  // punkternas skärmlägen i 3D/4D, för att kunna klicka på dem
+
+const DIM_INFO={
+  1:{note:`<strong>En ingång.</strong> Den orange linjen är <span class="vw">net = w₁·x₁ − θ</span>. Där den korsar noll ligger beslutsgränsen — en enda <strong>punkt</strong> på tallinjen. w₁ bestämmer lutningen och θ flyttar linjen upp och ner. Punkter där net ≥ 0 blir klass 1.`,
+     hint:'Klicka i diagrammet för att lägga till punkter'},
+  2:{note:`<strong>Två ingångar.</strong> Beslutsgränsen <span class="vw">w₁·x₁ + w₂·x₂ = θ</span> är en <strong>rät linje</strong> i planet. Färgerna visar vilken klass perceptronen gissar på var sida om linjen.`,
+     hint:'Klicka i diagrammet för att lägga till punkter'},
+  3:{note:`<strong>Tre ingångar.</strong> Gränsen <span class="vw">w₁·x₁ + w₂·x₂ + w₃·x₃ = θ</span> är ett <strong>plan</strong> i rummet. Pilen pekar mot klass 1-sidan. Dra i figuren för att vrida den. Ser du mönstret? Gränsen har alltid en dimension mindre än rummet: punkt, linje, plan …`,
+     hint:'Dra för att vrida · klicka på en punkt'},
+  4:{note:`<strong>Fyra ingångar.</strong> Gränsen är ett <strong>hyperplan</strong> i ett fyrdimensionellt rum — det går inte att rita. Men perceptronen bryr sig inte: den räknar fortfarande bara ut <em>en</em> summa och jämför den med θ. Överst ser du hur summan byggs upp för den valda punkten. Nederst ligger alla punkter utlagda efter sin summa — hamnar alla röda till vänster om θ och alla blå till höger har perceptronen lyckats. (I fliken <em>Bildklassificering</em> har perceptronen 400 ingångar — samma formel.)`,
+     hint:'Klicka på en punkt i remsan eller i tabellen'},
+};
 
 function toPixel2(dx,dy){
   return[PAD+(dx-DMIN)/DRNG*PRNG, PAD+(DMAX-dy)/DRNG*PRNG];
@@ -889,24 +933,114 @@ function toPixel2(dx,dy){
 function toData2(px,py){
   return[DMIN+(px-PAD)/PRNG*DRNG, DMAX-(py-PAD)/PRNG*DRNG];
 }
+function sumOf(x){let s=0;for(let i=0;i<dim;i++) s+=pd.w[i]*x[i];return s;}
+function netOf(x){return sumOf(x)-pd.theta;}
+function fmtVec(x){return '('+x.map(v=>v.toFixed(2)).join(', ')+')';}
 
 const canvas2=document.getElementById('plot');
 const ctx2=canvas2.getContext('2d');
 const offCv=document.createElement('canvas'); offCv.width=CW; offCv.height=CH;
 const offCtx=offCv.getContext('2d');
 
+function regionColors(){
+  const dark=isDark();
+  return[dark?[255,107,107]:[220,38,38], dark?[77,184,255]:[26,101,163]];
+}
+
+function drawPoint(px,py,cls,correct,r=7,selected=false){
+  const col=cls===1?gcss('--blue'):gcss('--red');
+  ctx2.save();
+  if(!correct){ctx2.shadowColor='#FFD700';ctx2.shadowBlur=14;}
+  ctx2.strokeStyle=col;ctx2.lineWidth=2;ctx2.fillStyle=col+'44';
+  ctx2.beginPath();
+  if(cls===1) ctx2.arc(px,py,r,0,2*Math.PI);
+  else ctx2.rect(px-r*.86,py-r*.86,r*1.72,r*1.72);
+  ctx2.fill();ctx2.stroke();
+  ctx2.restore();
+  if(selected){
+    ctx2.save();ctx2.strokeStyle=gcss('--text');ctx2.lineWidth=1.5;ctx2.setLineDash([3,3]);
+    ctx2.beginPath();ctx2.arc(px,py,r+6,0,2*Math.PI);ctx2.stroke();ctx2.restore();
+  }
+}
+
+function drawDemo(){
+  ctx2.clearRect(0,0,CW,CH);
+  ctx2.fillStyle=gcss('--surface'); ctx2.fillRect(0,0,CW,CH);
+  [null,draw1d,draw2dPlot,draw3d,draw4d][dim]();
+}
+
+/* ── 1 ingång: tallinje + net-linjen ── */
+const YR=3;
+function toPixel1(x,net){return[toPixel2(x,0)[0], PAD+(YR-net)/(2*YR)*PRNG];}
+
+function draw1d(){
+  const w=pd.w[0],th=pd.theta;
+  const[c0,c1]=regionColors();
+  // regioner: vertikala band
+  for(let px=PAD;px<CW-PAD;px+=2){
+    const x=toData2(px,0)[0];
+    const c=(w*x-th>=0)?c1:c0;
+    ctx2.fillStyle=`rgba(${c[0]},${c[1]},${c[2]},.10)`;
+    ctx2.fillRect(px,PAD,2,PRNG);
+  }
+  // rutnät
+  ctx2.strokeStyle=gcss('--border');ctx2.lineWidth=.5;
+  for(let v=-1;v<=1;v+=.5){const[gx]=toPixel1(v,0);ctx2.beginPath();ctx2.moveTo(gx,PAD);ctx2.lineTo(gx,CH-PAD);ctx2.stroke();}
+  for(let v=-2;v<=2;v++){const[,gy]=toPixel1(0,v);ctx2.beginPath();ctx2.moveTo(PAD,gy);ctx2.lineTo(CW-PAD,gy);ctx2.stroke();}
+  // axlar
+  const[ox,oy]=toPixel1(0,0);
+  ctx2.strokeStyle=gcss('--muted');ctx2.lineWidth=1.2;
+  ctx2.beginPath();ctx2.moveTo(PAD,oy);ctx2.lineTo(CW-PAD,oy);ctx2.stroke();
+  ctx2.beginPath();ctx2.moveTo(ox,PAD);ctx2.lineTo(ox,CH-PAD);ctx2.stroke();
+  ctx2.fillStyle=gcss('--muted');ctx2.font=`10px ${gcss('--fm')}`;ctx2.textAlign='center';ctx2.textBaseline='top';
+  [-1,-.5,.5,1].forEach(v=>ctx2.fillText(v.toFixed(1),toPixel1(v,0)[0],oy+3));
+  ctx2.textAlign='right';ctx2.textBaseline='middle';
+  [-2,-1,1,2].forEach(v=>ctx2.fillText(v,ox-4,toPixel1(0,v)[1]));
+  ctx2.font=`bold 11px ${gcss('--fb')}`;ctx2.textAlign='center';
+  ctx2.fillStyle=gcss('--blue');ctx2.fillText('x₁',CW-PAD+14,oy);
+  ctx2.fillStyle=gcss('--amber');ctx2.fillText('net',ox,PAD-14);
+  // net-linjen
+  ctx2.save();ctx2.beginPath();ctx2.rect(PAD,PAD,PRNG,PRNG);ctx2.clip();
+  ctx2.strokeStyle=gcss('--amber');ctx2.lineWidth=2;
+  const[l0x,l0y]=toPixel1(DMIN,w*DMIN-th),[l1x,l1y]=toPixel1(DMAX,w*DMAX-th);
+  ctx2.beginPath();ctx2.moveTo(l0x,l0y);ctx2.lineTo(l1x,l1y);ctx2.stroke();
+  // stolpar från varje punkt upp/ner till net-linjen
+  ctx2.setLineDash([3,3]);ctx2.lineWidth=1;ctx2.strokeStyle=gcss('--muted');
+  for(const p of pts){
+    const[px,py0]=toPixel1(p.x[0],0),[,py1]=toPixel1(p.x[0],netOf(p.x));
+    ctx2.beginPath();ctx2.moveTo(px,py0);ctx2.lineTo(px,py1);ctx2.stroke();
+  }
+  ctx2.restore();
+  // beslutsgränsen
+  if(Math.abs(w)>1e-6){
+    const xb=th/w;
+    if(xb>DMIN&&xb<DMAX){
+      const[bx]=toPixel1(xb,0);
+      ctx2.save();ctx2.shadowColor=gcss('--green');ctx2.shadowBlur=10;
+      ctx2.strokeStyle=gcss('--green');ctx2.lineWidth=2;
+      ctx2.beginPath();ctx2.moveTo(bx,PAD);ctx2.lineTo(bx,CH-PAD);ctx2.stroke();ctx2.restore();
+      ctx2.fillStyle=gcss('--green');ctx2.font=`10px ${gcss('--fm')}`;
+      ctx2.textAlign=bx>CW/2?'right':'left';ctx2.textBaseline='bottom';
+      ctx2.fillText(`gräns x₁ = θ/w₁ = ${xb.toFixed(2)}`,bx+(bx>CW/2?-5:5),CH-PAD-4);
+    }
+  }
+  // punkter på x₁-axeln
+  for(const p of pts){
+    const[px,py]=toPixel1(p.x[0],0);
+    drawPoint(px,py,p.cls,pd.predict(p.x)===p.cls);
+  }
+}
+
+/* ── 2 ingångar: planet ── */
 function drawRegions2(){
   const img=offCtx.createImageData(CW,CH);
   const d=img.data;
-  const dark=isDark();
-  const c0=dark?[255,107,107]:[220,38,38];
-  const c1=dark?[77,184,255]:[26,101,163];
-  const w1=p2.w[0],w2=p2.w[1],th=p2.theta;
+  const[c0,c1]=regionColors();
+  const w1=pd.w[0],w2=pd.w[1],th=pd.theta;
   for(let py=0;py<CH;py++){
     for(let px=0;px<CW;px++){
       const[x,y]=toData2(px,py);
-      const cls=(-th+w1*x+w2*y>=0)?1:0;
-      const col=cls?c1:c0;
+      const col=(-th+w1*x+w2*y>=0)?c1:c0;
       const i=(py*CW+px)*4;
       d[i]=col[0];d[i+1]=col[1];d[i+2]=col[2];d[i+3]=26;
     }
@@ -915,9 +1049,7 @@ function drawRegions2(){
   ctx2.drawImage(offCv,0,0);
 }
 
-function draw2d(){
-  ctx2.clearRect(0,0,CW,CH);
-  ctx2.fillStyle=gcss('--surface'); ctx2.fillRect(0,0,CW,CH);
+function draw2dPlot(){
   drawRegions2();
   // grid
   ctx2.strokeStyle=gcss('--border'); ctx2.lineWidth=.5;
@@ -942,7 +1074,7 @@ function draw2d(){
   ctx2.fillText('x₁',CW-PAD+14,ay);
   ctx2.fillText('x₂',toPixel2(0,0)[0]+4,PAD-12);
   // decision boundary
-  const w1=p2.w[0],w2=p2.w[1],th=p2.theta;
+  const w1=pd.w[0],w2=pd.w[1],th=pd.theta;
   ctx2.save();ctx2.shadowColor=gcss('--green');ctx2.shadowBlur=10;
   ctx2.strokeStyle=gcss('--green');ctx2.lineWidth=2;
   if(Math.abs(w2)>.01){
@@ -955,40 +1087,401 @@ function draw2d(){
   }
   ctx2.restore();
   // points
-  for(const p of pts2){
-    const[px,py]=toPixel2(p.x,p.y);
-    const correct=p2.predict([p.x,p.y])===p.cls;
-    const col=p.cls===1?gcss('--blue'):gcss('--red');
-    ctx2.save();
-    if(!correct){ctx2.shadowColor='#FFD700';ctx2.shadowBlur=14;}
-    ctx2.strokeStyle=col;ctx2.lineWidth=2;
-    if(p.cls===1){
-      ctx2.beginPath();ctx2.arc(px,py,7,0,2*Math.PI);
-      ctx2.fillStyle=col+'44';ctx2.fill();ctx2.stroke();
-    } else {
-      ctx2.beginPath();ctx2.rect(px-6,py-6,12,12);
-      ctx2.fillStyle=col+'44';ctx2.fill();ctx2.stroke();
-    }
-    ctx2.restore();
+  for(const p of pts){
+    const[px,py]=toPixel2(p.x[0],p.x[1]);
+    drawPoint(px,py,p.cls,pd.predict(p.x)===p.cls);
   }
 }
 
-canvas2.addEventListener('click',e=>{
+/* ── 3 ingångar: roterbar kub ── */
+const C3=1.2;
+function proj3(p){
+  const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
+  const X=p[0]*cy-p[1]*sy, Y=p[0]*sy+p[1]*cy, Z=p[2];
+  const u=Z*cp+Y*sp, d=Y*cp-Z*sp;     // d = djup, större = längre bort
+  const f=6/(6+d), S=82;
+  return[CW/2+S*X*f, CH/2+8-S*u*f, d, f];
+}
+
+function planePolygon(){
+  const w=pd.w,th=pd.theta;
+  if(Math.hypot(w[0],w[1],w[2])<1e-6) return null;
+  const f=p=>w[0]*p[0]+w[1]*p[1]+w[2]*p[2]-th;
+  const out=[];
+  for(let m=0;m<8;m++){
+    const a=[0,1,2].map(i=>(m>>i)&1?C3:-C3);
+    for(let i=0;i<3;i++){
+      if((m>>i)&1) continue;              // varje kant en gång: från −C till +C längs axel i
+      const b=[...a];b[i]=C3;
+      const fa=f(a),fb=f(b);
+      if((fa<=0&&fb>=0)||(fa>=0&&fb<=0)){
+        if(fa===fb) continue;
+        const t=fa/(fa-fb);
+        out.push(a.map((v,k)=>v+(b[k]-v)*t));
+      }
+    }
+  }
+  if(out.length<3) return null;
+  const c=[0,1,2].map(k=>out.reduce((s,p)=>s+p[k],0)/out.length);
+  // två riktningar i planet för att sortera hörnen runt mittpunkten
+  const n=[w[0],w[1],w[2]];
+  const ref=Math.abs(n[0])<.9*Math.hypot(...n)?[1,0,0]:[0,1,0];
+  const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+  const e1=cross(n,ref),e2=cross(n,e1);
+  const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+  out.sort((p,q)=>{
+    const dp=p.map((v,k)=>v-c[k]),dq=q.map((v,k)=>v-c[k]);
+    return Math.atan2(dot(dp,e2),dot(dp,e1))-Math.atan2(dot(dq,e2),dot(dq,e1));
+  });
+  return{poly:out,center:c};
+}
+
+function draw3d(){
+  const muted=gcss('--muted'),border=gcss('--border'),green=gcss('--green');
+  // kubens kanter
+  ctx2.strokeStyle=border;ctx2.lineWidth=1;
+  for(let m=0;m<8;m++){
+    const a=[0,1,2].map(i=>(m>>i)&1?C3:-C3);
+    for(let i=0;i<3;i++){
+      if((m>>i)&1) continue;
+      const b=[...a];b[i]=C3;
+      const pa=proj3(a),pb=proj3(b);
+      ctx2.beginPath();ctx2.moveTo(pa[0],pa[1]);ctx2.lineTo(pb[0],pb[1]);ctx2.stroke();
+    }
+  }
+  // axlar genom origo
+  ctx2.strokeStyle=muted;ctx2.lineWidth=1;ctx2.setLineDash([4,4]);
+  ctx2.font=`bold 11px ${gcss('--fb')}`;ctx2.textAlign='center';ctx2.textBaseline='middle';
+  for(let i=0;i<3;i++){
+    const a=[0,0,0],b=[0,0,0],l=[0,0,0];a[i]=-C3;b[i]=C3;l[i]=C3*1.18;
+    const pa=proj3(a),pb=proj3(b),pl=proj3(l);
+    ctx2.beginPath();ctx2.moveTo(pa[0],pa[1]);ctx2.lineTo(pb[0],pb[1]);ctx2.stroke();
+    ctx2.fillStyle=gcss('--blue');ctx2.fillText('x'+SUB[i],pl[0],pl[1]);
+  }
+  ctx2.setLineDash([]);
+
+  // vilka punkter ligger bakom planet sett från betraktaren?
+  const cp=Math.cos(pitch),sp=Math.sin(pitch);
+  const view=[-cp*Math.sin(yaw),-cp*Math.cos(yaw),sp];   // riktning mot betraktaren
+  const wv=pd.w[0]*view[0]+pd.w[1]*view[1]+pd.w[2]*view[2];
+  const items=pts.map((p,i)=>{
+    const pr=proj3(p.x);
+    return{p,i,pr,behind:netOf(p.x)*wv<0};
+  }).sort((a,b)=>b.pr[2]-a.pr[2]);
+  screenPts=items.map(it=>({i:it.i,x:it.pr[0],y:it.pr[1]}));
+
+  const drawItems=list=>{
+    for(const it of list){
+      // skugglinje ner till golvet hjälper djupseendet
+      const fl=proj3([it.p.x[0],it.p.x[1],-C3]);
+      ctx2.strokeStyle=muted+'66';ctx2.lineWidth=1;
+      ctx2.beginPath();ctx2.moveTo(it.pr[0],it.pr[1]);ctx2.lineTo(fl[0],fl[1]);ctx2.stroke();
+      ctx2.fillStyle=muted+'88';ctx2.beginPath();ctx2.arc(fl[0],fl[1],1.8,0,2*Math.PI);ctx2.fill();
+      drawPoint(it.pr[0],it.pr[1],it.p.cls,pd.predict(it.p.x)===it.p.cls,7*it.pr[3],it.i===sel);
+    }
+  };
+  drawItems(items.filter(it=>it.behind));
+
+  const pl=planePolygon();
+  if(pl){
+    const sp2=pl.poly.map(proj3);
+    ctx2.save();
+    ctx2.fillStyle=green+'2e';ctx2.strokeStyle=green;ctx2.lineWidth=2;
+    ctx2.shadowColor=green;ctx2.shadowBlur=8;
+    ctx2.beginPath();sp2.forEach((q,k)=>k?ctx2.lineTo(q[0],q[1]):ctx2.moveTo(q[0],q[1]));ctx2.closePath();
+    ctx2.fill();ctx2.stroke();ctx2.restore();
+    // normalpil från planets mitt mot klass 1-sidan
+    const wl=Math.hypot(pd.w[0],pd.w[1],pd.w[2]);
+    const tip=pl.center.map((v,k)=>v+pd.w[k]/wl*.45);
+    const a=proj3(pl.center),b=proj3(tip);
+    const ang=Math.atan2(b[1]-a[1],b[0]-a[0]);
+    ctx2.strokeStyle=gcss('--blue');ctx2.fillStyle=gcss('--blue');ctx2.lineWidth=2;
+    ctx2.beginPath();ctx2.moveTo(a[0],a[1]);ctx2.lineTo(b[0],b[1]);ctx2.stroke();
+    ctx2.beginPath();ctx2.moveTo(b[0],b[1]);
+    ctx2.lineTo(b[0]-8*Math.cos(ang-.45),b[1]-8*Math.sin(ang-.45));
+    ctx2.lineTo(b[0]-8*Math.cos(ang+.45),b[1]-8*Math.sin(ang+.45));
+    ctx2.closePath();ctx2.fill();
+  }
+
+  drawItems(items.filter(it=>!it.behind));
+}
+
+/* ── 4 ingångar: summan för vald punkt + alla punkter längs summa-axeln ── */
+function draw4d(){
+  const muted=gcss('--muted'),green=gcss('--green'),amber=gcss('--amber');
+  const fm=gcss('--fm');
+  screenPts=[];
+  if(!pts.length){
+    ctx2.fillStyle=muted;ctx2.font=`13px ${gcss('--fb')}`;ctx2.textAlign='center';ctx2.textBaseline='middle';
+    ctx2.fillText('4 dimensioner går inte att rita.',CW/2,CH/2-12);
+    ctx2.fillText('Ladda ett förval eller lägg till punkter.',CW/2,CH/2+12);
+    return;
+  }
+  const th=pd.theta;
+  const x=(sel>=0&&pts[sel])?pts[sel].x:pts[0].x;
+
+  // ── Övre delen: vattenfall Σ wᵢxᵢ ──
+  const top=44,bot=224,mid=(top+bot)/2,h=bot-top;
+  const terms=[...Array(dim).keys()].map(i=>pd.w[i]*x[i]);
+  const cum=[0];terms.forEach(t=>cum.push(cum[cum.length-1]+t));
+  const sum=cum[cum.length-1];
+  const M=Math.max(.4,...cum.map(Math.abs),Math.abs(th))*1.15;
+  const yv=v=>mid-v/M*(h/2);
+  const slots=dim+1,left=PAD+6,slotW=(CW-PAD-left-6)/slots,bw=slotW*.58;
+
+  ctx2.fillStyle=muted;ctx2.font=`10px ${fm}`;ctx2.textAlign='left';ctx2.textBaseline='top';
+  ctx2.fillText(`Vald punkt: x = ${fmtVec(x)}`,PAD-24,10);
+  // nollinje
+  ctx2.strokeStyle=muted;ctx2.lineWidth=1;
+  ctx2.beginPath();ctx2.moveTo(left-6,yv(0));ctx2.lineTo(CW-PAD,yv(0));ctx2.stroke();
+  ctx2.textAlign='right';ctx2.textBaseline='middle';ctx2.fillText('0',left-9,yv(0));
+
+  for(let i=0;i<dim;i++){
+    const cx=left+slotW*(i+.5);
+    const y0=yv(cum[i]),y1=yv(cum[i+1]);
+    ctx2.fillStyle=amber+'55';ctx2.strokeStyle=amber;ctx2.lineWidth=1.5;
+    ctx2.fillRect(cx-bw/2,Math.min(y0,y1),bw,Math.max(Math.abs(y1-y0),1));
+    ctx2.strokeRect(cx-bw/2,Math.min(y0,y1),bw,Math.max(Math.abs(y1-y0),1));
+    // trappsteg till nästa stapel
+    ctx2.save();ctx2.setLineDash([2,3]);ctx2.strokeStyle=muted;
+    ctx2.beginPath();ctx2.moveTo(cx+bw/2,y1);ctx2.lineTo(cx+slotW-bw/2,y1);ctx2.stroke();ctx2.restore();
+    ctx2.fillStyle=amber;ctx2.font=`10px ${fm}`;ctx2.textAlign='center';
+    ctx2.textBaseline=terms[i]>=0?'bottom':'top';
+    ctx2.fillText((terms[i]>=0?'+':'−')+Math.abs(terms[i]).toFixed(2),cx,terms[i]>=0?Math.min(y0,y1)-3:Math.max(y0,y1)+3);
+    ctx2.fillStyle=muted;ctx2.textBaseline='top';
+    ctx2.fillText(`w${SUB[i]}x${SUB[i]}`,cx,bot+8);
+  }
+  // Σ-stapel
+  const out=sum>=th?1:0;
+  const sc=out?gcss('--blue'):gcss('--red');
+  const sx=left+slotW*(dim+.5);
+  ctx2.fillStyle=sc+'55';ctx2.strokeStyle=sc;ctx2.lineWidth=2;
+  ctx2.fillRect(sx-bw/2,Math.min(yv(0),yv(sum)),bw,Math.max(Math.abs(yv(sum)-yv(0)),1));
+  ctx2.strokeRect(sx-bw/2,Math.min(yv(0),yv(sum)),bw,Math.max(Math.abs(yv(sum)-yv(0)),1));
+  ctx2.fillStyle=sc;ctx2.font=`bold 11px ${fm}`;ctx2.textAlign='center';ctx2.textBaseline='top';
+  ctx2.fillText('Σ',sx,bot+7);
+  ctx2.font=`10px ${fm}`;ctx2.textBaseline=sum>=0?'bottom':'top';
+  ctx2.fillText(sum.toFixed(2),sx,sum>=0?yv(sum)-3:yv(sum)+3);
+  // θ-linjen
+  ctx2.save();ctx2.strokeStyle=green;ctx2.lineWidth=1.5;ctx2.setLineDash([6,4]);
+  ctx2.shadowColor=green;ctx2.shadowBlur=6;
+  ctx2.beginPath();ctx2.moveTo(left-6,yv(th));ctx2.lineTo(CW-PAD+10,yv(th));ctx2.stroke();ctx2.restore();
+  ctx2.fillStyle=green;ctx2.font=`10px ${fm}`;ctx2.textAlign='right';ctx2.textBaseline='bottom';
+  ctx2.fillText(`θ = ${th.toFixed(2)}`,CW-PAD+10,yv(th)-2);
+  ctx2.fillStyle=sc;ctx2.font=`bold 11px ${fm}`;ctx2.textAlign='right';ctx2.textBaseline='top';
+  ctx2.fillText(`Σ ${out?'≥':'<'} θ → output ${out}`,CW-8,26);
+
+  // ── Nedre delen: alla punkter längs Σ-axeln ──
+  const sTop=274,sBot=352;
+  ctx2.fillStyle=muted;ctx2.font=`10px ${fm}`;ctx2.textAlign='left';ctx2.textBaseline='bottom';
+  ctx2.fillText('Alla punkter, utlagda efter sin summa Σ wᵢxᵢ',PAD-24,sTop-4);
+  const sums=pts.map(p=>sumOf(p.x));
+  let lo=Math.min(th,...sums),hi=Math.max(th,...sums);
+  if(hi-lo<1e-6){lo-=1;hi+=1;}
+  const padv=(hi-lo)*.08;lo-=padv;hi+=padv;
+  const xs=v=>PAD+(v-lo)/(hi-lo)*PRNG;
+  const[c0,c1]=regionColors();
+  const tx=xs(th);
+  ctx2.fillStyle=`rgba(${c0[0]},${c0[1]},${c0[2]},.10)`;ctx2.fillRect(PAD,sTop,tx-PAD,sBot-sTop);
+  ctx2.fillStyle=`rgba(${c1[0]},${c1[1]},${c1[2]},.10)`;ctx2.fillRect(tx,sTop,CW-PAD-tx,sBot-sTop);
+  ctx2.strokeStyle=gcss('--border');ctx2.lineWidth=1;ctx2.strokeRect(PAD,sTop,PRNG,sBot-sTop);
+  ctx2.save();ctx2.strokeStyle=green;ctx2.lineWidth=2;ctx2.shadowColor=green;ctx2.shadowBlur=10;
+  ctx2.beginPath();ctx2.moveTo(tx,sTop-2);ctx2.lineTo(tx,sBot+2);ctx2.stroke();ctx2.restore();
+  ctx2.fillStyle=green;ctx2.font=`bold 10px ${fm}`;ctx2.textAlign='center';ctx2.textBaseline='top';
+  ctx2.fillText('θ',tx,sBot+4);
+  ctx2.fillStyle=muted;ctx2.font=`10px ${fm}`;
+  ctx2.textAlign='left';ctx2.fillText(lo.toFixed(1),PAD,sBot+4);
+  ctx2.textAlign='right';ctx2.fillText(hi.toFixed(1),CW-PAD,sBot+4);
+  pts.forEach((p,i)=>{
+    const px=xs(sums[i]),py=sTop+10+((i*37)%7)*(sBot-sTop-20)/6;
+    screenPts.push({i,x:px,y:py});
+    drawPoint(px,py,p.cls,pd.predict(p.x)===p.cls,5.5,i===sel);
+  });
+}
+
+/* ── Klick, mus och rotation ── */
+function canvasPos(e){
   const r=canvas2.getBoundingClientRect();
-  const sx=CW/r.width,sy=CH/r.height;
-  const px=(e.clientX-r.left)*sx,py=(e.clientY-r.top)*sy;
+  return[(e.clientX-r.left)*CW/r.width,(e.clientY-r.top)*CH/r.height];
+}
+function pickPoint(px,py){
+  let best=-1,bd=14*14;
+  for(const s of screenPts){const d=(s.x-px)**2+(s.y-py)**2;if(d<bd){bd=d;best=s.i;}}
+  return best;
+}
+
+canvas2.addEventListener('click',e=>{
+  const[px,py]=canvasPos(e);
+  if(dim===4){
+    const i=pickPoint(px,py);
+    if(i>=0){sel=i;refresh(false);}
+    return;
+  }
+  if(dim===3) return;   // hanteras av pointer-händelserna nedan
   if(px<PAD-12||px>CW-PAD+12||py<PAD-12||py>CH-PAD+12) return;
   const[x,y]=toData2(px,py);
-  pts2.push({x,y,cls:curCls2});
-  draw2d();updateStats2();updateFormula2(x,y);
+  pts.push({x:dim===1?[x]:[x,y],cls:curCls2});
+  sel=pts.length-1;
+  refresh(false);
 });
 canvas2.addEventListener('mousemove',e=>{
-  if(!pts2.length) return;
-  const r=canvas2.getBoundingClientRect();
-  const[x,y]=toData2((e.clientX-r.left)*CW/r.width,(e.clientY-r.top)*CH/r.height);
-  updateFormula2(x,y);
+  if(dim>2||!pts.length) return;
+  const[x,y]=toData2(...canvasPos(e));
+  hoverX=dim===1?[x]:[x,y];
+  updateFormula2();
+});
+canvas2.addEventListener('mouseleave',()=>{if(hoverX){hoverX=null;updateFormula2();}});
+
+canvas2.addEventListener('pointerdown',e=>{
+  if(dim!==3) return;
+  drag={x:e.clientX,y:e.clientY,moved:0};
+  canvas2.setPointerCapture(e.pointerId);
+  canvas2.style.cursor='grabbing';
+});
+canvas2.addEventListener('pointermove',e=>{
+  if(dim!==3||!drag) return;
+  const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+  drag.x=e.clientX;drag.y=e.clientY;drag.moved+=Math.abs(dx)+Math.abs(dy);
+  if(drag.moved>4&&autoRot){autoRot=false;updateRotBtn();}
+  yaw+=dx*.01;
+  pitch=Math.max(-1.4,Math.min(1.4,pitch+dy*.01));
+  drawDemo();
+});
+canvas2.addEventListener('pointerup',e=>{
+  if(dim!==3||!drag) return;
+  if(drag.moved<=4){
+    const i=pickPoint(...canvasPos(e));
+    if(i>=0){sel=i;refresh(false);}
+  }
+  drag=null;canvas2.style.cursor='grab';
 });
 
+function startRot(){
+  if(rotRunning) return;
+  rotRunning=true;requestAnimationFrame(rotStep);
+}
+function rotStep(){
+  const active=document.getElementById('tab-demo2d').classList.contains('active');
+  if(dim!==3||!autoRot||!active){rotRunning=false;return;}
+  if(!drag){yaw+=.004;drawDemo();}
+  requestAnimationFrame(rotStep);
+}
+function toggleRot(){autoRot=!autoRot;updateRotBtn();if(autoRot) startRot();}
+function updateRotBtn(){
+  const b=document.getElementById('rot-btn');
+  b.textContent=autoRot?'⏸ Stoppa rotation':'⟳ Auto-rotera';
+}
+
+/* ── Antal ingångar ── */
+function setDim(n){
+  stopAuto2();
+  dim=n;
+  const eta=pd.eta;
+  pd=new Perceptron(n);pd.eta=eta;
+  document.querySelectorAll('.dim-btn').forEach(b=>b.classList.toggle('active',+b.dataset.n===n));
+  document.getElementById('dim-note').innerHTML=DIM_INFO[n].note;
+  document.getElementById('plot-hint').textContent=DIM_INFO[n].hint;
+  document.getElementById('rot-btn').style.display=n===3?'':'none';
+  document.getElementById('pts-wrap').style.display=n>=3?'':'none';
+  canvas2.style.cursor=n===3?'grab':n===4?'pointer':'crosshair';
+  canvas2.style.touchAction=n===3?'none':'';
+  buildSliders();buildPresets();buildAddForm();
+  document.getElementById('log-head2').innerHTML=
+    `<tr><th>Epok</th><th>Punkt</th><th>Kl.</th><th>Nät</th><th>Pred.</th><th>Fel</th>${
+      [...Array(n).keys()].map(i=>`<th>Δw${SUB[i]}</th>`).join('')}<th>Δθ</th></tr>`;
+  document.getElementById('pts-head').innerHTML=
+    `<tr><th>#</th>${[...Array(n).keys()].map(i=>`<th>x${SUB[i]}</th>`).join('')}<th>Kl.</th><th>Σ wᵢxᵢ</th><th>net</th><th>Pred.</th><th></th></tr>`;
+  loadPreset2(n===1?'pos':'and');
+  if(n===3){updateRotBtn();startRot();}
+}
+
+function buildSliders(){
+  document.getElementById('w-sliders').innerHTML=[...Array(dim).keys()].map(i=>
+    `<div class="sg"><label>w${SUB[i]} <span class="val" id="v-w${i}">0.00</span></label>
+      <input type="range" id="sl-w${i}" min="-3" max="3" step="0.01" value="0" oninput="onSlider2()"></div>`).join('');
+}
+
+function buildAddForm(){
+  const el=document.getElementById('add-pt');
+  if(dim<3){el.style.display='none';el.innerHTML='';return;}
+  el.style.display='';
+  el.innerHTML='Ny punkt:'+[...Array(dim).keys()].map(i=>
+    `<label>x${SUB[i]} <input type="number" id="ap-x${i}" min="-1.2" max="1.2" step="0.1" value="0"></label>`).join('')+
+    `<button class="pre-btn" onclick="addPoint()">+ Lägg till</button>`;
+}
+function addPoint(){
+  const x=[...Array(dim).keys()].map(i=>{
+    const v=parseFloat(document.getElementById('ap-x'+i).value);
+    return Math.max(-C3,Math.min(C3,isNaN(v)?0:v));
+  });
+  pts.push({x,cls:curCls2});sel=pts.length-1;
+  refresh(false);
+}
+
+/* ── Förval ── */
+const VARS={2:'x₁ och x₂',3:'x₁, x₂ och x₃',4:'x₁ … x₄'};
+const NO_CUT={1:'en punkt',2:'en rät linje',3:'ett plan',4:'ett hyperplan'};
+function presetList(){
+  if(dim===1) return[
+    {id:'pos',t:'Positiva tal',s:'x₁ > 0'},
+    {id:'rand',t:'Slumpdata',s:'går att separera'},
+    {id:'mid',t:'⚠ Omöjligt fall',s:'Kan ej lösas med en punkt',warn:true},
+  ];
+  const l=[
+    {id:'or',t:'Minst ett positivt',s:dim===2?'x₁ > 0 ELLER x₂ > 0':`någon av ${VARS[dim]} > 0`},
+    {id:'and',t:dim===2?'Båda positiva':'Alla positiva',s:dim===2?'x₁ > 0 OCH x₂ > 0':`${VARS[dim]} > 0`},
+  ];
+  if(dim>=3) l.push({id:'maj',t:'Majoritet',s:dim===3?'minst 2 av 3 positiva':'minst 2 av 4 positiva'});
+  l.push({id:'rand',t:'Slumpdata',s:'går att separera'});
+  l.push({id:'xor',t:'⚠ Omöjligt fall',s:dim===2?'Kan ej lösas med en rät linje':`udda antal positiva — ${NO_CUT[dim]} räcker inte`,warn:true});
+  return l;
+}
+function buildPresets(){
+  document.getElementById('preset-row').innerHTML=presetList().map(p=>
+    `<button class="pre-btn" onclick="loadPreset2('${p.id}')" style="display:flex;flex-direction:column;align-items:flex-start;padding:7px 12px${p.warn?';border-color:var(--amber);color:var(--amber)':''}">
+      <span style="font-weight:600">${p.t}</span>
+      <span style="font-size:.72rem;color:var(--muted)">${p.s}</span>
+    </button>`).join('');
+}
+
+function corners(n){
+  const out=[];
+  for(let m=0;m<(1<<n);m++) out.push([...Array(n).keys()].map(i=>(m>>(n-1-i))&1?.7:-.7));
+  return out;
+}
+function randomSeparable(n){
+  const w=[...Array(n)].map(()=>Math.random()*2-1),th=(Math.random()-.5)*.6;
+  const norm=Math.hypot(...w),want=[0,8,20,30,40][n],out=[];
+  for(let tries=0;out.length<want&&tries<5000;tries++){
+    const x=[...Array(n)].map(()=>+(Math.random()*2-1).toFixed(2));
+    const s=(w.reduce((a,wi,i)=>a+wi*x[i],0)-th)/norm;
+    if(Math.abs(s)<.12) continue;   // lite marginal kring den dolda gränsen
+    out.push({x,cls:s>=0?1:0});
+  }
+  return out;
+}
+function makePreset(id){
+  if(id==='pos') return[-.9,-.55,-.2,.25,.6,.95].map(v=>({x:[v],cls:v>0?1:0}));
+  if(id==='mid') return[-1,-.65,-.3,0,.3,.65,1].map(v=>({x:[v],cls:Math.abs(v)<.5?1:0}));
+  if(id==='rand') return randomSeparable(dim);
+  return corners(dim).map(x=>{
+    const k=x.filter(v=>v>0).length;
+    const cls=id==='or'?+(k>0):id==='and'?+(k===dim):id==='maj'?+(k>=dim/2):k%2;
+    return{x,cls};
+  });
+}
+function loadPreset2(id){
+  stopAuto2();
+  pts=makePreset(id);sel=pts.length?0:-1;hoverX=null;
+  pd.randomize(.2);epoch2=0;logRows2=[];
+  refresh(true);
+  const msg={pos:'Positiva tal laddade',mid:'Mittenklass laddad — obs: ej linjärseparabelt!',
+    or:'OR-grind laddad',and:'AND-grind laddad',maj:'Majoritet laddad',rand:'Slumpdata laddad — den går att separera',
+    xor:dim===2?'XOR laddad — obs: ej linjärseparabelt!':'Udda antal positiva (XOR) laddat — obs: ej linjärseparabelt!'};
+  setStatus2(msg[id],(id==='xor'||id==='mid')?'warn':'');
+}
+
+/* ── Reglage, formel, statistik ── */
 function setClass2(c){
   curCls2=c;
   document.getElementById('cls0-btn').classList.toggle('active',c===0);
@@ -996,43 +1489,47 @@ function setClass2(c){
 }
 
 function onSlider2(){
-  p2.w[0]=+document.getElementById('sl-w1').value;
-  p2.w[1]=+document.getElementById('sl-w2').value;
-  p2.theta=+document.getElementById('sl-th').value;
-  p2.eta=+document.getElementById('sl-eta').value;
-  document.getElementById('v-w1').textContent=p2.w[0].toFixed(2);
-  document.getElementById('v-w2').textContent=p2.w[1].toFixed(2);
-  document.getElementById('v-th').textContent=p2.theta.toFixed(2);
-  document.getElementById('v-eta').textContent=p2.eta.toFixed(2);
-  draw2d();updateStats2();updateFormula2();
+  for(let i=0;i<dim;i++){
+    pd.w[i]=+document.getElementById('sl-w'+i).value;
+    document.getElementById('v-w'+i).textContent=pd.w[i].toFixed(2);
+  }
+  pd.theta=+document.getElementById('sl-th').value;
+  pd.eta=+document.getElementById('sl-eta').value;
+  document.getElementById('v-th').textContent=pd.theta.toFixed(2);
+  document.getElementById('v-eta').textContent=pd.eta.toFixed(2);
+  refresh(false);
 }
 
 function syncSliders2(){
   const cl=(v,mn,mx)=>Math.max(mn,Math.min(mx,v));
-  document.getElementById('sl-w1').value=cl(p2.w[0],-3,3);
-  document.getElementById('sl-w2').value=cl(p2.w[1],-3,3);
-  document.getElementById('sl-th').value=cl(p2.theta,-3,3);
-  document.getElementById('v-w1').textContent=p2.w[0].toFixed(2);
-  document.getElementById('v-w2').textContent=p2.w[1].toFixed(2);
-  document.getElementById('v-th').textContent=p2.theta.toFixed(2);
+  for(let i=0;i<dim;i++){
+    document.getElementById('sl-w'+i).value=cl(pd.w[i],-3,3);
+    document.getElementById('v-w'+i).textContent=pd.w[i].toFixed(2);
+  }
+  document.getElementById('sl-th').value=cl(pd.theta,-3,3);
+  document.getElementById('v-th').textContent=pd.theta.toFixed(2);
 }
 
-function updateFormula2(hx,hy){
-  const x=hx??(pts2.length?pts2[pts2.length-1].x:0.5);
-  const y=hy??(pts2.length?pts2[pts2.length-1].y:0.5);
-  const net=p2.w[0]*x+p2.w[1]*y-p2.theta;
-  const out=net>=0?1:0;
-  const s=p2.w[1]>=0?'+':'−';
-  document.getElementById('fml-net').innerHTML=
-    `net = <span class="vw">${p2.w[0].toFixed(2)}</span>·x₁ ${s} <span class="vw">${Math.abs(p2.w[1]).toFixed(2)}</span>·x₂ − θ`;
-  document.getElementById('fml-net2').innerHTML=
-    `= <span class="vw">${net.toFixed(3)}</span> (θ = <span class="vt">${p2.theta.toFixed(2)}</span>)`;
-  const outEl=document.getElementById('fml-out');
-  outEl.innerHTML=`output = <span style="color:${out?gcss('--green'):gcss('--red')}">${out}</span> (net ${net>=0?'≥':'<'} 0)`;
+function updateFormula2(){
+  const x=hoverX??((sel>=0&&pts[sel])?pts[sel].x:Array(dim).fill(.5));
+  let sym='net = ',num='= ';
+  for(let i=0;i<dim;i++){
+    const w=pd.w[i],t=w*x[i];
+    sym+=(i===0?(w<0?'−':''):(w>=0?' + ':' − '))+`<span class="vw">${Math.abs(w).toFixed(2)}</span>·x${SUB[i]}`;
+    num+=(i===0?(t<0?'−':''):(t>=0?' + ':' − '))+Math.abs(t).toFixed(2);
+  }
+  sym+=' − θ';
+  num+=` ${pd.theta>=0?'−':'+'} <span class="vt">${Math.abs(pd.theta).toFixed(2)}</span>`;
+  const net=netOf(x),out=net>=0?1:0;
+  document.getElementById('fml-net').innerHTML=sym;
+  document.getElementById('fml-x').innerHTML=`x = <span class="vx">${fmtVec(x)}</span>`;
+  document.getElementById('fml-net2').innerHTML=`${num} = <span class="vw">${net.toFixed(3)}</span>`;
+  document.getElementById('fml-out').innerHTML=
+    `output = <span style="color:${out?gcss('--green'):gcss('--red')}">${out}</span> (net ${net>=0?'≥':'<'} 0)`;
 }
 
 function updateStats2(){
-  const n=pts2.length,ok=pts2.filter(p=>p2.predict([p.x,p.y])===p.cls).length;
+  const n=pts.length,ok=pts.filter(p=>pd.predict(p.x)===p.cls).length;
   document.getElementById('stat-acc').textContent=n?`${ok}/${n}`:'—';
   document.getElementById('stat-ep').textContent=epoch2;
 }
@@ -1044,36 +1541,60 @@ function setStatus2(m,c=''){
 function renderLog2(){
   const tb=document.getElementById('log-body2');
   if(!logRows2.length){
-    tb.innerHTML='<tr><td colspan="9" style="color:var(--muted);text-align:center;padding:14px">Ingen inlärning ännu</td></tr>';return;
+    tb.innerHTML=`<tr><td colspan="${7+dim}" style="color:var(--muted);text-align:center;padding:14px">Ingen inlärning ännu</td></tr>`;return;
   }
-  tb.innerHTML=logRows2.map(r=>{
-    const dc=v=>(+v>0?`<span class="pos">+${v}</span>`:`<span class="${+v<0?'neg':'neu'}">${v}</span>`);
-    return`<tr><td>${r.ep}</td><td>(${r.px},${r.py})</td><td class="${r.cls?'pos':'neg'}">${r.cls}</td>
+  const dc=v=>(+v>0?`<span class="pos">+${v}</span>`:`<span class="${+v<0?'neg':'neu'}">${v}</span>`);
+  tb.innerHTML=logRows2.map(r=>
+    `<tr><td>${r.ep}</td><td>${fmtVec(r.x)}</td><td class="${r.cls?'pos':'neg'}">${r.cls}</td>
       <td>${r.net}</td><td class="${r.pred?'pos':'neg'}">${r.pred}</td><td class="${r.err>0?'pos':r.err<0?'neg':'neu'}">${r.err>0?'+':''}${r.err}</td>
-      <td>${dc(r.dw1)}</td><td>${dc(r.dw2)}</td><td>${dc(r.dth)}</td></tr>`;
-  }).join('');
+      ${r.dw.map(v=>`<td>${dc(v)}</td>`).join('')}<td>${dc(r.dth)}</td></tr>`).join('');
 }
 
+function renderPts(){
+  if(dim<3) return;
+  const tb=document.getElementById('pts-body');
+  if(!pts.length){
+    tb.innerHTML=`<tr><td colspan="${dim+6}" style="color:var(--muted);text-align:center;padding:14px">Inga punkter</td></tr>`;return;
+  }
+  tb.innerHTML=pts.map((p,i)=>{
+    const s=sumOf(p.x),net=s-pd.theta,pred=net>=0?1:0,ok=pred===p.cls;
+    return`<tr class="${i===sel?'sel':''}" onclick="selectPt(${i})"><td>${i+1}</td>
+      ${p.x.map(v=>`<td>${v.toFixed(2)}</td>`).join('')}
+      <td class="${p.cls?'pos':'neg'}">${p.cls}</td><td>${s.toFixed(2)}</td><td>${net.toFixed(2)}</td>
+      <td class="${ok?'pos':'neg'}">${pred} ${ok?'✓':'✗'}</td>
+      <td><button class="del" title="Ta bort" onclick="event.stopPropagation();deletePt(${i})">✕</button></td></tr>`;
+  }).join('');
+}
+function selectPt(i){sel=i;refresh(false);}
+function deletePt(i){
+  pts.splice(i,1);
+  if(sel>=pts.length) sel=pts.length-1;
+  refresh(false);
+}
+
+function refresh(sync){
+  if(sync) syncSliders2();
+  drawDemo();updateStats2();updateFormula2();renderLog2();renderPts();
+}
+
+/* ── Träning ── */
 function trainOne2(){
-  if(!pts2.length){setStatus2('Inga punkter!','warn');return false;}
+  if(!pts.length){setStatus2('Inga punkter!','warn');return false;}
   let upd=0;
-  const shuf=[...pts2].sort(()=>Math.random()-.5);
-  for(const p of shuf){
-    const prev_w1=p2.w[0],prev_w2=p2.w[1],prev_th=p2.theta;
-    const err=p2.trainOne([p.x,p.y],p.cls);
+  const order=[...pts.keys()].sort(()=>Math.random()-.5);
+  for(const i of order){
+    const p=pts[i];
+    const prevW=[...pd.w],prevTh=pd.theta,net=netOf(p.x);
+    const err=pd.trainOne(p.x,p.cls);
     if(err!==0){
-      logRows2.unshift({ep:epoch2,px:p.x.toFixed(2),py:p.y.toFixed(2),cls:p.cls,
-        net:(p2.w[0]*p.x+p2.w[1]*p.y-prev_th).toFixed(2),
-        pred:err===1?0:1,err,
-        dw1:(p2.w[0]-prev_w1).toFixed(3),
-        dw2:(p2.w[1]-prev_w2).toFixed(3),
-        dth:(p2.theta-prev_th).toFixed(3)});
+      logRows2.unshift({ep:epoch2,x:p.x,cls:p.cls,net:net.toFixed(2),pred:err===1?0:1,err,
+        dw:prevW.map((v,j)=>(pd.w[j]-v).toFixed(3)),dth:(pd.theta-prevTh).toFixed(3)});
       if(logRows2.length>10) logRows2.pop();
       upd++;
     }
   }
   epoch2++;
-  syncSliders2();draw2d();updateStats2();updateFormula2();renderLog2();
+  refresh(true);
   if(!upd){setStatus2(`✓ Konvergerat efter ${epoch2} epoker!`,'ok');return true;}
   setStatus2(`Epok ${epoch2}: ${upd} uppdateringar`,'');
   return false;
@@ -1086,44 +1607,36 @@ function toggleAuto2(){
   b.classList.toggle('running',autoOn2);
   if(autoOn2) autoStep2();
 }
+function stopAuto2(){
+  autoOn2=false;
+  const b=document.getElementById('btn-auto2');
+  b.textContent='Träna automatiskt';b.classList.remove('running');
+}
 function autoStep2(){
   if(!autoOn2) return;
   const done=trainOne2();
   if(done||epoch2>=500){
-    autoOn2=false;
-    const b=document.getElementById('btn-auto2');
-    b.textContent='Träna automatiskt';b.classList.remove('running');
+    stopAuto2();
     if(epoch2>=500&&!done) setStatus2('Ej konvergent — troligen inte linjärseparabelt!','err');
   } else {
     setTimeout(()=>requestAnimationFrame(autoStep2),80);
   }
 }
 function resetWeights2(){
-  p2.randomize(.3);epoch2=0;logRows2=[];
-  syncSliders2();draw2d();updateStats2();updateFormula2();renderLog2();
+  stopAuto2();
+  pd.randomize(.3);epoch2=0;logRows2=[];
+  refresh(true);
   setStatus2('Vikter återställda','');
 }
 function clearAll2(){
-  pts2=[];epoch2=0;logRows2=[];
-  p2.randomize(.3);
-  syncSliders2();draw2d();updateStats2();updateFormula2();renderLog2();
+  stopAuto2();
+  pts=[];sel=-1;hoverX=null;epoch2=0;logRows2=[];
+  pd.randomize(.3);
+  refresh(true);
   setStatus2('Allt rensat','');
 }
 
-const PRESETS2={
-  or:[{x:-.7,y:-.7,cls:0},{x:-.7,y:.7,cls:1},{x:.7,y:-.7,cls:1},{x:.7,y:.7,cls:1}],
-  and:[{x:-.7,y:-.7,cls:0},{x:-.7,y:.7,cls:0},{x:.7,y:-.7,cls:0},{x:.7,y:.7,cls:1}],
-  xor:[{x:-.7,y:-.7,cls:0},{x:-.7,y:.7,cls:1},{x:.7,y:-.7,cls:1},{x:.7,y:.7,cls:0}],
-};
-function loadPreset2(n){
-  pts2=PRESETS2[n].map(p=>({...p}));
-  p2.randomize(.2);epoch2=0;logRows2=[];
-  syncSliders2();draw2d();updateStats2();updateFormula2();renderLog2();
-  const msg={or:'OR-grind laddad',and:'AND-grind laddad',xor:'XOR laddad — obs: ej linjärseparabelt!'};
-  setStatus2(msg[n],n==='xor'?'warn':'');
-}
-
-draw2d(); updateStats2(); updateFormula2();
+setDim(1);
 
 /* ═══════════════════════════════════════════════════
    SPAM DEMO

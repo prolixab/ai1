@@ -9,6 +9,7 @@ const STEPS = 200;
 const WALL_H = 1.4;     // en ruta är 1 × 1, väggarna är höga sett från golvet
 const CAM_Y = 0.16;     // kameran sitter på robotens framkant
 const TWEEN = 0.14;     // sekunder per rörelse
+const VR_SCALE = 0.1;   // i VR krymps eleven till robotens storlek: 1 m i rummet blir 10 cm
 
 const ORDER = ['N', 'E', 'S', 'W'];
 const YAW = { N: 0, E: -Math.PI / 2, S: Math.PI, W: Math.PI / 2 };
@@ -32,17 +33,24 @@ let seed = 1 + Math.floor(Math.random() * 1e6);
 const canvas = document.getElementById('view');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.xr.enabled = true;
+renderer.xr.setReferenceSpaceType('local');   // origo där huvudet är när VR startar, så det funkar sittande och stående
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(72, 1, 0.02, 60);
 const headlamp = new THREE.PointLight(0xfff1dd, 0, 3.2, 1.6);
 camera.add(headlamp);
-scene.add(camera);
+// Riggen är roboten: den flyttas och vrids i rummet. Kameran (och i VR huvudet) sitter i den.
+const rig = new THREE.Group();
+rig.add(camera);
+scene.add(rig);
+const inVR = () => renderer.xr.isPresenting;
 const hemi = new THREE.HemisphereLight(0xffffff, 0x8a8070, 1.6);
 const sun = new THREE.DirectionalLight(0xffffff, 1.2);
 sun.position.set(3, 8, 2);
 scene.add(hemi, sun);
 
 function resize() {
+  if (inVR()) return;
   const r = canvas.getBoundingClientRect();
   renderer.setSize(r.width, r.height, false);
   camera.aspect = r.width / Math.max(1, r.height);
@@ -251,7 +259,7 @@ function act(a) {
   if (action === 'SUG') {
     level.shake = .35;
     if (ev.failed) { say('Sugningen misslyckades. Försök igen.'); audio.suck(false); }
-    else if (dirtyBefore) { say('Slurp! Rent här.'); audio.suck(true); }
+    else if (dirtyBefore) { say('Slurp! Rent här.'); audio.suck(true); buzz(.35, 220); }
     else { say('Här var det redan rent.'); audio.suck(false); }
   }
   if (action === 'VANTA') {
@@ -314,7 +322,10 @@ function finish() {
     el('div', { class: 'track' }, el('div', { class: 'fill', style: `width:${Math.round(r.perf * 100)}%` })),
     el('span', { class: 'v' }, pct(r.perf)))));
   document.getElementById('end-note').textContent = reflection();
-  setTimeout(() => { document.getElementById('end').hidden = false; document.getElementById('again').focus(); }, 500);
+  level.result = { rows, place, mine, steps };
+  drawPanel();
+  const lv = level;   // startar man om (t.ex. med VR-knapparna) innan rutan visas ska den inte dyka upp
+  setTimeout(() => { if (level !== lv) return; document.getElementById('end').hidden = false; document.getElementById('again').focus(); }, 500);
 }
 
 function reflection() {
@@ -331,8 +342,9 @@ let msgTimer = null;
 function say(t) {
   msg.textContent = t;
   msg.classList.add('show');
+  vrMsg = t;
   clearTimeout(msgTimer);
-  msgTimer = setTimeout(() => msg.classList.remove('show'), 1600);
+  msgTimer = setTimeout(() => { msg.classList.remove('show'); vrMsg = ''; drawPanel(); }, 1600);
 }
 
 const bumpEl = document.getElementById('bump');
@@ -344,6 +356,9 @@ function bump(r) {
   if (r === 0) bumperEl.classList.add('hit');
   requestAnimationFrame(() => requestAnimationFrame(() => bumpEl.classList.remove('on')));
   setTimeout(() => bumperEl.classList.remove('hit'), 250);
+  vrBump = r;
+  buzz(1, 120);
+  setTimeout(() => { vrBump = -1; drawPanel(); }, 300);
 }
 
 function updateHud() {
@@ -361,6 +376,7 @@ function updateHud() {
   statsBox.innerHTML = `<h2>Prestanda</h2>Steg <b>${world.t}/${STEPS}</b><br>Renhet nu <b>${pct(world.cleanliness())}</b><br><span title="Genomsnittlig renhet över alla steg hittills">Snitt <b>${pct(world.performance())}</b></span>`;
   document.getElementById('dirtglow').classList.toggle('on', p.dirty);
   drawMap();
+  drawPanel();
 }
 
 // Kartan: full observerbarhet = sanningen, delvis = ditt minne (som en modellbaserad agent).
@@ -375,7 +391,11 @@ function drawMap() {
   const cs = Math.max(8, Math.min(16, Math.floor(200 / world.w)));
   mapCanvas.width = world.w * cs;
   mapCanvas.height = world.h * cs;
-  const g = mapCanvas.getContext('2d');
+  paintMap(mapCanvas.getContext('2d'), cs);
+}
+
+function paintMap(g, cs) {
+  const full = cfg.observable === 'full';
   for (let y = 0; y < world.h; y++) for (let x = 0; x < world.w; x++) {
     const i = world.idx(x, y);
     let c;
@@ -429,6 +449,8 @@ muteBtn.addEventListener('click', () => {
 const clock = new THREE.Clock();
 function frame(now) {
   const dt = Math.min(clock.getDelta(), .1);
+  const vr = inVR();
+  if (vr) pollPads(now);
   if (level) {
     if (level.to) {
       const k = Math.min(1, (now - level.t0) / (TWEEN * 1000));
@@ -439,12 +461,18 @@ function frame(now) {
         if (queued.length) act(queued.shift());
       }
     }
+    // I VR vrids man direkt (mjuk vridning ger lätt åksjuka), annars glider vyn runt.
     level.yaw += (level.yawTo - level.yaw) * Math.min(1, dt * 16);
-    if (Math.abs(level.yawTo - level.yaw) < .002) level.yaw = level.yawTo;
+    if (vr || Math.abs(level.yawTo - level.yaw) < .002) level.yaw = level.yawTo;
     level.shake = Math.max(0, level.shake - dt);
-    const sh = level.shake * .012;
-    camera.position.set(level.pos.x + (Math.random() - .5) * sh, CAM_Y + (Math.random() - .5) * sh, level.pos.z);
-    camera.rotation.set(-.04, level.yaw, 0, 'YXZ');
+    rig.position.set(level.pos.x, CAM_Y, level.pos.z);
+    rig.rotation.y = level.yaw;
+    rig.scale.setScalar(vr ? VR_SCALE : 1);
+    if (!vr) {
+      const sh = level.shake * .012;
+      camera.position.set((Math.random() - .5) * sh, (Math.random() - .5) * sh, 0);
+      camera.rotation.set(-.04, 0, 0, 'YXZ');
+    }
     for (const g of level.dirtMeshes.values()) {
       if (!g.visible) continue;
       const s = g.scale.x + (g.userData.target - g.scale.x) * Math.min(1, dt * 10);
@@ -457,8 +485,170 @@ function frame(now) {
     }
   }
   renderer.render(scene, camera);
-  requestAnimationFrame(frame);
 }
+
+// ---------- VR ----------
+// Sidans paneler syns inte i ett headset, så i VR ritas percept, prestanda och karta på en
+// skylt som sitter fast i roboten, en bit framför och nedanför blicken.
+const panelCanvas = document.createElement('canvas');
+panelCanvas.width = 1024;
+panelCanvas.height = 600;
+const panelTex = new THREE.CanvasTexture(panelCanvas);
+panelTex.colorSpace = THREE.SRGBColorSpace;
+const panel = new THREE.Mesh(new THREE.PlaneGeometry(.64, .375),
+  new THREE.MeshBasicMaterial({ map: panelTex, transparent: true, fog: false, depthTest: false }));
+panel.renderOrder = 10;
+panel.position.set(0, -.3, -.75);
+panel.rotation.x = -.45;
+panel.visible = false;
+rig.add(panel);
+let vrMsg = '';
+let vrBump = -1;
+
+function drawPanel() {
+  if (!inVR() || !level) return;
+  const g = panelCanvas.getContext('2d'), W = panelCanvas.width, H = panelCanvas.height;
+  g.clearRect(0, 0, W, H);
+  g.fillStyle = 'rgba(12,10,30,.88)';
+  g.strokeStyle = vrBump >= 0 ? '#f2756b' : '#3a3466';
+  g.lineWidth = vrBump >= 0 ? 14 : 4;
+  g.beginPath(); g.roundRect(6, 6, W - 12, H - 12, 28); g.fill(); g.stroke();
+  g.textBaseline = 'middle';
+  const text = (s, x, y, size = 30, color = '#ebe8ff', weight = 400, align = 'left') => {
+    g.font = `${weight} ${size}px system-ui, sans-serif`; g.fillStyle = color; g.textAlign = align; g.fillText(s, x, y);
+  };
+
+  if (level.result) {
+    const { rows, place, mine, steps } = level.result;
+    text(`Klart efter ${steps} steg – plats ${place} av ${rows.length}`, 40, 56, 40, '#fff', 700);
+    text(`Lägenheten var i snitt ${pct(mine)} ren.`, 40, 106, 30, '#cdc7f0');
+    rows.forEach((r, k) => {
+      const y = 170 + k * 52;
+      text(r.namn, 40, y, 28, r.you ? '#f5a23a' : '#ebe8ff', r.you ? 700 : 400);
+      g.fillStyle = '#2a2457'; g.fillRect(420, y - 12, 440, 24);
+      g.fillStyle = r.you ? '#f5a23a' : '#98a2b0'; g.fillRect(420, y - 12, 440 * r.perf, 24);
+      text(pct(r.perf), W - 40, y, 28, '#fff', 600, 'right');
+    });
+    text('A/X: nytt rum   ·   B/Y: samma rum igen', W / 2, H - 44, 28, '#b3a6ff', 600, 'center');
+    panelTex.needsUpdate = true;
+    return;
+  }
+
+  const p = world.percept();
+  text('PERCEPT JUST NU', 40, 50, 24, '#b3a6ff', 700);
+  const lamp = (label, val, y, on, low) => {
+    text(label, 40, y, 30);
+    g.font = '700 28px system-ui, sans-serif';
+    const w = g.measureText(val).width + 32;
+    g.fillStyle = low ? '#f2756b' : on ? '#c08a55' : '#2a2457';
+    g.beginPath(); g.roundRect(440 - w, y - 20, w, 40, 20); g.fill();
+    text(val, 440 - w / 2, y, 28, on || low ? '#2a1800' : '#cdc7f0', 700, 'center');
+  };
+  lamp('Smutsigt här?', p.dirty ? 'Ja' : 'Nej', 100, p.dirty);
+  lamp('Position', `(${p.x}, ${p.y})`, 150, false);
+  let y = 200;
+  if (p.battery !== null) { lamp('Batteri', `${p.battery}/${p.capacity}`, y, false, p.battery <= 8); y += 50; }
+  lamp('Hela kartan?', p.full ? 'Ja' : 'Nej', y, false);
+  // Stötsensorerna: ett kors runt roboten, framåt är uppåt.
+  text('Stötsensorer', 40, y + 70, 30);
+  const cx = 360, cy = y + 120, s = 40;
+  [[0, -1], [1, 0], [0, 1], [-1, 0]].forEach(([dx, dy], r) => {
+    const wall = p.bumps[turn(level.facing, r)];
+    g.fillStyle = r === vrBump ? '#ffffff' : wall ? '#f2756b' : '#352e6e';
+    g.fillRect(cx + dx * (s + 4) - s / 2, cy + dy * (s + 4) - s / 2, s, s);
+  });
+  g.fillStyle = '#f5a23a';
+  g.beginPath(); g.arc(cx, cy, s / 2, 0, 7); g.fill();
+  text('▲', cx, cy + 2, 22, '#2a1800', 700, 'center');
+
+  text('PRESTANDA', W - 40, 50, 24, '#b3a6ff', 700, 'right');
+  text(`Steg ${world.t}/${STEPS}`, W - 40, 100, 30, '#fff', 600, 'right');
+  text(`Renhet nu ${pct(world.cleanliness())}`, W - 40, 145, 30, '#fff', 600, 'right');
+  text(`Snitt ${pct(world.performance())}`, W - 40, 190, 30, '#fff', 600, 'right');
+  if (mapOn) {
+    const cs = Math.floor(Math.min(400 / world.w, 250 / world.h));
+    g.save();
+    g.translate(W - 40 - world.w * cs, 230);
+    paintMap(g, cs);
+    g.restore();
+  }
+  if (vrMsg) text(vrMsg, W / 2, H - 92, 32, '#fff', 700, 'center');
+  text('Spak: kör och vrid · Avtryckare: sug · Grepp: vänta · A/X: karta', W / 2, H - 40, 24, '#9d95d6', 400, 'center');
+  panelTex.needsUpdate = true;
+}
+
+function buzz(strength, ms) {
+  const s = renderer.xr.getSession();
+  if (!s) return;
+  for (const src of s.inputSources) {
+    const gp = src.gamepad;
+    try {
+      if (gp?.hapticActuators?.[0]?.pulse) gp.hapticActuators[0].pulse(strength, ms);
+      else gp?.vibrationActuator?.playEffect?.('dual-rumble', { duration: ms, strongMagnitude: strength });
+    } catch { /* inga vibrationer */ }
+  }
+}
+
+// Handkontrollerna läses av varje bildruta. Spaken ger fram/bak/vrid, knapparna resten.
+const pads = new Map();
+function pollPads(now) {
+  const s = renderer.xr.getSession();
+  if (!s) return;
+  for (const src of s.inputSources) {
+    const gp = src.gamepad;
+    if (!gp) continue;
+    let st = pads.get(src);
+    if (!st) pads.set(src, st = { stick: null, t: 0, btn: [] });
+    const x = gp.axes[2] ?? gp.axes[0] ?? 0, y = gp.axes[3] ?? gp.axes[1] ?? 0;
+    const mag = Math.max(Math.abs(x), Math.abs(y));
+    let dir = null;
+    if (mag > .7) dir = Math.abs(y) > Math.abs(x) ? (y < 0 ? 'F' : 'B') : (x < 0 ? 'L' : 'R');
+    else if (mag > .3) dir = st.stick;   // glapp, så att spaken inte fladdrar runt gränsen
+    const repeat = (dir === 'F' || dir === 'B') && now - st.t > 380;   // håll inne för att köra vidare
+    if (dir && (dir !== st.stick || repeat)) { act(dir); st.t = now; }
+    st.stick = dir;
+    gp.buttons.forEach((b, i) => {
+      if (b.pressed && !st.btn[i]) vrButton(i);
+      st.btn[i] = b.pressed;
+    });
+  }
+}
+
+function vrButton(i) {
+  // xr-standard: 0 avtryckare, 1 grepp, 4 A/X, 5 B/Y
+  if (level?.over) {
+    if (i === 4) { seed = 1 + Math.floor(Math.random() * 1e6); start(); }
+    if (i === 5) start();
+    return;
+  }
+  if (i === 0) act('SUG');
+  else if (i === 1) act('VANTA');
+  else if (i === 4 || i === 5) { mapOn = !mapOn; drawMap(); drawPanel(); }
+}
+
+const vrBtn = document.getElementById('vr');
+navigator.xr?.isSessionSupported('immersive-vr').then((ok) => { vrBtn.hidden = !ok; }).catch(() => {});
+vrBtn.addEventListener('click', async () => {
+  if (inVR()) { renderer.xr.getSession().end(); return; }
+  try {
+    const session = await navigator.xr.requestSession('immersive-vr');
+    await renderer.xr.setSession(session);
+    session.addEventListener('end', () => {
+      panel.visible = false;
+      vrBtn.textContent = 'Spela i VR';
+      pads.clear();
+      resize();
+    });
+    vrBtn.textContent = 'Lämna VR';
+    panel.visible = true;
+    audio.resume();
+    if (!startEl.hidden || level.over) start();
+    drawPanel();
+  } catch (err) {
+    console.error(err);
+    say('VR kunde inte startas.');
+  }
+});
 
 // ---------- styrning ----------
 const KEYS = { ArrowUp: 'F', KeyW: 'F', ArrowDown: 'B', KeyS: 'B', ArrowLeft: 'L', KeyA: 'L', ArrowRight: 'R', KeyD: 'R', Space: 'SUG', Enter: 'SUG', KeyE: 'VANTA' };
@@ -506,4 +696,4 @@ document.getElementById('quit').addEventListener('click', () => {
 buildOptions();
 buildLevel();
 resize();
-requestAnimationFrame(frame);
+renderer.setAnimationLoop(frame);

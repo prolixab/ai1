@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bli dammsugaren</title>
+  <meta name="description" content="Spela dammsugarroboten i 3D ur robotens eget perspektiv. Du får bara det som robotens sensorer ger – och jämför ditt resultat med agenterna från Sandlådan.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2314112b'/><circle cx='16' cy='16' r='10' fill='%23e8890c'/><circle cx='16' cy='16' r='5' fill='none' stroke='%233a2300' stroke-width='2'/><circle cx='22' cy='16' r='2' fill='%233a2300'/></svg>">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    html, body { height: 100%; }
+    body { background: #0b0a1a; color: #ebe8ff; overflow: hidden; }
+    .topbar { display: flex; align-items: center; gap: 14px; height: 48px; padding: 0 16px; background: var(--hero); border-bottom: 1px solid #2a2457; }
+    .topbar .back-link { margin: 0; }
+    .topbar h1 { font-size: 1.05rem; margin: 0; font-weight: 650; }
+    .topbar .sp { flex: 1; }
+    .topbar button { padding: 4px 12px; font-size: .85rem; background: transparent; color: #b3a6ff; border-color: #3a3466; }
+    .stage { position: relative; height: calc(100% - 48px); user-select: none; -webkit-user-select: none; }
+    .stage canvas.view { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+    .hud { position: absolute; background: rgba(12, 10, 30, .78); border: 1px solid #3a3466; border-radius: 10px; padding: 10px 12px; font-size: .86rem; line-height: 1.45; backdrop-filter: blur(4px); }
+    .hud h2 { font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; color: #b3a6ff; margin: 0 0 6px; display: block; }
+    .hud b { color: #fff; font-variant-numeric: tabular-nums; }
+    #percept { top: 12px; left: 12px; width: 210px; }
+    #stats { top: 12px; right: 12px; text-align: right; }
+    #mapbox { bottom: 12px; left: 12px; padding: 8px; }
+    #mapbox canvas { display: block; image-rendering: pixelated; }
+    #mapbox small { display: block; color: #b3a6ff; font-size: .72rem; margin-bottom: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 10px; }
+    .lamp { display: inline-block; padding: 0 8px; border-radius: 99px; background: #2a2457; color: #cdc7f0; font-weight: 600; }
+    .lamp.on { background: #c08a55; color: #2a1800; }
+    .lamp.low { background: #f2756b; color: #2a0a08; }
+    .bumps { display: grid; grid-template-columns: repeat(3, 20px); grid-template-rows: repeat(3, 20px); gap: 2px; }
+    .bumps span { border-radius: 4px; background: #352e6e; display: grid; place-items: center; font-size: .7rem; color: #6d65a8; }
+    .bumps span.wall { background: #f2756b; color: #2a0a08; }
+    .bumps .x { background: transparent; }
+    .bumps .me { background: #f5a23a; border-radius: 50%; color: #2a1800; }
+
+    #msg { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); padding: 6px 14px; border-radius: 99px; background: rgba(12, 10, 30, .8); font-size: .95rem; white-space: nowrap; opacity: 0; transition: opacity .25s; pointer-events: none; }
+    #msg.show { opacity: 1; }
+    .flash { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .35s; }
+    .flash.on { opacity: 1; transition: none; }
+    #bump { box-shadow: inset 0 0 0 0 transparent; }
+    #dirtglow { background: radial-gradient(ellipse at 50% 110%, rgba(192, 138, 85, .55), transparent 55%); }
+    .bumper { position: absolute; left: 50%; bottom: -60px; width: min(70vw, 560px); height: 120px; transform: translateX(-50%); border-radius: 50% 50% 0 0 / 100% 100% 0 0; background: linear-gradient(#3a3a44, #18181d); border-top: 6px solid #e8890c; pointer-events: none; transition: border-color .1s; }
+    .bumper.hit { border-top-color: #f2756b; }
+
+    .pad { position: absolute; right: 12px; bottom: 12px; display: grid; grid-template-columns: repeat(3, 56px); grid-template-rows: repeat(2, 56px); gap: 6px; }
+    .pad button { padding: 0; font-size: 1.3rem; border-radius: 12px; background: rgba(42, 36, 87, .85); border-color: #3a3466; color: #ebe8ff; touch-action: manipulation; }
+    .pad button.suck { background: #e8890c; border-color: #e8890c; color: #2a1800; font-size: .85rem; font-weight: 700; }
+    .pad small { font-size: .7rem; display: block; }
+    .keys { position: absolute; right: 12px; bottom: 140px; font-size: .78rem; color: #9d95d6; text-align: right; }
+
+    .overlay { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(8, 7, 20, .82); overflow-y: auto; padding: 16px; z-index: 5; }
+    .overlay[hidden] { display: none; }
+    .box { background: var(--surface); color: var(--ink); border-radius: 14px; padding: 24px clamp(16px, 4vw, 32px); max-width: 640px; width: 100%; box-shadow: 0 20px 60px rgba(0, 0, 0, .5); }
+    .box h2 { font-size: 1.6rem; margin: 0 0 .4rem; display: block; }
+    .box p { margin: .4rem 0; }
+    .opts { display: grid; gap: 8px; margin: 14px 0; }
+    .opts .switch select { font: inherit; font-size: .9rem; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+    .switch small { display: block; color: var(--muted); font-size: .78rem; }
+    .result { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; }
+    .result .r { display: grid; grid-template-columns: 170px 1fr 52px; gap: 10px; align-items: center; font-size: .9rem; }
+    .result .track { height: 14px; background: var(--soft-bg); border-radius: 99px; overflow: hidden; }
+    .result .fill { height: 100%; background: var(--muted); border-radius: 99px; }
+    .result .you .fill { background: var(--bot); }
+    .result .you { font-weight: 700; }
+    .result .v { text-align: right; font-variant-numeric: tabular-nums; }
+    .box .toolbar { margin-bottom: 0; }
+
+    @media (max-width: 640px) {
+      .topbar { gap: 8px; padding: 0 10px; }
+      .topbar h1 { display: none; }
+      .opts .switch { flex-direction: column; align-items: flex-start; gap: 4px; }
+      #percept { width: auto; max-width: 52vw; font-size: .76rem; padding: 8px; }
+      #stats { font-size: .76rem; padding: 8px; }
+      .keys { display: none; }
+      #mapbox { bottom: 148px; }
+      .pad { grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(2, 52px); }
+      .result .r { grid-template-columns: 110px 1fr 46px; font-size: .82rem; }
+    }
+    @media (prefers-reduced-motion: reduce) { .flash, #msg { transition: none; } }
+  </style>
+  <script type="importmap">
+  {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js"}}
+  </script>
+</head>
+<body>
+<div class="topbar">
+  <a class="back-link" href="index.html#k5">← Sandlådan</a>
+  <h1>Bli dammsugaren</h1>
+  <span class="sp"></span>
+  <button id="mute" aria-pressed="false">Ljud på</button>
+  <button id="quit">Avsluta omgången</button>
+</div>
+
+<div class="stage" id="stage">
+  <canvas class="view" id="view"></canvas>
+  <div class="flash" id="dirtglow"></div>
+  <div class="flash" id="bump"></div>
+  <div class="bumper" id="bumper"></div>
+
+  <div class="hud" id="percept" aria-live="polite"></div>
+  <div class="hud" id="stats"></div>
+  <div class="hud" id="mapbox"><small id="maptitle">Karta</small><canvas id="map"></canvas></div>
+  <div id="msg"></div>
+
+  <div class="keys">↑ / W fram · ↓ / S backa · ← → / A D vrid<br>Mellanslag sug · E vänta/ladda · M karta</div>
+  <div class="pad" aria-label="Styrning">
+    <button data-a="L" aria-label="Vrid vänster">↺</button>
+    <button data-a="F" aria-label="Fram">↑</button>
+    <button data-a="R" aria-label="Vrid höger">↻</button>
+    <button data-a="VANTA" aria-label="Vänta eller ladda"><small>vänta</small>⏸</button>
+    <button data-a="B" aria-label="Backa">↓</button>
+    <button data-a="SUG" class="suck">SUG</button>
+  </div>
+
+  <div class="overlay" id="start">
+    <div class="box">
+      <h2>Bli dammsugaren</h2>
+      <p>Nu är <b>du</b> agentprogrammet. Du ser världen från golvet, och du vet bara det som robotens sensorer ger dig. Varje gång du kör, backar, suger eller väntar går ett <i>steg</i>. Vrida dig kostar inget.</p>
+      <p class="muted small">Efter 200 steg får du se hur ren lägenheten har varit i snitt, och hur agenterna från Sandlådan klarar exakt samma rum.</p>
+      <div class="opts settings" id="opts"></div>
+      <div class="toolbar"><button id="go">Starta</button><span class="muted small" id="seedinfo"></span></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="end" hidden>
+    <div class="box">
+      <h2 id="end-title">Klart!</h2>
+      <p id="end-text"></p>
+      <div class="result" id="end-result"></div>
+      <p class="muted small" id="end-note"></p>
+      <div class="toolbar">
+        <button id="again">Samma rum igen</button>
+        <button class="ghost" id="new">Nytt rum</button>
+        <button class="ghost" id="settings">Ändra miljön</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/dammsugaren3d.js"></script>
+</body>
+</html>

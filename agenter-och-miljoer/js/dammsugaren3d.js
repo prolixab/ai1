@@ -1,9 +1,10 @@
 // Bli dammsugaren: samma dammsugarvärld som i Sandlådan, men eleven är agentprogrammet
 // och ser världen i 3D från robotens höjd. Med delvis observerbarhet syns bara det sensorerna når.
 import * as THREE from 'three';
-import { World, MAPS, DIRS } from './world.js';
+import { World, MAPS, DIRS, SHOT_GRACE } from './world.js';
 import { AGENTS } from './agents.js';
 import { headless, el } from './sim.js';
+import { makeRivals, RIVALS } from './rivals.js';
 
 const STEPS = 200;
 const WALL_H = 1.4;     // en ruta är 1 × 1, väggarna är höga sett från golvet
@@ -24,9 +25,11 @@ const SWITCHES = [
   { k: 'dynamic', namn: 'Förändring', opts: [[false, 'Statisk'], [true, 'Dynamisk']], hint: 'Ny smuts dyker upp då och då.' },
   { k: 'dog', namn: 'Agenter', opts: [[false, 'En'], [true, 'Flera']], hint: 'Hunden Sixten vill leka och har ibland leriga tassar.' },
   { k: 'battery', namn: 'Batteri', opts: [[false, 'Obegränsat'], [true, 'Begränsat']], hint: '40 steg per laddning. Stå på den gröna laddplattan och vänta för att ladda.' },
+  { k: 'rivals', namn: 'Motståndare', opts: [[0, 'Inga'], [1, '1'], [2, '2'], [3, '3']], hint: 'Tävling: AI-dammsugare (agenterna från Sandlådan) suger smuts åt sig själva. Den som suger upp mest vinner.' },
+  { k: 'shoot', namn: 'Skjutläge', opts: [[false, 'Av'], [true, 'På']], hint: `Skjut dammbollar rakt fram med F. Den som träffas åker ut – och motståndarna skjuter också! Fred de första ${SHOT_GRACE} stegen.` },
 ];
 
-const cfg = { map: 'lagenhet', observable: 'partial', stochastic: false, dynamic: false, dog: false, battery: false };
+const cfg = { map: 'lagenhet', observable: 'partial', stochastic: false, dynamic: false, dog: false, battery: false, rivals: 0, shoot: false };
 let seed = 1 + Math.floor(Math.random() * 1e6);
 
 // ---------- 3D ----------
@@ -97,10 +100,16 @@ const MAT = {
   dog: new THREE.MeshStandardMaterial({ color: 0xb07a45, roughness: .8 }),
   dogDark: new THREE.MeshStandardMaterial({ color: 0x5b3a1e, roughness: .8 }),
   eye: new THREE.MeshStandardMaterial({ color: 0x111111, roughness: .2 }),
+  botBody: new THREE.MeshStandardMaterial({ color: 0x2b2b33, roughness: .5, metalness: .2 }),
+  sensor: new THREE.MeshStandardMaterial({ color: 0xf4f4f4, emissive: 0x666666, roughness: .3 }),
+  ball: new THREE.MeshStandardMaterial({ color: 0x8a7a66, roughness: 1, emissive: 0x2a2018 }),
 };
+const SHOT_SPEED = 14;   // rutor per sekund för dammbollen
 
 let level = null;   // allt som hör till en omgång: värld, 3D-objekt, minne
 let world = null;
+let brains = [];    // motståndarnas agenter (tävlingsläget)
+const rivalActions = () => brains.map(b => b.act());
 
 function buildLevel() {
   if (level) scene.remove(level.root);
@@ -176,12 +185,24 @@ function buildLevel() {
     root.add(dog);
   }
 
+  // Motståndarna: en 3D-dammsugare och en "hjärna" (agent) var.
+  brains = makeRivals(world, seed);
+  const rivals = world.rivals.map((r, k) => {
+    const m = makeVacuum(RIVALS[k].color);
+    m.position.set(r.x, 0, r.y);
+    m.rotation.y = YAW[r.heading];
+    m.userData.to = m.position.clone();
+    m.userData.yawTo = m.rotation.y;
+    root.add(m);
+    return m;
+  });
+
   scene.add(root);
   busy = false;
   queued.length = 0;
   const facing = 'E';
   level = {
-    root, dirtMeshes, dog, facing,
+    root, dirtMeshes, dog, rivals, shots: [], dying: [], facing,
     yaw: YAW[facing], yawTo: YAW[facing],
     pos: new THREE.Vector3(world.bot.x, CAM_Y, world.bot.y), from: null, to: null, t0: 0,
     shake: 0,
@@ -191,6 +212,22 @@ function buildLevel() {
   remember();
   applyLook();
   updateHud();
+}
+
+// En robotdammsugare sedd utifrån: rund kropp, färgad topp och en vit sensor fram (−z är framåt).
+function makeVacuum(color) {
+  const g = new THREE.Group();
+  const top = new THREE.MeshStandardMaterial({ color, roughness: .45 });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(.34, .36, .09, 32), MAT.botBody);
+  body.position.y = .055;
+  const lid = new THREE.Mesh(new THREE.CylinderGeometry(.28, .3, .02, 32), top);
+  lid.position.y = .11;
+  const bumper = new THREE.Mesh(new THREE.CylinderGeometry(.365, .365, .05, 32, 1, true, Math.PI * .65, Math.PI * .7), top);
+  bumper.position.y = .05;
+  const sensor = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .03, 16), MAT.sensor);
+  sensor.position.set(0, .13, -.17);
+  g.add(body, lid, bumper, sensor);
+  return g;
 }
 
 function boltShape() {
@@ -244,9 +281,18 @@ function act(a) {
     if (queued.length) act(queued.shift());
     return;
   }
+  if (a === 'SKJUT') {
+    if (!cfg.shoot) return;
+    if (world.t < SHOT_GRACE) { say(`Fred – du kan skjuta om ${SHOT_GRACE - world.t} steg.`); return; }
+    if (world.bot.cool > 0) { say(`Laddar om … ${world.bot.cool} steg kvar.`); return; }
+    world.bot.heading = level.facing;   // skjut dit du tittar
+  }
   const action = a === 'F' ? level.facing : a === 'B' ? turn(level.facing, 2) : a;
   const dirtyBefore = world.isDirty(world.bot.x, world.bot.y);
-  const ev = world.step(action);
+  const ev = world.step(action, rivalActions());
+
+  if (ev.shot) { fireShot(ev.shot, null); audio.pew(); }
+  world.rivals.forEach((r, k) => { if (r.last && r.last.shot) fireShot(r.last.shot, k); });
 
   if (ev.dead) say('Batteriet är slut.');
   else if (ev.blocked) {
@@ -271,16 +317,74 @@ function act(a) {
   level.to = new THREE.Vector3(world.bot.x, CAM_Y, world.bot.y);
   level.t0 = performance.now();
   busy = !level.from.equals(level.to);
-  if (level.dog) {
+  if (level.dog && world.dog) {
     const to = new THREE.Vector3(world.dog.x, 0, world.dog.y);
     if (!to.equals(level.dog.userData.to)) level.dog.lookAt(level.dog.position.clone().multiplyScalar(2).sub(to));
     level.dog.userData.to = to;
   }
+  syncRivals();
   syncDirt();
   remember();
   updateHud();
-  if (world.bot.dead || world.t >= STEPS) finish();
+  if (world.bot.out) {
+    level.over = true;   // spela inte fler drag – slutrutan visas när dammbollen träffat
+    queued.length = 0;
+    setTimeout(finish, 1100);
+  } else if (world.bot.dead || world.t >= STEPS) finish();
   else if (!busy && queued.length) act(queued.shift());
+}
+
+// Motståndarnas mål i 3D (de glider dit i frame()).
+function syncRivals() {
+  world.rivals.forEach((r, k) => {
+    const m = level.rivals[k];
+    if (!m || m.userData.gone) return;
+    m.userData.to = new THREE.Vector3(r.x, 0, r.y);
+    let yaw = YAW[r.heading];
+    while (yaw - m.userData.yawTo > Math.PI) yaw -= 2 * Math.PI;   // vrid kortaste vägen
+    while (m.userData.yawTo - yaw > Math.PI) yaw += 2 * Math.PI;
+    m.userData.yawTo = yaw;
+  });
+}
+
+// En dammboll flyger från skytten till där den stannar. Träffen visas när bollen kommer fram.
+function fireShot(shot, shooter) {
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(.07, 12, 10), MAT.ball);
+  const from = new THREE.Vector3(shot.from.x, .14, shot.from.y);
+  const d = DIRS[shot.dir];
+  from.x += d[0] * .3; from.z += d[1] * .3;
+  // Missar bollen flyger den ända fram till väggen (eller räckvidden) i stället för rutans mitt.
+  const reach = shot.hit ? 0 : .4;
+  const to = new THREE.Vector3(shot.to.x + d[0] * reach, .14, shot.to.y + d[1] * reach);
+  ball.position.copy(from);
+  level.root.add(ball);
+  const dur = Math.max(.12, from.distanceTo(to) / SHOT_SPEED);
+  level.shots.push({ ball, from, to, t0: performance.now(), dur, shot, shooter });
+  if (shooter !== null && shot.hit?.kind === 'player') say(`${RIVALS[shooter].namn} sköt dig!`);
+}
+
+// Dammbollen har kommit fram: göm det som blev träffat.
+function landShot(s) {
+  const hit = s.shot.hit;
+  const by = s.shooter === null ? 'Du' : RIVALS[s.shooter].namn;
+  if (!hit) return;
+  audio.hit();
+  if (hit.kind === 'dog' && level.dog) {
+    level.dying.push({ obj: level.dog, t0: performance.now() });
+    level.dog = null;
+    say(s.shooter === null ? 'Träff! Hunden Sixten sprang iväg.' : `${by} träffade hunden – den sprang iväg.`);
+  } else if (hit.kind === 'rival') {
+    const m = level.rivals[hit.id];
+    if (m && !m.userData.gone) { m.userData.gone = true; level.dying.push({ obj: m, t0: performance.now() }); }
+    const namn = RIVALS[hit.id].namn;
+    say(s.shooter === null ? `Träff! ${namn} är ute.` : `${by} träffade ${namn} – ${namn} är ute.`);
+  } else if (hit.kind === 'player') {
+    say(`Träffad av ${by}! Du är ute.`);
+    bump(0);
+    document.getElementById('hit').classList.add('on');
+    setTimeout(() => document.getElementById('hit').classList.remove('on'), 50);
+  }
+  updateHud();
 }
 
 function syncDirt() {
@@ -305,30 +409,54 @@ function remember() {
 }
 
 function finish() {
+  if (level.result) return;
   level.over = true;
-  // Tog batteriet slut spelas resten av stegen upp utan dig, precis som för agenterna.
-  while (world.t < STEPS && world.bot.dead) world.step('VANTA');
+  queued.length = 0;
+  const contest = world.rivals.length > 0;
+  // Är du ute (batteriet slut eller träffad) spelas resten av stegen upp utan dig, precis som för agenterna.
+  // I tävlingen kör motståndarna vidare – annars slutar omgången när du avbryter.
+  while (world.t < STEPS && (world.bot.dead || world.bot.out)) world.step('VANTA', rivalActions());
   const steps = world.t;
   const mine = world.performance();
-  const rows = Object.entries(AGENTS).map(([k, a]) => ({ namn: a.namn, perf: headless(k, cfg, seed, steps).perf }));
-  rows.push({ namn: 'Du', perf: mine, you: true });
-  rows.sort((a, b) => b.perf - a.perf);
+  let rows, title, text;
+  if (contest) {
+    // Prestandamåttet i tävlingen är din egen poäng: hur många smutsiga rutor du sög upp.
+    rows = [{ namn: 'Du', val: world.bot.sucked, you: true, out: world.bot.out },
+      ...world.rivals.map((r, k) => ({ namn: `${RIVALS[k].namn} (${RIVALS[k].typ})`, val: r.sucked, out: r.out, color: RIVALS[k].color }))];
+    const max = Math.max(1, ...rows.map(r => r.val));
+    rows.forEach(r => { r.perf = r.val / max; r.label = `${r.val}${r.out ? ' ✗' : ''}`; });
+    rows.sort((a, b) => b.val - a.val || (a.out - b.out));
+    title = world.bot.out ? 'Du blev träffad' : world.bot.dead ? 'Batteriet tog slut' : `Tävlingen är slut efter ${steps} steg`;
+  } else {
+    rows = Object.entries(AGENTS).map(([k, a]) => ({ namn: a.namn, perf: headless(k, cfg, seed, steps).perf }));
+    rows.push({ namn: 'Du', perf: mine, you: true });
+    rows.sort((a, b) => b.perf - a.perf);
+    title = world.bot.dead && steps === STEPS ? 'Batteriet tog slut' : `Klart efter ${steps} steg`;
+  }
   const place = rows.findIndex(r => r.you) + 1;
-  document.getElementById('end-title').textContent = world.bot.dead && steps === STEPS ? 'Batteriet tog slut' : `Klart efter ${steps} steg`;
-  document.getElementById('end-text').innerHTML = `Lägenheten var i snitt <b>${pct(mine)}</b> ren. Du kom på plats <b>${place} av ${rows.length}</b> mot agenterna i exakt samma rum och miljö.`;
+  if (contest) {
+    const outs = rows.filter(r => r.out).length;
+    text = `Du sög upp <b>${world.bot.sucked}</b> smutsiga rutor och kom på plats <b>${place} av ${rows.length}</b>.` +
+      (cfg.shoot ? ` ${outs ? `${outs} av ${rows.length} dammsugare blev träffade (✗) och åkte ut.` : 'Ingen blev träffad.'}` : '') +
+      ` Lägenheten var i snitt ${pct(mine)} ren.`;
+  } else text = `Lägenheten var i snitt <b>${pct(mine)}</b> ren. Du kom på plats <b>${place} av ${rows.length}</b> mot agenterna i exakt samma rum och miljö.`;
+  document.getElementById('end-title').textContent = title;
+  document.getElementById('end-text').innerHTML = text;
   const box = document.getElementById('end-result');
   box.replaceChildren(...rows.map(r => el('div', { class: `r${r.you ? ' you' : ''}` },
-    el('span', {}, r.namn),
-    el('div', { class: 'track' }, el('div', { class: 'fill', style: `width:${Math.round(r.perf * 100)}%` })),
-    el('span', { class: 'v' }, pct(r.perf)))));
+    el('span', {}, r.color ? el('i', { class: 'dot', style: `background:${r.color}` }) : null, r.namn),
+    el('div', { class: 'track' }, el('div', { class: 'fill', style: `width:${Math.round(r.perf * 100)}%${r.color ? `;background:${r.color}` : ''}` })),
+    el('span', { class: 'v' }, r.label ?? pct(r.perf)))));
   document.getElementById('end-note').textContent = reflection();
-  level.result = { rows, place, mine, steps };
+  level.result = { rows, place, mine, steps, title };
   drawPanel();
   const lv = level;   // startar man om (t.ex. med VR-knapparna) innan rutan visas ska den inte dyka upp
   setTimeout(() => { if (level !== lv) return; document.getElementById('end').hidden = false; document.getElementById('again').focus(); }, 500);
 }
 
 function reflection() {
+  if (cfg.rivals > 0 && cfg.shoot) return 'Fundera: Nu var miljön tävlande – de andra agenterna försökte aktivt slå ut dig. Vad behövde du veta om dem för att överleva? Varför räcker det inte med en enkel reflexregel som "skjut om någon står i linjen"?';
+  if (cfg.rivals > 0) return 'Fundera: Nu var miljön en tävlande multiagentmiljö, och prestandamåttet var din egen poäng – inte hur ren lägenheten blev. Hur ändrade det hur du spelade? Vilken agent var svårast att slå, och varför?';
   if (cfg.observable === 'partial') return 'Fundera: Vad hade du i huvudet som robotens sensorer inte gav dig? Det minnet är skillnaden mellan en enkel reflexagent och en modellbaserad agent.';
   if (cfg.dynamic || cfg.dog) return 'Fundera: Hur planerade du när smuts dök upp medan du var på väg någon annanstans? Vilken agent gör likadant?';
   return 'Fundera: Du såg hela lägenheten. Vilken agent tänkte mest som du? Prova sedan med delvis observerbarhet.';
@@ -373,11 +501,22 @@ function updateHud() {
     <div class="row" style="margin-top:6px"><span>Stötsensorer<br><small class="muted">pilen = din riktning</small></span>
       <div class="bumps"><span class="x"></span>${cell(0)}<span class="x"></span>${cell(3)}<span class="me">▲</span>${cell(1)}<span class="x"></span>${cell(2)}<span class="x"></span></div></div>
     <div class="row" style="margin-top:6px"><span>Hela kartan?</span><b>${p.full ? 'Ja' : 'Nej'}</b></div>`;
-  statsBox.innerHTML = `<h2>Prestanda</h2>Steg <b>${world.t}/${STEPS}</b><br>Renhet nu <b>${pct(world.cleanliness())}</b><br><span title="Genomsnittlig renhet över alla steg hittills">Snitt <b>${pct(world.performance())}</b></span>`;
+  if (world.rivals.length) {
+    const line = (namn, color, v) => `<div class="row score${v.out ? ' out' : ''}"><span><i class="dot" style="background:${color}"></i>${namn}</span><b>${v.sucked}${v.out ? ' ✗' : ''}</b></div>`;
+    statsBox.innerHTML = `<h2>Tävling · steg ${world.t}/${STEPS}</h2>` +
+      line('Du', '#f5a23a', world.bot) + world.rivals.map((r, k) => line(RIVALS[k].namn, RIVALS[k].color, r)).join('') +
+      (cfg.shoot ? `<div class="row" style="margin-top:6px"><span>Dammboll</span><span class="lamp${shotReady() ? ' on' : ''}">${shotState()}</span></div>` : '');
+  } else {
+    statsBox.innerHTML = `<h2>Prestanda</h2>Steg <b>${world.t}/${STEPS}</b><br>Renhet nu <b>${pct(world.cleanliness())}</b><br><span title="Genomsnittlig renhet över alla steg hittills">Snitt <b>${pct(world.performance())}</b></span>` +
+      (cfg.shoot ? `<br>Dammboll <span class="lamp${shotReady() ? ' on' : ''}">${shotState()}</span>` : '');
+  }
   document.getElementById('dirtglow').classList.toggle('on', p.dirty);
   drawMap();
   drawPanel();
 }
+
+const shotReady = () => world.t >= SHOT_GRACE && world.bot.cool === 0 && !world.bot.out;
+const shotState = () => world.bot.out ? 'ute' : world.t < SHOT_GRACE ? `fred ${SHOT_GRACE - world.t}` : world.bot.cool ? `laddar ${world.bot.cool}` : 'redo (F)';
 
 // Kartan: full observerbarhet = sanningen, delvis = ditt minne (som en modellbaserad agent).
 const mapCanvas = document.getElementById('map');
@@ -407,6 +546,11 @@ function paintMap(g, cs) {
   g.fillStyle = '#16a34a';
   if (full || level.known[world.idx(world.charger.x, world.charger.y)] >= 0) g.fillRect(world.charger.x * cs + 2, world.charger.y * cs + 2, cs - 4, cs - 4);
   if (full && world.dog) { g.fillStyle = '#7a4a20'; g.beginPath(); g.arc((world.dog.x + .5) * cs, (world.dog.y + .5) * cs, cs * .35, 0, 7); g.fill(); }
+  if (full) world.rivals.forEach((r, k) => {
+    if (r.out) return;
+    g.fillStyle = RIVALS[k].color;
+    g.beginPath(); g.arc((r.x + .5) * cs, (r.y + .5) * cs, cs * .36, 0, 7); g.fill();
+  });
   const bx = (world.bot.x + .5) * cs, by = (world.bot.y + .5) * cs, d = DIRS[level.facing];
   g.fillStyle = '#f5a23a';
   g.beginPath(); g.arc(bx, by, cs * .38, 0, 7); g.fill();
@@ -437,6 +581,8 @@ const audio = {
   },
   thud() { this.tone(90, .18, 'triangle', .35, .5); },
   suck(ok) { this.noise(.35, ok ? 1800 : 900, ok ? .25 : .12); if (ok) setTimeout(() => this.tone(880, .12, 'sine', .08, 1.5), 260); },
+  pew() { this.noise(.12, 2400, .18); this.tone(520, .16, 'square', .06, .4); },
+  hit() { this.noise(.3, 500, .3); this.tone(180, .3, 'sawtooth', .08, .3); },
 };
 const muteBtn = document.getElementById('mute');
 muteBtn.addEventListener('click', () => {
@@ -483,6 +629,31 @@ function frame(now) {
       level.dog.position.lerp(level.dog.userData.to, Math.min(1, dt * 9));
       level.dog.userData.tail.rotation.y = Math.sin(now / 90) * .6;
     }
+    for (const m of level.rivals) {
+      if (m.userData.gone) continue;
+      m.position.lerp(m.userData.to, Math.min(1, dt * 9));
+      m.rotation.y += (m.userData.yawTo - m.rotation.y) * Math.min(1, dt * 12);
+    }
+    // Dammbollar i luften. Träffen räknas när bollen kommer fram.
+    level.shots = level.shots.filter((s) => {
+      const k = Math.min(1, (now - s.t0) / (s.dur * 1000));
+      s.ball.position.lerpVectors(s.from, s.to, k);
+      s.ball.rotation.x += dt * 20;
+      if (k < 1) return true;
+      level.root.remove(s.ball);
+      landShot(s);
+      return false;
+    });
+    // Den som träffats snurrar, krymper och försvinner.
+    level.dying = level.dying.filter((d) => {
+      const k = Math.min(1, (now - d.t0) / 700);
+      d.obj.rotation.y += dt * 14;
+      d.obj.scale.setScalar(1 - k);
+      d.obj.position.y = Math.sin(k * Math.PI) * .25;
+      if (k < 1) return true;
+      level.root.remove(d.obj);
+      return false;
+    });
   }
   renderer.render(scene, camera);
 }
@@ -519,15 +690,15 @@ function drawPanel() {
   };
 
   if (level.result) {
-    const { rows, place, mine, steps } = level.result;
-    text(`Klart efter ${steps} steg – plats ${place} av ${rows.length}`, 40, 56, 40, '#fff', 700);
-    text(`Lägenheten var i snitt ${pct(mine)} ren.`, 40, 106, 30, '#cdc7f0');
+    const { rows, place, mine, title } = level.result;
+    text(`${title} – plats ${place} av ${rows.length}`, 40, 56, 40, '#fff', 700);
+    text(world.rivals.length ? `Du sög upp ${world.bot.sucked} smutsiga rutor.` : `Lägenheten var i snitt ${pct(mine)} ren.`, 40, 106, 30, '#cdc7f0');
     rows.forEach((r, k) => {
       const y = 170 + k * 52;
       text(r.namn, 40, y, 28, r.you ? '#f5a23a' : '#ebe8ff', r.you ? 700 : 400);
       g.fillStyle = '#2a2457'; g.fillRect(420, y - 12, 440, 24);
-      g.fillStyle = r.you ? '#f5a23a' : '#98a2b0'; g.fillRect(420, y - 12, 440 * r.perf, 24);
-      text(pct(r.perf), W - 40, y, 28, '#fff', 600, 'right');
+      g.fillStyle = r.you ? '#f5a23a' : r.color || '#98a2b0'; g.fillRect(420, y - 12, 440 * r.perf, 24);
+      text(r.label ?? pct(r.perf), W - 40, y, 28, '#fff', 600, 'right');
     });
     text('A/X: nytt rum   ·   B/Y: samma rum igen', W / 2, H - 44, 28, '#b3a6ff', 600, 'center');
     panelTex.needsUpdate = true;
@@ -561,10 +732,17 @@ function drawPanel() {
   g.beginPath(); g.arc(cx, cy, s / 2, 0, 7); g.fill();
   text('▲', cx, cy + 2, 22, '#2a1800', 700, 'center');
 
-  text('PRESTANDA', W - 40, 50, 24, '#b3a6ff', 700, 'right');
-  text(`Steg ${world.t}/${STEPS}`, W - 40, 100, 30, '#fff', 600, 'right');
-  text(`Renhet nu ${pct(world.cleanliness())}`, W - 40, 145, 30, '#fff', 600, 'right');
-  text(`Snitt ${pct(world.performance())}`, W - 40, 190, 30, '#fff', 600, 'right');
+  if (world.rivals.length) {
+    text(`TÄVLING · STEG ${world.t}/${STEPS}`, W - 40, 50, 24, '#b3a6ff', 700, 'right');
+    const all = [['Du', '#f5a23a', world.bot], ...world.rivals.map((r, k) => [RIVALS[k].namn, RIVALS[k].color, r])];
+    all.forEach(([namn, color, v], k) => text(`${namn} ${v.sucked}${v.out ? ' ✗' : ''}`, W - 40, 95 + k * 38, 28, v.out ? '#6d65a8' : color, 700, 'right'));
+    if (cfg.shoot) text(`Dammboll: ${shotState()}`, W - 40, 95 + all.length * 38, 26, '#fff', 600, 'right');
+  } else {
+    text('PRESTANDA', W - 40, 50, 24, '#b3a6ff', 700, 'right');
+    text(`Steg ${world.t}/${STEPS}`, W - 40, 100, 30, '#fff', 600, 'right');
+    text(`Renhet nu ${pct(world.cleanliness())}`, W - 40, 145, 30, '#fff', 600, 'right');
+    text(`Snitt ${pct(world.performance())}`, W - 40, 190, 30, '#fff', 600, 'right');
+  }
   if (mapOn) {
     const cs = Math.floor(Math.min(400 / world.w, 250 / world.h));
     g.save();
@@ -573,7 +751,8 @@ function drawPanel() {
     g.restore();
   }
   if (vrMsg) text(vrMsg, W / 2, H - 92, 32, '#fff', 700, 'center');
-  text('Spak: kör och vrid · Avtryckare: sug · Grepp: vänta · A/X: karta', W / 2, H - 40, 24, '#9d95d6', 400, 'center');
+  text(cfg.shoot ? 'Spak: kör och vrid · Avtryckare: sug · Grepp: vänta · B/Y: skjut · A/X: karta'
+    : 'Spak: kör och vrid · Avtryckare: sug · Grepp: vänta · A/X: karta', W / 2, H - 40, 24, '#9d95d6', 400, 'center');
   panelTex.needsUpdate = true;
 }
 
@@ -623,6 +802,7 @@ function vrButton(i) {
   }
   if (i === 0) act('SUG');
   else if (i === 1) act('VANTA');
+  else if (i === 5 && cfg.shoot) act('SKJUT');
   else if (i === 4 || i === 5) { mapOn = !mapOn; drawMap(); drawPanel(); }
 }
 
@@ -651,7 +831,7 @@ vrBtn.addEventListener('click', async () => {
 });
 
 // ---------- styrning ----------
-const KEYS = { ArrowUp: 'F', KeyW: 'F', ArrowDown: 'B', KeyS: 'B', ArrowLeft: 'L', KeyA: 'L', ArrowRight: 'R', KeyD: 'R', Space: 'SUG', Enter: 'SUG', KeyE: 'VANTA' };
+const KEYS = { ArrowUp: 'F', KeyW: 'F', ArrowDown: 'B', KeyS: 'B', ArrowLeft: 'L', KeyA: 'L', ArrowRight: 'R', KeyD: 'R', Space: 'SUG', Enter: 'SUG', KeyE: 'VANTA', KeyF: 'SKJUT', KeyX: 'SKJUT' };
 window.addEventListener('keydown', (e) => {
   if (!document.getElementById('start').hidden || !document.getElementById('end').hidden) return;
   if (e.code === 'KeyM') { mapOn = !mapOn; drawMap(); return; }
@@ -660,7 +840,7 @@ window.addEventListener('keydown', (e) => {
   e.preventDefault();
   act(a);
 });
-for (const b of document.querySelectorAll('.pad button')) {
+for (const b of document.querySelectorAll('.pad button, #shootbtn')) {
   b.addEventListener('click', () => act(b.dataset.a));
 }
 
@@ -682,6 +862,8 @@ function start() {
   startEl.hidden = true;
   endEl.hidden = true;
   audio.resume();
+  document.getElementById('shootbtn').hidden = !cfg.shoot;
+  document.getElementById('keyshoot').hidden = !cfg.shoot;
   buildLevel();
   canvas.focus?.();
 }

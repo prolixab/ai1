@@ -67,6 +67,13 @@
     .result .you { font-weight: 700; }
     .result .v { text-align: right; font-variant-numeric: tabular-nums; }
     .box .toolbar { margin-bottom: 0; }
+    .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+    #stats .score { gap: 16px; }
+    #stats .score.out { opacity: .5; text-decoration: line-through; }
+    #hit { background: radial-gradient(ellipse at center, transparent 35%, rgba(229, 72, 77, .75)); }
+    .shoot { position: absolute; right: 12px; bottom: 136px; width: 180px; height: 48px; padding: 0; border-radius: 12px; background: #e5484d; border-color: #e5484d; color: #fff; font-weight: 800; letter-spacing: .08em; touch-action: manipulation; }
+    .shoot[hidden] { display: none; }
+    .keys:has(#keyshoot:not([hidden])) { bottom: 194px; }
 
     @media (max-width: 640px) {
       .topbar { gap: 8px; padding: 0 10px; }
@@ -77,6 +84,8 @@
       .keys { display: none; }
       #mapbox { bottom: 148px; }
       .pad { grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(2, 52px); }
+      .shoot { bottom: 128px; width: 168px; height: 44px; }
+      #mapbox { bottom: 184px; }
       .result .r { grid-template-columns: 110px 1fr 46px; font-size: .82rem; }
     }
     @media (prefers-reduced-motion: reduce) { .flash, #msg { transition: none; } }
@@ -106,7 +115,9 @@
   <div class="hud" id="mapbox"><small id="maptitle">Karta</small><canvas id="map"></canvas></div>
   <div id="msg"></div>
 
-  <div class="keys">↑ / W fram · ↓ / S backa · ← → / A D vrid<br>Mellanslag sug · E vänta/ladda · M karta</div>
+  <div class="flash" id="hit"></div>
+  <div class="keys">↑ / W fram · ↓ / S backa · ← → / A D vrid<br>Mellanslag sug · E vänta/ladda · M karta<span id="keyshoot" hidden> · F skjut</span></div>
+  <button id="shootbtn" class="shoot" data-a="SKJUT" aria-label="Skjut en dammboll" hidden>SKJUT</button>
   <div class="pad" aria-label="Styrning">
     <button data-a="L" aria-label="Vrid vänster">↺</button>
     <button data-a="F" aria-label="Fram">↑</button>
@@ -121,6 +132,7 @@
       <h2>Bli dammsugaren</h2>
       <p>Nu är <b>du</b> agentprogrammet. Du ser världen från golvet, och du vet bara det som robotens sensorer ger dig. Varje gång du kör, backar, suger eller väntar går ett <i>steg</i>. Vrida dig kostar inget.</p>
       <p class="muted small">Efter 200 steg får du se hur ren lägenheten har varit i snitt, och hur agenterna från Sandlådan klarar exakt samma rum.</p>
+      <p class="muted small"><b>Tävling:</b> välj motståndare så tävlar du mot AI-dammsugare i samma rum – den som suger upp mest smuts vinner. Med <i>skjutläge</i> kan alla skjuta dammbollar rakt fram, och den som träffas åker ut.</p>
       <p class="muted small">Har du ett VR-headset? Öppna sidan i headsetets webbläsare och tryck på <i>Spela i VR</i> uppe till höger. Spaken kör och vrider, avtryckaren suger, greppknappen väntar.</p>
       <div class="opts settings" id="opts"></div>
       <div class="toolbar"><button id="go">Starta</button><span class="muted small" id="seedinfo"></span></div>

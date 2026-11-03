@@ -209,7 +209,7 @@ footer{max-width:1400px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
           <button class="r" data-act="höger" type="button" aria-label="Kör åt höger">→</button>
           <button class="d" data-act="ned" type="button" aria-label="Kör nedåt">↓</button>
         </div>
-        <div class="keys">
+        <div class="keys" id="keysHelp">
           <p>Roboten flyttar en ruta per drag. Den suger bara upp smutsen på den ruta den står på, och bara när du trycker <b>Sug</b>.</p>
           <p>Kör du in i en möbel eller vägg står roboten kvar, men draget räknas ändå.</p>
         </div>
@@ -222,13 +222,14 @@ footer{max-width:1400px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
         <div class="stats">
           <div class="stat"><small>Poäng</small><b id="sScore">0</b></div>
           <div class="stat"><small>Drag</small><b id="sMoves">0</b></div>
-          <div class="stat"><small>Smuts kvar</small><b id="sDirt">0</b></div>
+          <div class="stat"><small id="sDirtLabel">Smuts kvar</small><b id="sDirt">0</b></div>
         </div>
         <ul class="rules">
           <li>+10 för varje smutsig ruta du suger rent</li>
           <li>−1 för varje drag (även krockar och onödig sugning)</li>
-          <li>+20 när rummet är rent och du står i laddstationen</li>
+          <li id="rDock">+20 när rummet är rent och du står i laddstationen</li>
         </ul>
+        <p class="hint" id="rivalLine" hidden></p>
       </section>
 
       <section class="panel" aria-labelledby="hSensor">
@@ -236,7 +237,7 @@ footer{max-width:1400px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
         <dl class="sensor">
           <dt>Position</dt><dd id="pPos">–</dd>
           <dt>Rutan</dt><dd id="pCell">–</dd>
-          <dt>Smuts i rummet</dt><dd id="pSeen">–</dd>
+          <dt id="pSeenLabel">Smuts i rummet</dt><dd id="pSeen">–</dd>
         </dl>
         <div class="map-wrap">
           <small>Robotens karta – det roboten vet om rummet</small>
@@ -250,7 +251,7 @@ footer{max-width:1400px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
         <div class="meter"><span id="meterText">Svårighet</span><span class="bars" id="meterBars" aria-hidden="true"></span></div>
         <ul class="switches" id="switches"></ul>
         <ul class="env-text" id="envText"></ul>
-        <p class="hint">Rummet börjar om när du slår om ett reglage. Gråa reglage kommer i senare versioner.</p>
+        <p class="hint">Rummet börjar om när du slår om ett reglage.</p>
       </section>
 
       <section class="panel" aria-labelledby="hRoom">
@@ -307,43 +308,54 @@ function makeRng(seed) {
 const idx = (x, y) => y * N + x;
 const inside = (x, y) => x >= 0 && y >= 0 && x < N && y < N;
 
-function reachableFrom(blocked, x0, y0) {
-  const seen = new Uint8Array(N * N);
+// Antal steg från (x0, y0) till varje ruta, -1 om den inte går att nå.
+function distances(blocked, x0, y0) {
+  const dist = new Int16Array(N * N).fill(-1);
   const queue = [[x0, y0]];
-  seen[idx(x0, y0)] = 1;
-  let count = 1;
-  while (queue.length) {
-    const [x, y] = queue.shift();
+  dist[idx(x0, y0)] = 0;
+  for (let h = 0; h < queue.length; h++) {
+    const [x, y] = queue[h];
     for (const [dx, dy] of Object.values(MOVES)) {
       const nx = x + dx, ny = y + dy;
-      if (inside(nx, ny) && !seen[idx(nx, ny)] && blocked[idx(nx, ny)] < 0) {
-        seen[idx(nx, ny)] = 1; count++; queue.push([nx, ny]);
+      if (inside(nx, ny) && dist[idx(nx, ny)] < 0 && blocked[idx(nx, ny)] < 0) {
+        dist[idx(nx, ny)] = dist[idx(x, y)] + 1; queue.push([nx, ny]);
       }
     }
   }
-  return count;
+  return dist;
 }
 
 // Reglagen. Varje egenskap har ett lätt (vänster, 0) och ett svårt (höger, 1) läge.
-// De som inte är byggda än står fast i läget "fixed".
+// start = läget när sidan öppnas. Texten easy/hard visas när reglaget står i det andra läget.
 const PROPERTIES = [
   { key: "obs", left: "Fullt observerbar", right: "Delvis observerbar", param: "syn", values: ["full", "delvis"],
     hard: "Dimma täcker rummet. Roboten ser bara sin egen ruta och rutorna runt om, och kartan visar det den minns." },
   { key: "det", left: "Deterministisk", right: "Stokastisk", param: "slump", values: ["nej", "ja"],
     hard: "Golvet är halt. Ibland slirar roboten åt sidan, och ibland misslyckas sugningen. Tärningen visar när slumpen slår till." },
-  { key: "epi", left: "Episodisk", right: "Sekventiell", fixed: 1 },
-  { key: "sta", left: "Statisk", right: "Dynamisk", fixed: 0 },
-  { key: "dis", left: "Diskret", right: "Kontinuerlig", fixed: 0 },
-  { key: "ag", left: "En agent", right: "Flera agenter", fixed: 0 }
+  { key: "epi", left: "Episodisk", right: "Sekventiell", param: "episod", values: ["ja", "nej"], start: 1,
+    easy: "Varje drag är en egen episod. Roboten lyfts till en slumpad ruta, och det enda du ska avgöra är om den ska suga eller gå vidare. Inget du gör påverkar nästa episod – det finns inget att planera.",
+    hard: "Det du gör nu påverkar resten av städningen: varje drag bestämmer var roboten står nästa gång." },
+  { key: "sta", left: "Statisk", right: "Dynamisk", param: "dynamisk", values: ["nej", "ja"],
+    hard: "En hund springer runt och drar in ny smuts. Världen ändras även när du står still och funderar, och rutor du redan har städat kan bli smutsiga igen." },
+  { key: "dis", left: "Diskret", right: "Kontinuerlig", param: "kontinuerlig", values: ["nej", "ja"],
+    hard: "Roboten kör fritt i stället för en ruta i taget. Håll inne ↑ för att köra och ← → för att svänga. Varje rutlängd du kör och varje kvarts varv du svänger kostar ett drag." },
+  { key: "ag", left: "En agent", right: "Flera agenter", param: "rival", values: ["nej", "ja"],
+    hard: "En blå rivalrobot städar samma rum. Den tar smuts du räknade med och står ibland i vägen. Rivalen är en målbaserad agent." }
 ];
+// En episodisk miljö har inget "sedan" – därför går den inte att kombinera med de här.
+const EPISODIC_OFF = ["sta", "dis", "ag"];
+const EPISODES = 15;
 const SLIP = 0.2;       // risk att roboten slirar åt sidan i stokastiskt läge
 const SUCK_FAIL = 0.25; // risk att sugningen misslyckas i stokastiskt läge
+const DOG_MOVE = 0.7, DOG_DROP = 0.25, DOG_DIRT = 5; // hunden: risk att den flyttar sig, att den lämnar smuts, max antal nya smutsrutor
+const DRIVE_SPEED = 2.2, TURN_SPEED = 2.8, RADIUS = 0.32; // kontinuerligt läge: rutor per sekund, radianer per sekund, robotens radie
 const DIR_TEXT = { upp: "uppåt", ned: "nedåt", "vänster": "åt vänster", "höger": "åt höger" };
 const SIDEWAYS = { upp: ["vänster", "höger"], ned: ["höger", "vänster"], "vänster": ["ned", "upp"], "höger": ["upp", "ned"] };
+const DIR_ANGLE = { upp: 0, "höger": -Math.PI / 2, ned: Math.PI, "vänster": Math.PI / 2 };
 
 function defaultSettings() {
   const s = {};
-  PROPERTIES.forEach((p) => { s[p.key] = p.fixed ?? 0; });
+  PROPERTIES.forEach((p) => { s[p.key] = p.start ?? 0; });
   return s;
 }
 
@@ -376,7 +388,8 @@ function createWorld(seed, settings) {
     const freeCells = [];
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (blocked[idx(x, y)] < 0) freeCells.push([x, y]);
     // Alla fria rutor måste gå att nå från laddstationen.
-    if (reachableFrom(blocked, charger.x, charger.y) !== freeCells.length) continue;
+    const dist = distances(blocked, charger.x, charger.y);
+    if (freeCells.some(([x, y]) => dist[idx(x, y)] < 0)) continue;
 
     const candidates = freeCells.filter(([x, y]) => !(x === charger.x && y === charger.y));
     const dirt = new Uint8Array(N * N);
@@ -385,17 +398,31 @@ function createWorld(seed, settings) {
       [candidates[k], candidates[j]] = [candidates[j], candidates[k]];
       dirt[idx(candidates[k][0], candidates[k][1])] = 1;
     }
+    const s = { ...defaultSettings(), ...settings };
     const w = {
-      seed, n: N, blocked, furniture, charger, dirt,
-      settings: { ...defaultSettings(), ...settings },
+      seed, n: N, blocked, furniture, charger, dirt, settings: s,
       // Egen slumpgenerator för slirningar, så att samma rum och samma drag ger samma utfall.
       chance: makeRng(seed ^ 0x5BD1E995),
       // Robotens minne: -1 okänd, 0 ren, 1 smutsig, 2 möbel.
       known: new Int8Array(N * N).fill(-1),
       visible: new Uint8Array(N * N),
-      robot: { x: charger.x, y: charger.y, dir: "upp" },
-      score: 0, moves: 0, cleaned: 0, totalDirt: DIRT_COUNT, done: false
+      // fx, fy och angle används i kontinuerligt läge: var robotens mittpunkt är och vart den pekar.
+      robot: { x: charger.x, y: charger.y, dir: "upp", fx: charger.x + 0.5, fy: charger.y + 0.5, angle: 0 },
+      score: 0, moves: 0, cleaned: 0, totalDirt: DIRT_COUNT, done: false,
+      // Kontinuerligt läge: sträcka som ännu inte blivit ett helt drag, och om roboten står emot ett hinder.
+      travel: 0, contact: false,
+      dog: null, rival: null, rivalRng: makeRng(seed ^ 0x2B1A1)
     };
+    // Rivalen startar på den ruta som ligger längst från laddstationen, hunden någonstans långt bort.
+    const far = freeCells.map(([x, y]) => idx(x, y)).sort((a, b) => dist[b] - dist[a] || a - b);
+    if (s.ag) w.rival = { x: far[0] % N, y: Math.floor(far[0] / N), dir: "upp", score: 0, cleaned: 0 };
+    if (s.sta) {
+      w.dogRng = makeRng(seed ^ 0x0D06D06);
+      const spots = far.slice(1, far.length >> 1);
+      const c = spots[Math.floor(w.dogRng() * spots.length)];
+      w.dog = { x: c % N, y: Math.floor(c / N), dir: "ned", dropped: 0 };
+    }
+    if (s.epi === 0) { w.episode = 0; w.episodes = EPISODES; w.totalDirt = 0; newEpisode(w); }
     observe(w);
     return w;
   }
@@ -423,7 +450,10 @@ function step(w, action) {
   w.moves++;
   w.score += POINTS.step;
   let ev;
-  if (action === "vänta") {
+  if (action !== "sug" && w.settings.epi === 0) {
+    ev = w.dirt[idx(r.x, r.y)] ? { type: "skip-dirty", text: "Gick vidare från en smutsig ruta", points: POINTS.step }
+      : { type: "skip", text: "Gick vidare – rutan var ren", points: POINTS.step };
+  } else if (action === "vänta") {
     ev = { type: "wait", text: "Väntade", points: POINTS.step };
   } else if (action === "sug") {
     if (w.dirt[idx(r.x, r.y)] && stochastic && w.chance() < SUCK_FAIL) {
@@ -446,16 +476,24 @@ function step(w, action) {
     const nx = r.x + dx, ny = r.y + dy;
     r.dir = dir;
     const pre = slip ? "Slirade " + DIR_TEXT[dir] + " och " : "";
-    if (!inside(nx, ny)) {
-      ev = { type: "bump", what: "väggen", text: (slip ? pre + "krockade" : "Krockade") + " med väggen", points: POINTS.step };
-    } else if (w.blocked[idx(nx, ny)] >= 0) {
-      const what = w.furniture[w.blocked[idx(nx, ny)]].name;
+    const what = blocker(w, nx, ny, "robot");
+    if (what) {
       ev = { type: "bump", what, text: (slip ? pre + "krockade" : "Krockade") + " med " + what, points: POINTS.step };
     } else {
       r.x = nx; r.y = ny;
       ev = { type: "move", text: slip ? "Slirade " + DIR_TEXT[dir] + " (du ville " + DIR_TEXT[action] + ")" : "Körde " + DIR_TEXT[action], points: POINTS.step };
     }
+    r.fx = r.x + 0.5; r.fy = r.y + 0.5; r.angle = DIR_ANGLE[dir];
     if (slip) { ev.chance = true; ev.wanted = action; }
+  }
+  if (w.settings.epi === 0) {
+    // Episodiskt: episoden är slut efter ett drag, och nästa börjar på en ny ruta.
+    ev.episode = true;
+    w.episode++;
+    if (w.episode >= w.episodes) { w.done = true; ev.lastEpisode = true; }
+    else newEpisode(w);
+    observe(w);
+    return ev;
   }
   const home = r.x === w.charger.x && r.y === w.charger.y;
   if (home && dirtLeft(w) === 0) {
@@ -468,6 +506,122 @@ function step(w, action) {
   }
   observe(w);
   return ev;
+}
+
+// Vad som står i vägen på rutan (x, y) för den som vill dit ("robot", "rival" eller "dog"), eller null.
+// Rivalen och hunden går aldrig in i laddstationen, så att den alltid är fri för din robot.
+function blocker(w, x, y, who) {
+  if (!inside(x, y)) return "väggen";
+  if (w.blocked[idx(x, y)] >= 0) return w.furniture[w.blocked[idx(x, y)]].name;
+  if (w.dog && who !== "dog" && w.dog.x === x && w.dog.y === y) return "hunden";
+  if (w.rival && who !== "rival" && w.rival.x === x && w.rival.y === y) return "rivalen";
+  if (who !== "robot" && w.robot.x === x && w.robot.y === y) return "roboten";
+  if (who !== "robot" && x === w.charger.x && y === w.charger.y) return "laddstationen";
+  return null;
+}
+
+// Episodiskt läge: lyft roboten till en slumpad ruta som är smutsig eller ren, oberoende av allt som hänt förut.
+function newEpisode(w) {
+  const r = w.robot, here = idx(r.x, r.y), free = [];
+  for (let i = 0; i < N * N; i++) if (w.blocked[i] < 0 && i !== here) free.push(i);
+  const c = free[Math.floor(w.chance() * free.length)];
+  w.dirt.fill(0);
+  if (w.chance() < 0.5) { w.dirt[c] = 1; w.totalDirt++; }
+  r.x = c % N; r.y = (c - r.x) / N; r.fx = r.x + 0.5; r.fy = r.y + 0.5;
+  w.known.fill(-1);
+}
+
+// Dynamiskt läge: hunden flyttar sig ibland och lämnar ibland smuts efter sig.
+function dogStep(w) {
+  const d = w.dog;
+  if (!d || w.done || w.dogRng() > DOG_MOVE) return null;
+  const opts = Object.keys(MOVES).filter((m) => !blocker(w, d.x + MOVES[m][0], d.y + MOVES[m][1], "dog"));
+  if (!opts.length) return null;
+  const m = opts[Math.floor(w.dogRng() * opts.length)];
+  const from = { x: d.x, y: d.y };
+  d.x += MOVES[m][0]; d.y += MOVES[m][1]; d.dir = m;
+  let dropped = null;
+  if (d.dropped < DOG_DIRT && !w.dirt[idx(from.x, from.y)] && w.dogRng() < DOG_DROP) {
+    w.dirt[idx(from.x, from.y)] = 1;
+    w.totalDirt++; d.dropped++;
+    dropped = from;
+  }
+  observe(w);
+  return { from, dropped };
+}
+
+// Flera agenter: rivalen gör en handling. Står något i vägen tar den ett slumpat fritt håll i stället.
+function rivalStep(w, action) {
+  const v = w.rival;
+  if (!v || w.done) return null;
+  if (action === "sug") {
+    v.score += POINTS.step;
+    if (!w.dirt[idx(v.x, v.y)]) return { type: "wait" };
+    w.dirt[idx(v.x, v.y)] = 0;
+    w.cleaned++; v.cleaned++;
+    v.score += POINTS.dirt;
+    observe(w);
+    return { type: "suck", x: v.x, y: v.y };
+  }
+  if (!MOVES[action]) return { type: "wait" };
+  let dir = action;
+  if (blocker(w, v.x + MOVES[dir][0], v.y + MOVES[dir][1], "rival")) {
+    const opts = Object.keys(MOVES).filter((m) => !blocker(w, v.x + MOVES[m][0], v.y + MOVES[m][1], "rival"));
+    if (!opts.length) return { type: "wait" };
+    dir = opts[Math.floor(w.rivalRng() * opts.length)];
+  }
+  v.x += MOVES[dir][0]; v.y += MOVES[dir][1]; v.dir = dir;
+  v.score += POINTS.step;
+  return { type: "move" };
+}
+
+// Kontinuerligt läge: står robotens cirkel på (fx, fy) i något? Returnerar vad, eller null.
+function hits(w, fx, fy) {
+  if (fx < RADIUS || fy < RADIUS || fx > N - RADIUS || fy > N - RADIUS) return "väggen";
+  for (let cy = Math.floor(fy - RADIUS); cy <= Math.floor(fy + RADIUS); cy++)
+    for (let cx = Math.floor(fx - RADIUS); cx <= Math.floor(fx + RADIUS); cx++) {
+      const what = inside(cx, cy) && blocker(w, cx, cy, "robot");
+      if (!what) continue;
+      const nx = Math.max(cx, Math.min(fx, cx + 1)), ny = Math.max(cy, Math.min(fy, cy + 1));
+      if ((fx - nx) ** 2 + (fy - ny) ** 2 < RADIUS * RADIUS) return what;
+    }
+  return null;
+}
+
+// Kontinuerligt läge: kör roboten dt sekunder. fwd 1 framåt, -1 bakåt; turn 1 vänster, -1 höger.
+// Varje rutlängd och varje kvarts varv kostar ett drag, och en ny krock kostar ett drag.
+function drive(w, fwd, turn, dt) {
+  if (w.done) return null;
+  const r = w.robot, out = { bump: null, cell: false, cost: 0 };
+  let da = turn * TURN_SPEED * dt;
+  // Halt golv: roboten drar åt sidan när den kör.
+  if (w.settings.det === 1 && fwd) da += (Math.random() - 0.5) * 2.4 * dt;
+  r.angle += da;
+  let moved = 0, hit = null;
+  if (fwd) {
+    const sp = fwd * DRIVE_SPEED * dt;
+    const dx = -Math.sin(r.angle) * sp, dy = -Math.cos(r.angle) * sp;
+    // Prova x och y var för sig, så att roboten glider längs hinder i stället för att fastna.
+    hit = hits(w, r.fx + dx, r.fy);
+    if (!hit) { r.fx += dx; moved += Math.abs(dx); }
+    const hy = hits(w, r.fx, r.fy + dy);
+    if (!hy) { r.fy += dy; moved += Math.abs(dy); } else hit = hit || hy;
+  }
+  if (hit && !w.contact) { out.bump = hit; out.cost++; }
+  w.contact = !!hit;
+  w.travel += moved + Math.abs(da) / (Math.PI / 2);
+  while (w.travel >= 1) { w.travel -= 1; out.cost++; }
+  w.moves += out.cost;
+  w.score += out.cost * POINTS.step;
+  const cx = Math.floor(r.fx), cy = Math.floor(r.fy);
+  if (cx !== r.x || cy !== r.y) { r.x = cx; r.y = cy; out.cell = true; observe(w); }
+  const home = r.x === w.charger.x && r.y === w.charger.y;
+  if (home && dirtLeft(w) === 0) {
+    w.done = true;
+    w.score += POINTS.dock;
+    out.docked = true;
+  } else if (home && out.cell) out.homeNotClean = true;
+  return out;
 }
 
 // Det roboten känner av. I delvis observerbart läge vet den inte hur mycket smuts som finns kvar.
@@ -499,18 +653,22 @@ const MAX_AI_MOVES = 300;
 
 // Gör om Miljölabbets värld till det percept som lektionens agenter förväntar sig.
 // I delvis observerbart läge känner agenten bara av sin egen ruta och om den krockar åt sidorna.
-function lessonPercept(w) {
-  const r = w.robot, bumps = {};
+// rob = roboten som tänker. Rivalen ser laddstationen som en vägg, eftersom den inte får ställa sig där.
+// Ser agenten hela rummet kan den undvika ett rörligt hinder: hunden, eller annars den andra roboten.
+function lessonPercept(w, rob = w.robot) {
+  const isRival = rob === w.rival, home = idx(w.charger.x, w.charger.y), bumps = {};
+  const wall = (i) => w.blocked[i] >= 0 || (isRival && i === home);
   for (const [d, [dx, dy]] of Object.entries(LESSON_DIRS)) {
-    const nx = r.x + dx, ny = r.y + dy;
-    bumps[d] = !inside(nx, ny) || w.blocked[idx(nx, ny)] >= 0;
+    const nx = rob.x + dx, ny = rob.y + dy;
+    bumps[d] = !inside(nx, ny) || wall(idx(nx, ny));
   }
+  const mover = w.dog || (isRival ? w.robot : w.rival);
   return {
-    x: r.x, y: r.y, w: N, h: N, t: w.moves, dirty: !!w.dirt[idx(r.x, r.y)], bumps,
-    charger: { ...w.charger }, onCharger: r.x === w.charger.x && r.y === w.charger.y,
+    x: rob.x, y: rob.y, w: N, h: N, t: w.moves, dirty: !!w.dirt[idx(rob.x, rob.y)], bumps,
+    charger: { ...w.charger }, onCharger: rob.x === w.charger.x && rob.y === w.charger.y,
     battery: null, capacity: 0,
     full: w.settings.obs === 1 ? null
-      : { walls: Uint8Array.from(w.blocked, (b) => (b >= 0 ? 1 : 0)), dirt: Uint8Array.from(w.dirt), dog: null }
+      : { walls: Uint8Array.from(w.blocked, (b, i) => (wall(i) ? 1 : 0)), dirt: Uint8Array.from(w.dirt), dog: mover ? { x: mover.x, y: mover.y } : null }
   };
 }
 
@@ -682,12 +840,25 @@ function makeCharger() {
   return g;
 }
 
-function makeRobot() {
+function makeDog() {
+  const g = new THREE.Group(), c = 0x9A6B3F, d = 0x5E3D22;
+  g.add(box(0.24, 0.18, 0.48, c, 0, 0.17, 0.03));
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) g.add(box(0.06, 0.18, 0.06, d, sx * 0.08, 0, 0.03 + sz * 0.16));
+  g.add(box(0.19, 0.17, 0.19, c, 0, 0.3, -0.26));
+  g.add(box(0.1, 0.08, 0.1, d, 0, 0.32, -0.39));
+  for (const sx of [-1, 1]) g.add(box(0.05, 0.1, 0.04, d, sx * 0.08, 0.46, -0.24));
+  const tail = box(0.04, 0.04, 0.18, d, 0, 0.32, 0.32);
+  tail.rotation.x = -0.6;
+  g.add(tail);
+  return g;
+}
+
+function makeRobot(lidColor = 0xE8890C) {
   const g = new THREE.Group();
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.38, 0.14, 40), mat(0xEEF1F3, { roughness: 0.4 }));
   body.position.y = 0.09; body.castShadow = true;
   g.add(body);
-  const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.02, 40), mat(0xE8890C, { roughness: 0.45 }));
+  const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.02, 40), mat(lidColor, { roughness: 0.45 }));
   lid.position.y = 0.17;
   g.add(lid);
   const bumper = new THREE.Mesh(new THREE.CylinderGeometry(0.385, 0.385, 0.07, 40, 1, true, Math.PI * 0.7, Math.PI * 0.6),
@@ -720,8 +891,6 @@ function makeDirt(x, y, seed) {
   return g;
 }
 
-const DIR_ANGLE = { upp: 0, "höger": -Math.PI / 2, ned: Math.PI, "vänster": Math.PI / 2 };
-
 // Enkla animationer: varje tween får ett värde k från 0 till 1.
 const tweens = [];
 let needsRender = true;
@@ -732,7 +901,7 @@ function tween(dur, update, done) {
 }
 const ease = (k) => 1 - Math.pow(1 - k, 3);
 
-let world, roomGroup, robot, dirtMeshes;
+let world, roomGroup, robot, dirtMeshes, rivalMesh = null, dogMesh = null;
 let robotTween = null;
 
 function buildWorldMeshes() {
@@ -760,6 +929,18 @@ function buildWorldMeshes() {
   robot.position.copy(cellPos(world.robot.x, world.robot.y));
   robot.rotation.y = DIR_ANGLE[world.robot.dir];
   roomGroup.add(robot);
+  rivalMesh = dogMesh = null;
+  if (world.rival) {
+    rivalMesh = makeRobot(0x2D68B0);
+    rivalMesh.position.copy(cellPos(world.rival.x, world.rival.y));
+    roomGroup.add(rivalMesh);
+  }
+  if (world.dog) {
+    dogMesh = makeDog();
+    dogMesh.position.copy(cellPos(world.dog.x, world.dog.y));
+    dogMesh.rotation.y = DIR_ANGLE[world.dog.dir];
+    roomGroup.add(dogMesh);
+  }
   // Dimma: en mörk duk över varje okänd ruta och en tunn slöja över rutor som roboten
   // minns men inte ser just nu. Duken är låg så att den aldrig skymmer roboten; möbler
   // och smuts på okända rutor göms i stället.
@@ -829,12 +1010,74 @@ function updateFog(animate) {
   const known = (i) => !partial || vis[i] || grid[i] !== -1;
   furnitureMeshes.forEach((f) => { f.group.visible = f.cells.some(known); });
   dirtMeshes.forEach((d, i) => { d.visible = known(i); });
+  // Hunden och rivalen rör sig, så de syns bara där roboten ser just nu.
+  if (dogMesh) dogMesh.visible = !partial || !!vis[idx(world.dog.x, world.dog.y)];
+  if (rivalMesh) rivalMesh.visible = !partial || !!vis[idx(world.rival.x, world.rival.y)];
   needsRender = true;
+}
+
+// Flyttar hunden eller rivalen till en ny ruta.
+function moveMesh(mesh, x, y, dir, dur, hop = 0) {
+  if (!mesh) return;
+  const u = mesh.userData, i = tweens.indexOf(u.tw);
+  if (i >= 0) { u.tw.update(1); tweens.splice(i, 1); }
+  const from = mesh.position.clone(), to = cellPos(x, y);
+  const a0 = mesh.rotation.y;
+  let a1 = DIR_ANGLE[dir];
+  while (a1 - a0 > Math.PI) a1 -= 2 * Math.PI;
+  while (a1 - a0 < -Math.PI) a1 += 2 * Math.PI;
+  u.tw = tween(dur, (k) => {
+    mesh.position.lerpVectors(from, to, ease(k));
+    mesh.position.y = Math.sin(k * Math.PI) * hop;
+    mesh.rotation.y = a0 + (a1 - a0) * ease(Math.min(1, k * 1.6));
+  });
+}
+
+// Smutsen på ruta i sugs upp och försvinner.
+function suckMesh(i) {
+  const d = dirtMeshes.get(i), group = roomGroup;
+  if (!d) return;
+  dirtMeshes.delete(i);
+  const starts = d.children.map((m) => m.position.clone());
+  tween(320, (k) => {
+    d.children.forEach((m, j) => {
+      m.position.lerpVectors(starts[j], new THREE.Vector3(0, 0.1, 0), ease(k));
+      m.scale.multiplyScalar(0.9);
+    });
+  }, () => group.remove(d));
+}
+
+// Ritar smuts som har tillkommit (hunden, nya episoder) och tar bort smuts som har försvunnit.
+function syncDirtMeshes(instant) {
+  for (let i = 0; i < N * N; i++) {
+    const has = dirtMeshes.has(i);
+    if (world.dirt[i] && !has) {
+      const x = i % N, y = (i - x) / N;
+      const d = makeDirt(x, y, world.seed + world.totalDirt);
+      dirtMeshes.set(i, d);
+      roomGroup.add(d);
+      if (!instant) { d.scale.setScalar(0.01); tween(300, (k) => d.scale.setScalar(Math.max(0.01, ease(k)))); }
+    } else if (!world.dirt[i] && has) {
+      if (instant) { roomGroup.remove(dirtMeshes.get(i)); dirtMeshes.delete(i); } else suckMesh(i);
+    }
+  }
 }
 
 function animateRobot(ev) {
   // Hoppa direkt till förra målet om en ny handling kommer mitt i en animation.
   if (robotTween) { robotTween.update(1); tweens.splice(tweens.indexOf(robotTween), 1); robotTween = null; }
+  if (ev.episode && !ev.lastEpisode) {
+    // Ny episod: roboten lyfts till nästa ruta.
+    const from = robot.position.clone(), to = cellPos(world.robot.x, world.robot.y);
+    robotTween = tween(600, (k) => {
+      const kk = Math.max(0, (k - 0.3) / 0.7);
+      robot.position.lerpVectors(from, to, ease(kk));
+      robot.position.y = Math.sin(kk * Math.PI) * 0.9;
+    });
+    return;
+  }
+  // I kontinuerligt läge styrs robotens läge direkt av körningen.
+  if (world.settings.dis === 1 && mode === "du") return;
   const from = robot.position.clone();
   const to = cellPos(world.robot.x, world.robot.y);
   const a0 = robot.rotation.y;
@@ -863,19 +1106,6 @@ function animateRobot(ev) {
       robot.rotation.y = a0 + Math.sin(k * Math.PI * 4) * 0.12 * (1 - k);
     });
   }
-  if (ev.type === "suck") {
-    const d = dirtMeshes.get(idx(ev.x, ev.y));
-    dirtMeshes.delete(idx(ev.x, ev.y));
-    if (d) {
-      const starts = d.children.map((m) => m.position.clone());
-      tween(320, (k) => {
-        d.children.forEach((m, i) => {
-          m.position.lerpVectors(starts[i], new THREE.Vector3(0, 0.1, 0), ease(k));
-          m.scale.multiplyScalar(0.9);
-        });
-      }, () => roomGroup.remove(d));
-    }
-  }
 }
 
 function resize() {
@@ -897,7 +1127,11 @@ function applyTheme() {
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme);
 controls.addEventListener("change", () => { needsRender = true; });
 
+let lastNow = 0;
 function loop(now) {
+  const dt = lastNow ? Math.min(0.1, (now - lastNow) / 1000) : 0;
+  lastNow = now;
+  worldTick(dt);
   for (let i = tweens.length - 1; i >= 0; i--) {
     const t = tweens[i];
     const k = Math.min(1, (now - t.t0) / t.dur);
@@ -930,13 +1164,20 @@ function showToast(text, kind) {
 }
 
 function updatePanel() {
-  const p = percept(world);
+  const p = percept(world), epi = world.settings.epi === 0;
   $("sScore").textContent = world.score;
   $("sMoves").textContent = world.moves;
-  $("sDirt").textContent = p.dirtLeft === null ? "?" : p.dirtLeft;
+  $("sDirtLabel").textContent = epi ? "Episoder kvar" : "Smuts kvar";
+  $("sDirt").textContent = epi ? world.episodes - world.episode : p.dirtLeft === null ? "?" : p.dirtLeft;
+  $("rDock").hidden = epi;
+  $("rivalLine").hidden = !world.rival;
+  if (world.rival) $("rivalLine").textContent = "Rivalen: " + world.rival.score + " poäng, " + world.rival.cleaned + " smutsiga rutor uppsugna.";
   $("pPos").textContent = "kolumn " + (p.x + 1) + ", rad " + (p.y + 1) + (p.onCharger ? " (laddstationen)" : "");
   $("pCell").textContent = p.dirty ? "smutsig" : "ren";
-  if (p.dirtLeft === null) {
+  $("pSeenLabel").textContent = epi ? "Episod" : "Smuts i rummet";
+  if (epi) {
+    $("pSeen").textContent = Math.min(world.episode + 1, world.episodes) + " av " + world.episodes;
+  } else if (p.dirtLeft === null) {
     const kd = knowGrid().reduce((n, v) => n + (v === 1 ? 1 : 0), 0);
     p.knownDirt = kd;
     $("pSeen").textContent = p.knownDirt + (p.knownDirt === 1 ? " känd smutsig ruta" : " kända smutsiga rutor") + ", resten okänt";
@@ -1000,15 +1241,26 @@ function drawMap() {
     lastPlan.forEach(([x, y], i) => (i ? g.lineTo : g.moveTo).call(g, (x + 0.5) * s, (y + 0.5) * s));
     g.stroke();
   }
+  // Hunden och rivalen ritas bara där roboten ser dem just nu.
+  const seen = (o) => o && (world.settings.obs === 0 || vis[idx(o.x, o.y)]);
+  if (seen(world.dog)) {
+    g.fillStyle = "#8A5A2B";
+    g.beginPath(); g.arc((world.dog.x + 0.5) * s, (world.dog.y + 0.5) * s, s * 0.24, 0, Math.PI * 2); g.fill();
+  }
+  if (seen(world.rival)) {
+    g.fillStyle = "#2D68B0";
+    g.beginPath(); g.arc((world.rival.x + 0.5) * s, (world.rival.y + 0.5) * s, s * 0.32, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = "#0F2A4A"; g.lineWidth = 1.5; g.stroke();
+  }
   g.fillStyle = "#E8890C";
-  g.beginPath(); g.arc((world.robot.x + 0.5) * s, (world.robot.y + 0.5) * s, s * 0.32, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.arc(world.robot.fx * s, world.robot.fy * s, s * 0.32, 0, Math.PI * 2); g.fill();
   g.strokeStyle = "#3A2300"; g.lineWidth = 1.5; g.stroke();
 }
 
 function addLog(ev) {
   const li = document.createElement("li");
   const pts = ev.points;
-  li.innerHTML = "<span></span><span class='" + (pts > 0 ? "plus" : "minus") + "'>" + (pts > 0 ? "+" : "−") + Math.abs(pts) + "</span>";
+  li.innerHTML = "<span></span><span class='" + (pts > 0 ? "plus" : "minus") + "'>" + (pts ? (pts > 0 ? "+" : "−") + Math.abs(pts) : "") + "</span>";
   li.firstChild.textContent = ev.text + (ev.docked ? ", dockad!" : "");
   const log = $("log");
   log.prepend(li);
@@ -1033,6 +1285,8 @@ function act(action) {
   const ev = step(world, action);
   if (!ev) return null;
   animateRobot(ev);
+  if (ev.type === "suck") suckMesh(idx(ev.x, ev.y));
+  syncDirtMeshes(ev.episode);
   updateFog(true);
   addLog(ev);
   updatePanel();
@@ -1041,11 +1295,86 @@ function act(action) {
   else if (ev.type === "suck") showToast("+10 smuts uppsugen", "good");
   else if (ev.type === "suck-fail") showToast(dice + "Sugningen misslyckades – smutsen ligger kvar", "bad");
   else if (ev.type === "suck-empty") showToast("Rutan var redan ren", "");
+  else if (ev.type === "skip-dirty") showToast("Smutsen blev kvar", "bad");
   else if (ev.chance) showToast(dice + "Roboten slirade " + DIR_TEXT[world.robot.dir] + "!", "bad");
   else if (ev.homeNotClean) showToast("Laddstationen: det finns smuts kvar i rummet", "");
-  if (dirtLeft(world) === 0 && !world.done && ev.type === "suck") showToast("Allt rent! Kör till laddstationen.", "good");
-  if (ev.docked) finish();
+  if (dirtLeft(world) === 0 && !world.done && ev.type === "suck" && !ev.episode) showToast("Allt rent! Kör till laddstationen.", "good");
+  if (ev.docked || ev.lastEpisode) finish();
   return ev;
+}
+
+// Du styr: i diskret läge gör rivalen ett drag efter varje drag du gör.
+function humanAct(a) {
+  const ev = act(a);
+  if (ev && world.rival && world.settings.dis === 0) rivalTurn();
+}
+
+let rivalAgent = null;
+const seenNow = (o) => world.settings.obs === 0 || !!visibleGrid()[idx(o.x, o.y)];
+
+function rivalTurn() {
+  const v = world.rival;
+  if (!v || world.done || !rivalAgent) return;
+  const ev = rivalStep(world, FROM_LESSON[rivalAgent.act(lessonPercept(world, v)).a]);
+  if (!ev) return;
+  if (ev.type === "move") moveMesh(rivalMesh, v.x, v.y, v.dir, 200);
+  if (ev.type === "suck") {
+    suckMesh(idx(ev.x, ev.y));
+    if (seenNow(v)) addLog({ text: "Rivalen sög upp smuts", points: 0 });
+  }
+  updateFog(true);
+  updatePanel();
+}
+
+function dogTurn() {
+  const ev = dogStep(world);
+  if (!ev) return;
+  moveMesh(dogMesh, world.dog.x, world.dog.y, world.dog.dir, 300, 0.08);
+  syncDirtMeshes(false);
+  updateFog(true);
+  updatePanel();
+  if (ev.dropped && seenNow(ev.dropped)) {
+    showToast("Hunden drog in ny smuts!", "bad");
+    addLog({ text: "Hunden drog in smuts", points: 0 });
+  }
+}
+
+// Det som händer av sig självt när du styr: körning i kontinuerligt läge, hunden och (kontinuerligt) rivalen.
+// Klockan börjar gå när du gör ditt första drag.
+const DOG_EVERY = 0.9, RIVAL_EVERY = 0.45;
+let dogClock = 0, rivalClock = 0;
+const held = new Set();
+const isContinuous = () => world.settings.dis === 1 && mode === "du";
+
+function worldTick(dt) {
+  if (!world || world.done || mode !== "du" || document.hidden) return;
+  if (isContinuous()) driveTick(dt);
+  if (world.moves === 0 || world.done) return;
+  if (world.dog && (dogClock += dt) >= DOG_EVERY) { dogClock = 0; dogTurn(); }
+  if (world.rival && isContinuous() && (rivalClock += dt) >= RIVAL_EVERY) { rivalClock = 0; rivalTurn(); }
+}
+
+function driveTick(dt) {
+  const fwd = (held.has("upp") ? 1 : 0) - (held.has("ned") ? 0.6 : 0);
+  const turn = (held.has("vänster") ? 1 : 0) - (held.has("höger") ? 1 : 0);
+  if (!fwd && !turn) { world.contact = false; return; }
+  const out = drive(world, fwd, turn, dt);
+  if (!out) return;
+  const r = world.robot;
+  robot.position.set(r.fx - N / 2, 0, r.fy - N / 2);
+  robot.rotation.y = r.angle;
+  needsRender = true;
+  if (out.bump) {
+    showToast("Krock med " + out.bump + "!", "bad");
+    addLog({ text: "Krockade med " + out.bump, points: POINTS.step });
+  }
+  if (out.cell) updateFog(true);
+  if (out.homeNotClean) showToast("Laddstationen: det finns smuts kvar i rummet", "");
+  if (out.cell || out.cost || out.docked) updatePanel(); else drawMap();
+  if (out.docked) {
+    addLog({ text: "Körde in i laddstationen", points: POINTS.dock, docked: true });
+    finish();
+  }
 }
 
 const ACT_TEXT = { upp: "Kör uppåt", ned: "Kör nedåt", "vänster": "Kör åt vänster", "höger": "Kör åt höger", sug: "Sug", "vänta": "Vänta" };
@@ -1061,7 +1390,9 @@ function aiStep() {
   if (ev && ev.chance) actText += " – men slumpen ändrade utfallet: " + ev.text.toLowerCase() + ".";
   $("thinkAct").textContent = actText;
   if (world.done) { stopRun(); return; }
-  if (d.believesDone && dirtLeft(world) > 0) {
+  rivalTurn();
+  dogTurn();
+  if (d.believesDone && dirtLeft(world) > 0 && world.settings.epi !== 0) {
     stopRun();
     showBanner("Agenten tror att den är klar", "Men det finns " + dirtLeft(world) + " smutsiga rutor kvar som den inte vet om.", "warn");
   } else if (world.moves >= MAX_AI_MOVES) {
@@ -1088,8 +1419,24 @@ function newDriver() {
   showPlan3D(null);
   $("thinkWhy").innerHTML = "Tryck på <b>Kör</b> eller <b>Ett steg</b>.";
   $("thinkAct").textContent = "";
-  $("agentDesc").textContent = AGENT_INFO[$("agentSel").value] + (world.settings.obs === 1
-    ? " I dimman känner agenten bara av om dess egen ruta är smutsig och om grannrutorna är fria." : "");
+  rivalAgent = world.rival ? AGENTS.mal.make(world.seed + 7) : null;
+  dogClock = rivalClock = 0;
+  held.clear();
+  const s = world.settings, notes = [AGENT_INFO[$("agentSel").value]];
+  if (s.obs === 1) notes.push("I dimman känner agenten bara av om dess egen ruta är smutsig och om grannrutorna är fria.");
+  if (s.epi === 0) notes.push("Episodiskt: varje drag är en ny episod. Alla agenter suger när rutan är smutsig – minne och planering hjälper inte här.");
+  if (s.sta === 1) notes.push("Ny smuts från hunden märker agenten först när den ser den. Den nyttobaserade agenten börjar patrullera när den upptäcker att världen ändras.");
+  if (s.dis === 1) notes.push("Kontinuerligt: lektionens agenter kan bara tänka i rutor. De lägger ett rutnät över rummet – diskretiserar – och kör mellan rutornas mittpunkter.");
+  if (s.ag === 1) notes.push("Rivalen är en målbaserad agent som städar samtidigt.");
+  $("agentDesc").textContent = notes.join(" ");
+}
+
+const DEFAULT_HELP = $("keysHelp").innerHTML;
+function renderHelp() {
+  const h = $("keysHelp");
+  if (settings.epi === 0) h.innerHTML = "<p>Varje drag är en egen episod. Tryck <b>Sug</b> om rutan är smutsig, annars en pil för att gå vidare.</p><p>Efter varje drag lyfts roboten till en ny, slumpad ruta. Det finns ingen laddstation att hinna till.</p>";
+  else if (settings.dis === 1) h.innerHTML = "<p>Håll inne <b>↑</b> för att köra framåt och <b>↓</b> för att backa. <b>←</b> och <b>→</b> svänger roboten.</p><p>Varje rutlängd du kör och varje kvarts varv du svänger kostar ett drag, och en krock kostar också ett drag.</p>";
+  else h.innerHTML = DEFAULT_HELP;
 }
 
 function setMode(m) {
@@ -1110,9 +1457,17 @@ function showBanner(title, text, kind) {
 }
 
 function finish() {
+  stopRun();
+  held.clear();
   const who = mode === "ai" ? "Agenten (" + AGENTS[driver.kind].namn.toLowerCase() + ") fick " : "";
+  if (world.settings.epi === 0) {
+    showBanner("Alla episoder klara!", (who || "Du fick ") + world.score + " poäng. " + world.cleaned + " av " + world.totalDirt +
+      " smutsiga rutor sögs upp på " + world.episodes + " episoder. Hade det hjälpt att minnas tidigare episoder?");
+    return;
+  }
+  const rival = world.rival ? " Rivalen sög upp " + world.rival.cleaned + " av de " + world.totalDirt + " smutsiga rutorna." : "";
   showBanner("Rummet är städat!", who + world.score + " poäng på " + world.moves + " drag i en " + envWords(world.settings) +
-    " miljö." + (mode === "ai" ? " Klarar du det bättre själv?" : " Kan du klara samma rum på färre drag?"));
+    " miljö." + rival + (mode === "ai" ? " Klarar du det bättre själv?" : " Kan du klara samma rum på färre drag?"));
 }
 
 let settings = defaultSettings();
@@ -1124,8 +1479,8 @@ function startWorld(seed) {
   $("log").innerHTML = "";
   const url = new URL(location.href);
   url.searchParams.set("rum", seed);
-  PROPERTIES.filter((p) => p.values).forEach((p) => {
-    if (settings[p.key]) url.searchParams.set(p.param, p.values[1]);
+  PROPERTIES.forEach((p) => {
+    if (settings[p.key] !== (p.start ?? 0)) url.searchParams.set(p.param, p.values[settings[p.key]]);
     else url.searchParams.delete(p.param);
   });
   history.replaceState(null, "", url);
@@ -1135,6 +1490,7 @@ function startWorld(seed) {
   updateFog(false);
   updatePanel();
   renderEnv();
+  renderHelp();
 }
 
 const randomSeed = () => 1000 + Math.floor(Math.random() * 9000);
@@ -1148,17 +1504,12 @@ function renderSwitches() {
     l.textContent = p.left;
     r.textContent = p.right;
     b.setAttribute("aria-label", p.left + " eller " + p.right);
-    if (p.values) {
-      b.addEventListener("click", () => {
-        settings[p.key] = settings[p.key] ? 0 : 1;
-        startWorld(world.seed);
-        showToast("Ny miljö: " + (settings[p.key] ? p.right : p.left).toLowerCase(), "");
-      });
-    } else {
-      b.disabled = true;
-      li.classList.add("locked");
-      li.title = "Kommer i en senare version";
-    }
+    b.addEventListener("click", () => {
+      settings[p.key] = settings[p.key] ? 0 : 1;
+      if (settings.epi === 0) EPISODIC_OFF.forEach((k) => { settings[k] = 0; });
+      startWorld(world.seed);
+      showToast("Ny miljö: " + (settings[p.key] ? p.right : p.left).toLowerCase(), "");
+    });
     $("switches").appendChild(li);
   });
   const bars = $("meterBars");
@@ -1171,24 +1522,29 @@ function renderEnv() {
     li.children[1].setAttribute("aria-checked", String(hard));
     li.children[0].classList.toggle("on", !hard);
     li.children[2].classList.toggle("on", hard);
+    const lock = settings.epi === 0 && EPISODIC_OFF.includes(PROPERTIES[i].key);
+    li.children[1].disabled = lock;
+    li.classList.toggle("locked", lock);
+    li.title = lock ? "Går inte att kombinera med en episodisk miljö" : "";
   });
   const n = hardCount(settings);
   $("meterText").textContent = "Svårighet: " + n + " av " + PROPERTIES.length;
   [...$("meterBars").children].forEach((b, i) => b.classList.toggle("on", i < n));
   const list = $("envText");
-  const active = PROPERTIES.filter((p) => p.values && settings[p.key]);
+  // Beskriv varje reglage som inte står i sitt startläge.
+  const active = PROPERTIES.filter((p) => settings[p.key] !== (p.start ?? 0));
   list.className = "env-text" + (active.length ? "" : " none");
   list.innerHTML = "";
   if (!active.length) {
     const li = document.createElement("li");
-    li.textContent = "Alla reglage som går att ändra står på det lätta läget. Rummet är alltid sekventiellt: det du gör nu påverkar resten av städningen.";
+    li.textContent = "Alla reglage står i startläget. Rummet är sekventiellt: det du gör nu påverkar resten av städningen.";
     list.appendChild(li);
   }
   active.forEach((p) => {
     const li = document.createElement("li");
     li.innerHTML = "<b></b> ";
-    li.firstChild.textContent = p.right + ":";
-    li.append(p.hard);
+    li.firstChild.textContent = (settings[p.key] ? p.right : p.left) + ":";
+    li.append(settings[p.key] ? p.hard : p.easy);
     list.appendChild(li);
   });
 }
@@ -1204,9 +1560,19 @@ document.addEventListener("keydown", (e) => {
   const a = KEYS[e.code];
   if (!a || mode === "ai") return;
   e.preventDefault();
-  act(a);
+  if (isContinuous() && MOVES[a]) held.add(a);
+  else humanAct(a);
 });
-document.querySelectorAll(".pad button").forEach((b) => b.addEventListener("click", () => act(b.dataset.act)));
+document.addEventListener("keyup", (e) => { const a = KEYS[e.code]; if (a) held.delete(a); });
+window.addEventListener("blur", () => held.clear());
+document.querySelectorAll(".pad button").forEach((b) => {
+  const a = b.dataset.act;
+  b.addEventListener("click", () => { if (!(isContinuous() && MOVES[a])) humanAct(a); });
+  if (!MOVES[a]) return;
+  // Kontinuerligt läge: håll inne knappen för att köra.
+  b.addEventListener("pointerdown", () => { if (isContinuous()) held.add(a); });
+  for (const t of ["pointerup", "pointerleave", "pointercancel"]) b.addEventListener(t, () => held.delete(a));
+});
 $("restartBtn").addEventListener("click", () => startWorld(world.seed));
 $("againBtn").addEventListener("click", () => startWorld(world.seed));
 $("newBtn").addEventListener("click", () => startWorld(randomSeed()));
@@ -1232,12 +1598,16 @@ $("stepBtn").addEventListener("click", () => { stopRun(); aiStep(); });
 $("runBtn").addEventListener("click", () => (runTimer ? stopRun() : startRun()));
 $("speed").addEventListener("input", () => $("speed").setAttribute("aria-valuetext", SPEED_NAMES[+$("speed").value]));
 
-window.miljo = { createWorld, step, percept, get world() { return world; }, get settings() { return settings; }, get driver() { return driver; }, act, aiStep, setMode };
+window.miljo = { createWorld, step, percept, get world() { return world; }, get settings() { return settings; }, get driver() { return driver; }, act, aiStep, setMode, drive, dogStep, rivalStep };
 
 renderSwitches();
 applyTheme();
 const params = new URLSearchParams(location.search);
-PROPERTIES.filter((p) => p.values).forEach((p) => { settings[p.key] = params.get(p.param) === p.values[1] ? 1 : 0; });
+PROPERTIES.forEach((p) => {
+  const v = p.values.indexOf(params.get(p.param));
+  settings[p.key] = v >= 0 ? v : p.start ?? 0;
+});
+if (settings.epi === 0) EPISODIC_OFF.forEach((k) => { settings[k] = 0; });
 const fromUrl = parseInt(params.get("rum"), 10);
 startWorld(Number.isFinite(fromUrl) && fromUrl >= 0 ? fromUrl : randomSeed());
 resize();

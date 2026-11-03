@@ -1,5 +1,8 @@
 // Bli dammsugaren: samma dammsugarvärld som i Sandlådan, men eleven är agentprogrammet
 // och ser världen i 3D från robotens höjd. Med delvis observerbarhet syns bara det sensorerna når.
+// Samma spel finns som Bli gräsklipparen (<body data-tema="grasklippare">): världen och agenterna
+// är exakt desamma, men smutsen är högt gräs, väggarna är häckar och staket och det är natt i
+// stället för mörkt när observerbarheten är delvis.
 import * as THREE from 'three';
 import { World, MAPS, DIRS, SHOT_GRACE } from './world.js';
 import { AGENTS } from './agents.js';
@@ -19,15 +22,53 @@ const rel = (facing, d) => (ORDER.indexOf(d) - ORDER.indexOf(facing) + 4) % 4;
 const turn = (facing, k) => ORDER[(ORDER.indexOf(facing) + k + 4) % 4];
 const pct = (x) => `${Math.round(x * 100)} %`;
 
+// ---------- tema: dammsugare eller robotgräsklippare ----------
+const LAWN = document.body.dataset.tema === 'grasklippare';
+const T = LAWN ? {
+  area: 'trädgården', Area: 'Trädgården', avg: (p) => `Gräsmattan var i snitt <b>${p}</b> klippt`, avgPlain: (p) => `Gräsmattan var i snitt ${p} klippt.`,
+  robots: 'robotgräsklippare', ball: 'Gräsboll', balls: 'gräsbollar',
+  dirtyQ: 'Högt gräs här?', nowLabel: 'Klippt nu', avgTitle: 'Genomsnittlig andel klippt gräsmatta över alla steg hittills',
+  scored: (n) => `Du klippte <b>${n}</b> rutor med högt gräs`, scoredPlain: (n) => `Du klippte ${n} rutor med högt gräs.`,
+  ok: 'Brrr! Nyklippt här.', fail: 'Kniven tog inte. Försök igen.', already: 'Här var det redan klippt.',
+  slip: 'Hjulen slirade i det blöta gräset', blockedBy: 'Hunden står i vägen', bumpWord: 'Stöt', verb: 'klipp',
+  maps: { lagenhet: 'Villaträdgård', oppen: 'Öppen gräsmatta', labyrint: 'Häcklabyrint' },
+  hints: {
+    observable: 'Delvis: det är natt och du ser bara det sensorerna och lampan når. Full: dagsljus, du ser hela trädgården och kartan.',
+    stochastic: 'Hjulen slirar ibland i det blöta gräset, kniven tar ibland inte.',
+    dynamic: 'Gräset växer: nya högväxta fläckar dyker upp då och då.',
+    dog: 'Hunden Sixten vill leka och river ibland upp tovor som måste klippas jämnt igen.',
+    battery: '40 steg per laddning. Stå på den gula laddstationen och vänta för att ladda.',
+    rivals: 'Tävling: AI-gräsklippare (agenterna från Sandlådan) klipper gräs åt sig själva. Den som klipper mest vinner.',
+    shoot: `Skjut gräsbollar rakt fram med F. Den som träffas åker ut – och motståndarna skjuter också! Fred de första ${SHOT_GRACE} stegen.`,
+  },
+} : {
+  area: 'lägenheten', Area: 'Lägenheten', avg: (p) => `Lägenheten var i snitt <b>${p}</b> ren`, avgPlain: (p) => `Lägenheten var i snitt ${p} ren.`,
+  robots: 'dammsugare', ball: 'Dammboll', balls: 'dammbollar',
+  dirtyQ: 'Smutsigt här?', nowLabel: 'Renhet nu', avgTitle: 'Genomsnittlig renhet över alla steg hittills',
+  scored: (n) => `Du sög upp <b>${n}</b> smutsiga rutor`, scoredPlain: (n) => `Du sög upp ${n} smutsiga rutor.`,
+  ok: 'Slurp! Rent här.', fail: 'Sugningen misslyckades. Försök igen.', already: 'Här var det redan rent.',
+  slip: 'Hjulen slirade', blockedBy: 'Hunden står i vägen', bumpWord: 'Stöt', verb: 'sug',
+  maps: {},
+  hints: {
+    observable: 'Delvis: du ser bara det sensorerna når. Full: du ser hela lägenheten och kartan.',
+    stochastic: 'Hjulen slirar ibland, sugningen misslyckas ibland.',
+    dynamic: 'Ny smuts dyker upp då och då.',
+    dog: 'Hunden Sixten vill leka och har ibland leriga tassar.',
+    battery: '40 steg per laddning. Stå på den gröna laddplattan och vänta för att ladda.',
+    rivals: 'Tävling: AI-dammsugare (agenterna från Sandlådan) suger smuts åt sig själva. Den som suger upp mest vinner.',
+    shoot: `Skjut dammbollar rakt fram med F. Den som träffas åker ut – och motståndarna skjuter också! Fred de första ${SHOT_GRACE} stegen.`,
+  },
+};
+
 const SWITCHES = [
-  { k: 'observable', namn: 'Observerbarhet', opts: [['partial', 'Delvis'], ['full', 'Full']], hint: 'Delvis: du ser bara det sensorerna når. Full: du ser hela lägenheten och kartan.' },
-  { k: 'stochastic', namn: 'Slump', opts: [[false, 'Deterministisk'], [true, 'Stokastisk']], hint: 'Hjulen slirar ibland, sugningen misslyckas ibland.' },
-  { k: 'dynamic', namn: 'Förändring', opts: [[false, 'Statisk'], [true, 'Dynamisk']], hint: 'Ny smuts dyker upp då och då.' },
-  { k: 'dog', namn: 'Agenter', opts: [[false, 'En'], [true, 'Flera']], hint: 'Hunden Sixten vill leka och har ibland leriga tassar.' },
-  { k: 'battery', namn: 'Batteri', opts: [[false, 'Obegränsat'], [true, 'Begränsat']], hint: '40 steg per laddning. Stå på den gröna laddplattan och vänta för att ladda.' },
-  { k: 'rivals', namn: 'Motståndare', opts: [[0, 'Inga'], [1, '1'], [2, '2'], [3, '3']], hint: 'Tävling: AI-dammsugare (agenterna från Sandlådan) suger smuts åt sig själva. Den som suger upp mest vinner.' },
-  { k: 'shoot', namn: 'Skjutläge', opts: [[false, 'Av'], [true, 'På']], hint: `Skjut dammbollar rakt fram med F. Den som träffas åker ut – och motståndarna skjuter också! Fred de första ${SHOT_GRACE} stegen.` },
-];
+  { k: 'observable', namn: 'Observerbarhet', opts: [['partial', 'Delvis'], ['full', 'Full']] },
+  { k: 'stochastic', namn: 'Slump', opts: [[false, 'Deterministisk'], [true, 'Stokastisk']] },
+  { k: 'dynamic', namn: 'Förändring', opts: [[false, 'Statisk'], [true, 'Dynamisk']] },
+  { k: 'dog', namn: 'Agenter', opts: [[false, 'En'], [true, 'Flera']] },
+  { k: 'battery', namn: 'Batteri', opts: [[false, 'Obegränsat'], [true, 'Begränsat']] },
+  { k: 'rivals', namn: 'Motståndare', opts: [[0, 'Inga'], [1, '1'], [2, '2'], [3, '3']] },
+  { k: 'shoot', namn: 'Skjutläge', opts: [[false, 'Av'], [true, 'På']] },
+].map(s => ({ ...s, hint: T.hints[s.k] }));
 
 const cfg = { map: 'lagenhet', observable: 'partial', stochastic: false, dynamic: false, dog: false, battery: false, rivals: 0, shoot: false };
 let seed = 1 + Math.floor(Math.random() * 1e6);
@@ -88,7 +129,40 @@ function floorTexture() {
   t.anisotropy = 4;
   return t;
 }
-const FLOOR_TEX = floorTexture();
+// Gräsmatta: en ruta med klippränder och lite strå-brus.
+function lawnTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  g.fillStyle = '#5f9e3c'; g.fillRect(0, 0, 128, 64);
+  g.fillStyle = '#6cae46'; g.fillRect(0, 64, 128, 64);
+  for (let k = 0; k < 900; k++) {
+    g.fillStyle = `rgba(${20 + hash(k, 1) * 60},${70 + hash(k, 2) * 80},${10 + hash(k, 3) * 30},.5)`;
+    g.fillRect(hash(k, 4) * 128, hash(k, 5) * 128, 1, 2 + hash(k, 6) * 3);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+// Häck: tätt lövverk i olika gröna toner.
+function hedgeTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  g.fillStyle = '#2d5a1f'; g.fillRect(0, 0, 128, 128);
+  for (let k = 0; k < 500; k++) {
+    g.fillStyle = ['#244d18', '#3b7326', '#4a8a2e', '#1d3f13'][Math.floor(hash(k, 7) * 4)];
+    g.beginPath(); g.ellipse(hash(k, 8) * 128, hash(k, 9) * 128, 2 + hash(k, 10) * 4, 1.5 + hash(k, 11) * 2.5, hash(k, 12) * 3, 0, 7); g.fill();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const FLOOR_TEX = LAWN ? lawnTexture() : floorTexture();
+const HEDGE_H = 1.1, FENCE_H = .9;
 const MAT = {
   wall: new THREE.MeshStandardMaterial({ color: 0xe8e2d6, roughness: .9 }),
   skirt: new THREE.MeshStandardMaterial({ color: 0xfafafa, roughness: .6 }),
@@ -102,7 +176,16 @@ const MAT = {
   eye: new THREE.MeshStandardMaterial({ color: 0x111111, roughness: .2 }),
   botBody: new THREE.MeshStandardMaterial({ color: 0x2b2b33, roughness: .5, metalness: .2 }),
   sensor: new THREE.MeshStandardMaterial({ color: 0xf4f4f4, emissive: 0x666666, roughness: .3 }),
-  ball: new THREE.MeshStandardMaterial({ color: 0x8a7a66, roughness: 1, emissive: 0x2a2018 }),
+  ball: LAWN ? new THREE.MeshStandardMaterial({ color: 0x5d8f2e, roughness: 1, emissive: 0x1a2a0c })
+    : new THREE.MeshStandardMaterial({ color: 0x8a7a66, roughness: 1, emissive: 0x2a2018 }),
+  hedge: new THREE.MeshStandardMaterial({ map: hedgeTexture(), roughness: 1 }),
+  fence: new THREE.MeshStandardMaterial({ color: 0xc8a372, roughness: .9 }),
+  post: new THREE.MeshStandardMaterial({ color: 0x8f6a3e, roughness: .9 }),
+  grass: new THREE.MeshStandardMaterial({ color: 0x4f8f2a, roughness: 1 }),
+  grassTip: new THREE.MeshStandardMaterial({ color: 0x8fbf3a, roughness: 1 }),
+  station: new THREE.MeshStandardMaterial({ color: 0x3a3f4a, roughness: .6 }),
+  stationPad: new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0x6b5500, roughness: .5 }),
+  wheel: new THREE.MeshStandardMaterial({ color: 0x1b1b1f, roughness: .9 }),
 };
 const SHOT_SPEED = 14;   // rutor per sekund för dammbollen
 
@@ -126,24 +209,37 @@ function buildLevel() {
   const ceil = new THREE.Mesh(new THREE.PlaneGeometry(w, h), MAT.ceil);
   ceil.rotation.x = Math.PI / 2;
   ceil.position.set((w - 1) / 2, WALL_H, (h - 1) / 2);
-  root.add(floor, ceil);
-
-  const wallCells = [];
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (world.isWall(x, y)) wallCells.push([x, y]);
-  const walls = new THREE.InstancedMesh(new THREE.BoxGeometry(1, WALL_H, 1), MAT.wall, wallCells.length);
-  const skirts = new THREE.InstancedMesh(new THREE.BoxGeometry(1.04, .07, 1.04), MAT.skirt, wallCells.length);
-  const m = new THREE.Matrix4();
-  wallCells.forEach(([x, y], k) => {
-    walls.setMatrixAt(k, m.makeTranslation(x, WALL_H / 2, y));
-    skirts.setMatrixAt(k, m.makeTranslation(x, .035, y));
-  });
-  root.add(walls, skirts);
+  root.add(floor);
+  if (LAWN) buildGarden(root);
+  else {
+    root.add(ceil);
+    const wallCells = [];
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (world.isWall(x, y)) wallCells.push([x, y]);
+    const walls = new THREE.InstancedMesh(new THREE.BoxGeometry(1, WALL_H, 1), MAT.wall, wallCells.length);
+    const skirts = new THREE.InstancedMesh(new THREE.BoxGeometry(1.04, .07, 1.04), MAT.skirt, wallCells.length);
+    const m = new THREE.Matrix4();
+    wallCells.forEach(([x, y], k) => {
+      walls.setMatrixAt(k, m.makeTranslation(x, WALL_H / 2, y));
+      skirts.setMatrixAt(k, m.makeTranslation(x, .035, y));
+    });
+    root.add(walls, skirts);
+  }
 
   // Smuts: några platta fläckar och smulor per ruta, fasta för varje ruta.
+  // I trädgården är "smutsen" i stället en tuva högt gräs.
   const dirtMeshes = new Map();
+  if (LAWN) for (const i of world.floor) {
+    const { x, y } = world.xy(i);
+    const g = makeTuft(i);
+    g.position.set(x, 0, y);
+    g.visible = world.isDirty(x, y);
+    g.userData.target = g.visible ? 1 : 0;
+    root.add(g);
+    dirtMeshes.set(i, g);
+  }
   const blob = new THREE.CircleGeometry(1, 14);
   const crumb = new THREE.DodecahedronGeometry(1, 0);
-  for (const i of world.floor) {
+  if (!LAWN) for (const i of world.floor) {
     const { x, y } = world.xy(i);
     const g = new THREE.Group();
     for (let k = 0; k < 3; k++) {
@@ -168,12 +264,23 @@ function buildLevel() {
   }
 
   const ch = new THREE.Group();
-  const pad = new THREE.Mesh(new THREE.CylinderGeometry(.38, .42, .03, 32), MAT.charger);
+  const pad = new THREE.Mesh(new THREE.CylinderGeometry(.38, .42, .03, 32), LAWN ? MAT.stationPad : MAT.charger);
   pad.position.y = .015;
   const bolt = new THREE.Mesh(new THREE.ExtrudeGeometry(boltShape(), { depth: .01, bevelEnabled: false }), MAT.bolt);
   bolt.rotation.x = -Math.PI / 2;
   bolt.position.y = .032;
   ch.add(pad, bolt);
+  if (LAWN) {   // laddstationen har ett litet tak, som en riktig robotgräsklippares
+    const back = new THREE.Mesh(new THREE.BoxGeometry(.5, .28, .08), MAT.station);
+    back.position.set(0, .14, .4);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(.6, .04, .5), MAT.station);
+    roof.position.set(0, .3, .2);
+    roof.rotation.x = -.15;
+    ch.add(back, roof);
+    // Taket ska peka ut mot den öppna sidan, alltså bort från närmaste häck.
+    const open = ORDER.find(d => !world.isWall(world.charger.x + DIRS[d][0], world.charger.y + DIRS[d][1])) || 'S';
+    ch.rotation.y = YAW[open] + Math.PI;
+  }
   ch.position.set(world.charger.x, 0, world.charger.y);
   root.add(ch);
 
@@ -188,7 +295,7 @@ function buildLevel() {
   // Motståndarna: en 3D-dammsugare och en "hjärna" (agent) var.
   brains = makeRivals(world, seed);
   const rivals = world.rivals.map((r, k) => {
-    const m = makeVacuum(RIVALS[k].color);
+    const m = (LAWN ? makeMower : makeVacuum)(RIVALS[k].color);
     m.position.set(r.x, 0, r.y);
     m.rotation.y = YAW[r.heading];
     m.userData.to = m.position.clone();
@@ -230,6 +337,85 @@ function makeVacuum(color) {
   return g;
 }
 
+// En robotgräsklippare: platt, kantig kaross på fyra hjul, stora bakhjul (−z är framåt).
+function makeMower(color) {
+  const g = new THREE.Group();
+  const top = new THREE.MeshStandardMaterial({ color, roughness: .45 });
+  const chassis = new THREE.Mesh(new THREE.BoxGeometry(.5, .08, .62), MAT.botBody);
+  chassis.position.y = .08;
+  const shell = new THREE.Mesh(new THREE.BoxGeometry(.44, .07, .5), top);
+  shell.position.set(0, .15, .02);
+  const nose = new THREE.Mesh(new THREE.BoxGeometry(.36, .05, .12), top);
+  nose.position.set(0, .12, -.3);
+  const sensor = new THREE.Mesh(new THREE.CylinderGeometry(.04, .04, .03, 16), MAT.sensor);
+  sensor.position.set(0, .2, -.08);
+  g.add(chassis, shell, nose, sensor);
+  for (const [x, z, r] of [[-.27, .18, .09], [.27, .18, .09], [-.22, -.22, .05], [.22, -.22, .05]]) {
+    const wh = new THREE.Mesh(new THREE.CylinderGeometry(r, r, .05, 16), MAT.wheel);
+    wh.rotation.z = Math.PI / 2;
+    wh.position.set(x, r, z);
+    g.add(wh);
+  }
+  return g;
+}
+
+// Högt gräs: en tuva smala strån per ruta, fast för varje ruta. Kameran sitter lägre än stråna.
+const BLADE = new THREE.ConeGeometry(.018, 1, 3);
+BLADE.translate(0, .5, 0);
+function makeTuft(i) {
+  const g = new THREE.Group();
+  for (let k = 0; k < 26; k++) {
+    const b = new THREE.Mesh(BLADE, hash(i, k + 50) < .3 ? MAT.grassTip : MAT.grass);
+    const r = Math.sqrt(hash(i, k + 60)) * .42, a = hash(i, k + 70) * Math.PI * 2;
+    b.position.set(Math.cos(a) * r, 0, Math.sin(a) * r);
+    b.scale.set(1, .14 + hash(i, k + 80) * .16, 1);
+    b.rotation.set((hash(i, k + 90) - .5) * .5, 0, (hash(i, k + 100) - .5) * .5);
+    g.add(b);
+  }
+  return g;
+}
+
+// Trädgården: staket runt kanten, häckar inne på tomten, och en himmel i stället för tak.
+function buildGarden(root) {
+  const { w, h } = world;
+  const edge = (x, y) => x === 0 || y === 0 || x === w - 1 || y === h - 1;
+  const hedges = [], fences = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (world.isWall(x, y)) (edge(x, y) ? fences : hedges).push([x, y]);
+  const m = new THREE.Matrix4();
+  if (hedges.length) {
+    const hm = new THREE.InstancedMesh(new THREE.BoxGeometry(.96, HEDGE_H, .96), MAT.hedge, hedges.length);
+    hedges.forEach(([x, y], k) => hm.setMatrixAt(k, m.makeTranslation(x, HEDGE_H / 2, y)));
+    root.add(hm);
+  }
+  // Staketet: en plankvägg på rutans insida mot tomten, så att det syns som ett staket och inte ett block.
+  const planks = new THREE.InstancedMesh(new THREE.BoxGeometry(.15, FENCE_H, .04), MAT.fence, fences.length * 5);
+  const rails = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .06, .05), MAT.post, fences.length * 2);
+  const q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1);
+  let pk = 0, rk = 0;
+  fences.forEach(([x, y]) => {
+    for (const d of ORDER) {
+      const nx = x + DIRS[d][0], ny = y + DIRS[d][1];
+      if (world.isWall(nx, ny)) continue;
+      q.setFromAxisAngle(up, YAW[d]);
+      const cx = x + DIRS[d][0] * .48, cy = y + DIRS[d][1] * .48;
+      for (let k = 0; k < 5 && pk < planks.count; k++) {
+        const off = -.4 + k * .2;
+        const px = cx + (DIRS[d][1] ? off : 0), py = cy + (DIRS[d][0] ? off : 0);
+        planks.setMatrixAt(pk++, m.compose(new THREE.Vector3(px, FENCE_H / 2, py), q, one));
+      }
+      for (const ry of [.25, .65]) if (rk < rails.count) rails.setMatrixAt(rk++, m.compose(new THREE.Vector3(cx + DIRS[d][0] * .03, ry, cy + DIRS[d][1] * .03), q, one));
+      break;
+    }
+  });
+  planks.count = pk; rails.count = rk;
+  root.add(planks, rails);
+  // Gräs utanför tomten, så att man inte ser ut i tomma intet.
+  const outside = new THREE.Mesh(new THREE.PlaneGeometry(w + 40, h + 40), new THREE.MeshStandardMaterial({ color: 0x4d8a30, roughness: 1 }));
+  outside.rotation.x = -Math.PI / 2;
+  outside.position.set((w - 1) / 2, -.005, (h - 1) / 2);
+  root.add(outside);
+}
+
 function boltShape() {
   const s = new THREE.Shape();
   const p = [[.04, .2], [-.1, -.02], [-.01, -.02], [-.05, -.2], [.1, .04], [.01, .04]];
@@ -258,6 +444,17 @@ function makeDog() {
 // Utseendet beror på observerbarheten: full = upplyst rum, delvis = mörker och bara strålkastaren.
 function applyLook() {
   const partial = cfg.observable === 'partial';
+  if (LAWN) {   // delvis observerbar = natt i trädgården, full = en solig dag
+    scene.background = new THREE.Color(partial ? 0x060b18 : 0x9fd3ff);
+    scene.fog = partial ? new THREE.Fog(0x060b18, .25, 1.55) : new THREE.Fog(0xbfe2ff, 10, 28);
+    hemi.color.set(partial ? 0xffffff : 0xdff1ff);
+    hemi.groundColor.set(partial ? 0x8a8070 : 0x4d7a2e);
+    hemi.intensity = partial ? .05 : 1.5;
+    sun.intensity = partial ? 0 : 1.6;
+    headlamp.intensity = partial ? 2.2 : 0;
+    mapOn = !partial;
+    return;
+  }
   scene.background = new THREE.Color(partial ? 0x05040c : 0xdcd6ca);
   scene.fog = partial ? new THREE.Fog(0x05040c, .25, 1.55) : new THREE.Fog(0xdcd6ca, 8, 22);
   hemi.intensity = partial ? .05 : 1.6;
@@ -297,16 +494,16 @@ function act(a) {
   if (ev.dead) say('Batteriet är slut.');
   else if (ev.blocked) {
     const r = rel(level.facing, ev.actual);
-    const what = world.dog && !world.isWall(world.bot.x + DIRS[ev.actual][0], world.bot.y + DIRS[ev.actual][1]) ? 'Hunden står i vägen' : 'Stöt';
+    const what = world.dog && !world.isWall(world.bot.x + DIRS[ev.actual][0], world.bot.y + DIRS[ev.actual][1]) ? T.blockedBy : T.bumpWord;
     say(`${what} ${REL[r]}!`);
     bump(r);
     audio.thud();
-  } else if (ev.slipped) say(`Hjulen slirade – du hamnade ${REL[rel(level.facing, ev.actual)]}.`);
+  } else if (ev.slipped) say(`${T.slip} – du hamnade ${REL[rel(level.facing, ev.actual)]}.`);
   if (action === 'SUG') {
     level.shake = .35;
-    if (ev.failed) { say('Sugningen misslyckades. Försök igen.'); audio.suck(false); }
-    else if (dirtyBefore) { say('Slurp! Rent här.'); audio.suck(true); buzz(.35, 220); }
-    else { say('Här var det redan rent.'); audio.suck(false); }
+    if (ev.failed) { say(T.fail); audio.suck(false); }
+    else if (dirtyBefore) { say(T.ok); audio.suck(true); buzz(.35, 220); }
+    else { say(T.already); audio.suck(false); }
   }
   if (action === 'VANTA') {
     const onCh = world.bot.x === world.charger.x && world.bot.y === world.charger.y;
@@ -436,10 +633,10 @@ function finish() {
   const place = rows.findIndex(r => r.you) + 1;
   if (contest) {
     const outs = rows.filter(r => r.out).length;
-    text = `Du sög upp <b>${world.bot.sucked}</b> smutsiga rutor och kom på plats <b>${place} av ${rows.length}</b>.` +
-      (cfg.shoot ? ` ${outs ? `${outs} av ${rows.length} dammsugare blev träffade (✗) och åkte ut.` : 'Ingen blev träffad.'}` : '') +
-      ` Lägenheten var i snitt ${pct(mine)} ren.`;
-  } else text = `Lägenheten var i snitt <b>${pct(mine)}</b> ren. Du kom på plats <b>${place} av ${rows.length}</b> mot agenterna i exakt samma rum och miljö.`;
+    text = `${T.scored(world.bot.sucked)} och kom på plats <b>${place} av ${rows.length}</b>.` +
+      (cfg.shoot ? ` ${outs ? `${outs} av ${rows.length} ${T.robots} blev träffade (✗) och åkte ut.` : 'Ingen blev träffad.'}` : '') +
+      ` ${T.avgPlain(pct(mine))}`;
+  } else text = `${T.avg(pct(mine))}. Du kom på plats <b>${place} av ${rows.length}</b> mot agenterna i exakt ${LAWN ? 'samma trädgård' : 'samma rum'} och miljö.`;
   document.getElementById('end-title').textContent = title;
   document.getElementById('end-text').innerHTML = text;
   const box = document.getElementById('end-result');
@@ -456,10 +653,12 @@ function finish() {
 
 function reflection() {
   if (cfg.rivals > 0 && cfg.shoot) return 'Fundera: Nu var miljön tävlande – de andra agenterna försökte aktivt slå ut dig. Vad behövde du veta om dem för att överleva? Varför räcker det inte med en enkel reflexregel som "skjut om någon står i linjen"?';
-  if (cfg.rivals > 0) return 'Fundera: Nu var miljön en tävlande multiagentmiljö, och prestandamåttet var din egen poäng – inte hur ren lägenheten blev. Hur ändrade det hur du spelade? Vilken agent var svårast att slå, och varför?';
+  if (cfg.rivals > 0) return `Fundera: Nu var miljön en tävlande multiagentmiljö, och prestandamåttet var din egen poäng – inte hur ${LAWN ? 'välklippt trädgården' : 'ren lägenheten'} blev. Hur ändrade det hur du spelade? Vilken agent var svårast att slå, och varför?`;
   if (cfg.observable === 'partial') return 'Fundera: Vad hade du i huvudet som robotens sensorer inte gav dig? Det minnet är skillnaden mellan en enkel reflexagent och en modellbaserad agent.';
+  if (LAWN && cfg.dynamic) return 'Fundera: Gräset slutar aldrig växa – det blir aldrig "klart". Hur planerade du när nytt högt gräs dök upp medan du var på väg någon annanstans? Vilken agent gör likadant?';
+  if (LAWN && cfg.dog) return 'Fundera: Hur planerade du när hunden rev upp gräs medan du var på väg någon annanstans? Vilken agent gör likadant?';
   if (cfg.dynamic || cfg.dog) return 'Fundera: Hur planerade du när smuts dök upp medan du var på väg någon annanstans? Vilken agent gör likadant?';
-  return 'Fundera: Du såg hela lägenheten. Vilken agent tänkte mest som du? Prova sedan med delvis observerbarhet.';
+  return `Fundera: Du såg hela ${T.area}. Vilken agent tänkte mest som du? Prova sedan med delvis observerbarhet.`;
 }
 
 // ---------- HUD ----------
@@ -495,7 +694,7 @@ function updateHud() {
   const cell = (r) => { const d = turn(f, r); return `<span class="${p.bumps[d] ? 'wall' : ''}">${p.bumps[d] ? '▮' : ''}</span>`; };
   const bat = p.battery === null ? '' : `<div class="row"><span>Batteri</span><span class="lamp${p.battery <= 8 ? ' low' : ''}">${p.battery}/${p.capacity}</span></div>`;
   perceptBox.innerHTML = `<h2>Percept just nu</h2>
-    <div class="row"><span>Smutsigt här?</span><span class="lamp${p.dirty ? ' on' : ''}">${p.dirty ? 'Ja' : 'Nej'}</span></div>
+    <div class="row"><span>${T.dirtyQ}</span><span class="lamp${p.dirty ? ' on' : ''}">${p.dirty ? 'Ja' : 'Nej'}</span></div>
     <div class="row"><span>Position</span><b>(${p.x}, ${p.y})</b></div>
     ${bat}
     <div class="row" style="margin-top:6px"><span>Stötsensorer<br><small class="muted">pilen = din riktning</small></span>
@@ -505,10 +704,10 @@ function updateHud() {
     const line = (namn, color, v) => `<div class="row score${v.out ? ' out' : ''}"><span><i class="dot" style="background:${color}"></i>${namn}</span><b>${v.sucked}${v.out ? ' ✗' : ''}</b></div>`;
     statsBox.innerHTML = `<h2>Tävling · steg ${world.t}/${STEPS}</h2>` +
       line('Du', '#f5a23a', world.bot) + world.rivals.map((r, k) => line(RIVALS[k].namn, RIVALS[k].color, r)).join('') +
-      (cfg.shoot ? `<div class="row" style="margin-top:6px"><span>Dammboll</span><span class="lamp${shotReady() ? ' on' : ''}">${shotState()}</span></div>` : '');
+      (cfg.shoot ? `<div class="row" style="margin-top:6px"><span>${T.ball}</span><span class="lamp${shotReady() ? ' on' : ''}">${shotState()}</span></div>` : '');
   } else {
-    statsBox.innerHTML = `<h2>Prestanda</h2>Steg <b>${world.t}/${STEPS}</b><br>Renhet nu <b>${pct(world.cleanliness())}</b><br><span title="Genomsnittlig renhet över alla steg hittills">Snitt <b>${pct(world.performance())}</b></span>` +
-      (cfg.shoot ? `<br>Dammboll <span class="lamp${shotReady() ? ' on' : ''}">${shotState()}</span>` : '');
+    statsBox.innerHTML = `<h2>Prestanda</h2>Steg <b>${world.t}/${STEPS}</b><br>${T.nowLabel} <b>${pct(world.cleanliness())}</b><br><span title="${T.avgTitle}">Snitt <b>${pct(world.performance())}</b></span>` +
+      (cfg.shoot ? `<br>${T.ball} <span class="lamp${shotReady() ? ' on' : ''}">${shotState()}</span>` : '');
   }
   document.getElementById('dirtglow').classList.toggle('on', p.dirty);
   drawMap();
@@ -533,17 +732,20 @@ function drawMap() {
   paintMap(mapCanvas.getContext('2d'), cs);
 }
 
+const MAPC = LAWN
+  ? { wall: '#4f5a6b', dirt: '#3f7a22', clean: '#b7e08e', unknown: '#141127', open: '#5c5480', charger: '#facc15' }
+  : { wall: '#4f5a6b', dirt: '#c08a55', clean: '#e8e2d6', unknown: '#141127', open: '#5c5480', charger: '#16a34a' };
 function paintMap(g, cs) {
   const full = cfg.observable === 'full';
   for (let y = 0; y < world.h; y++) for (let x = 0; x < world.w; x++) {
     const i = world.idx(x, y);
     let c;
-    if (full) c = world.isWall(x, y) ? '#4f5a6b' : world.isDirty(x, y) ? '#c08a55' : '#e8e2d6';
-    else c = ['#141127', '#e8e2d6', '#c08a55', '#4f5a6b', '#5c5480'][level.known[i] + 1];
+    if (full) c = world.isWall(x, y) ? MAPC.wall : world.isDirty(x, y) ? MAPC.dirt : MAPC.clean;
+    else c = [MAPC.unknown, MAPC.clean, MAPC.dirt, MAPC.wall, MAPC.open][level.known[i] + 1];
     g.fillStyle = c;
     g.fillRect(x * cs, y * cs, cs, cs);
   }
-  g.fillStyle = '#16a34a';
+  g.fillStyle = MAPC.charger;
   if (full || level.known[world.idx(world.charger.x, world.charger.y)] >= 0) g.fillRect(world.charger.x * cs + 2, world.charger.y * cs + 2, cs - 4, cs - 4);
   if (full && world.dog) { g.fillStyle = '#7a4a20'; g.beginPath(); g.arc((world.dog.x + .5) * cs, (world.dog.y + .5) * cs, cs * .35, 0, 7); g.fill(); }
   if (full) world.rivals.forEach((r, k) => {
@@ -580,7 +782,10 @@ const audio = {
     s.connect(f).connect(v).connect(this.ctx.destination); s.start(t);
   },
   thud() { this.tone(90, .18, 'triangle', .35, .5); },
-  suck(ok) { this.noise(.35, ok ? 1800 : 900, ok ? .25 : .12); if (ok) setTimeout(() => this.tone(880, .12, 'sine', .08, 1.5), 260); },
+  suck(ok) {
+    if (LAWN) { this.tone(ok ? 140 : 110, .35, 'sawtooth', ok ? .1 : .05, 1.1); this.noise(.3, ok ? 3200 : 1500, ok ? .18 : .08); return; }
+    this.noise(.35, ok ? 1800 : 900, ok ? .25 : .12); if (ok) setTimeout(() => this.tone(880, .12, 'sine', .08, 1.5), 260);
+  },
   pew() { this.noise(.12, 2400, .18); this.tone(520, .16, 'square', .06, .4); },
   hit() { this.noise(.3, 500, .3); this.tone(180, .3, 'sawtooth', .08, .3); },
 };
@@ -692,7 +897,7 @@ function drawPanel() {
   if (level.result) {
     const { rows, place, mine, title } = level.result;
     text(`${title} – plats ${place} av ${rows.length}`, 40, 56, 40, '#fff', 700);
-    text(world.rivals.length ? `Du sög upp ${world.bot.sucked} smutsiga rutor.` : `Lägenheten var i snitt ${pct(mine)} ren.`, 40, 106, 30, '#cdc7f0');
+    text(world.rivals.length ? T.scoredPlain(world.bot.sucked) : T.avgPlain(pct(mine)), 40, 106, 30, '#cdc7f0');
     rows.forEach((r, k) => {
       const y = 170 + k * 52;
       text(r.namn, 40, y, 28, r.you ? '#f5a23a' : '#ebe8ff', r.you ? 700 : 400);
@@ -700,7 +905,7 @@ function drawPanel() {
       g.fillStyle = r.you ? '#f5a23a' : r.color || '#98a2b0'; g.fillRect(420, y - 12, 440 * r.perf, 24);
       text(r.label ?? pct(r.perf), W - 40, y, 28, '#fff', 600, 'right');
     });
-    text('A/X: nytt rum   ·   B/Y: samma rum igen', W / 2, H - 44, 28, '#b3a6ff', 600, 'center');
+    text(LAWN ? 'A/X: ny trädgård   ·   B/Y: samma trädgård igen' : 'A/X: nytt rum   ·   B/Y: samma rum igen', W / 2, H - 44, 28, '#b3a6ff', 600, 'center');
     panelTex.needsUpdate = true;
     return;
   }
@@ -711,11 +916,11 @@ function drawPanel() {
     text(label, 40, y, 30);
     g.font = '700 28px system-ui, sans-serif';
     const w = g.measureText(val).width + 32;
-    g.fillStyle = low ? '#f2756b' : on ? '#c08a55' : '#2a2457';
+    g.fillStyle = low ? '#f2756b' : on ? (LAWN ? '#9be15d' : '#c08a55') : '#2a2457';
     g.beginPath(); g.roundRect(440 - w, y - 20, w, 40, 20); g.fill();
     text(val, 440 - w / 2, y, 28, on || low ? '#2a1800' : '#cdc7f0', 700, 'center');
   };
-  lamp('Smutsigt här?', p.dirty ? 'Ja' : 'Nej', 100, p.dirty);
+  lamp(T.dirtyQ, p.dirty ? 'Ja' : 'Nej', 100, p.dirty);
   lamp('Position', `(${p.x}, ${p.y})`, 150, false);
   let y = 200;
   if (p.battery !== null) { lamp('Batteri', `${p.battery}/${p.capacity}`, y, false, p.battery <= 8); y += 50; }
@@ -736,11 +941,11 @@ function drawPanel() {
     text(`TÄVLING · STEG ${world.t}/${STEPS}`, W - 40, 50, 24, '#b3a6ff', 700, 'right');
     const all = [['Du', '#f5a23a', world.bot], ...world.rivals.map((r, k) => [RIVALS[k].namn, RIVALS[k].color, r])];
     all.forEach(([namn, color, v], k) => text(`${namn} ${v.sucked}${v.out ? ' ✗' : ''}`, W - 40, 95 + k * 38, 28, v.out ? '#6d65a8' : color, 700, 'right'));
-    if (cfg.shoot) text(`Dammboll: ${shotState()}`, W - 40, 95 + all.length * 38, 26, '#fff', 600, 'right');
+    if (cfg.shoot) text(`${T.ball}: ${shotState()}`, W - 40, 95 + all.length * 38, 26, '#fff', 600, 'right');
   } else {
     text('PRESTANDA', W - 40, 50, 24, '#b3a6ff', 700, 'right');
     text(`Steg ${world.t}/${STEPS}`, W - 40, 100, 30, '#fff', 600, 'right');
-    text(`Renhet nu ${pct(world.cleanliness())}`, W - 40, 145, 30, '#fff', 600, 'right');
+    text(`${T.nowLabel} ${pct(world.cleanliness())}`, W - 40, 145, 30, '#fff', 600, 'right');
     text(`Snitt ${pct(world.performance())}`, W - 40, 190, 30, '#fff', 600, 'right');
   }
   if (mapOn) {
@@ -751,8 +956,8 @@ function drawPanel() {
     g.restore();
   }
   if (vrMsg) text(vrMsg, W / 2, H - 92, 32, '#fff', 700, 'center');
-  text(cfg.shoot ? 'Spak: kör och vrid · Avtryckare: sug · Grepp: vänta · B/Y: skjut · A/X: karta'
-    : 'Spak: kör och vrid · Avtryckare: sug · Grepp: vänta · A/X: karta', W / 2, H - 40, 24, '#9d95d6', 400, 'center');
+  text(cfg.shoot ? `Spak: kör och vrid · Avtryckare: ${T.verb} · Grepp: vänta · B/Y: skjut · A/X: karta`
+    : `Spak: kör och vrid · Avtryckare: ${T.verb} · Grepp: vänta · A/X: karta`, W / 2, H - 40, 24, '#9d95d6', 400, 'center');
   panelTex.needsUpdate = true;
 }
 
@@ -848,7 +1053,7 @@ for (const b of document.querySelectorAll('.pad button, #shootbtn')) {
 const startEl = document.getElementById('start'), endEl = document.getElementById('end');
 function buildOptions() {
   const opts = document.getElementById('opts');
-  const mapSel = el('select', { 'aria-label': 'Karta' }, Object.entries(MAPS).filter(([k]) => k !== 'tvarum').map(([k, mp]) => el('option', { value: k, selected: k === cfg.map }, mp.namn)));
+  const mapSel = el('select', { 'aria-label': 'Karta' }, Object.entries(MAPS).filter(([k]) => k !== 'tvarum').map(([k, mp]) => el('option', { value: k, selected: k === cfg.map }, T.maps[k] || mp.namn)));
   mapSel.addEventListener('change', () => { cfg.map = mapSel.value; });
   opts.append(el('div', { class: 'switch' }, el('span', {}, 'Karta'), mapSel));
   for (const s of SWITCHES) {

@@ -89,6 +89,7 @@ footer{max-width:1400px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
 .modes button{font:inherit;font-weight:700;font-size:.95rem;border:0;border-radius:8px;padding:8px 16px;background:transparent;color:var(--muted);cursor:pointer;min-height:40px}
 .modes button[aria-checked="true"]{background:var(--accent);color:#fff}
 .ai-box{margin-top:14px}
+.top-row{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center}
 .ai-box[hidden],.under[hidden]{display:none}
 .ai-row{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center}
 .ai-row label{font-weight:700;font-size:.92rem}
@@ -159,10 +160,10 @@ footer{max-width:1400px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
   <a class="back-link" href="../agenter-och-miljoer/#k3">← Miljöns egenskaper</a>
   <p class="kicker">AI 1 · Agenter och miljöer</p>
   <h1>Miljölabbet</h1>
-  <p class="lede">Du är en städrobot. Sug upp all smuts i rummet och kör sedan tillbaka till laddstationen, på så få drag som möjligt. Börja med miljön så lätt den kan bli. Slå sedan om reglagen under <b>Miljön</b>, ett i taget, och känn efter vad som blir svårare.</p>
+  <p class="lede"><span data-lawn="Du är en robotgräsklippare. Klipp allt högt gräs i trädgården och kör sedan tillbaka till laddstationen, på så få drag som möjligt.">Du är en städrobot. Sug upp all smuts i rummet och kör sedan tillbaka till laddstationen, på så få drag som möjligt.</span> Välj robot nedan. Börja med miljön så lätt den kan bli. Slå sedan om reglagen under <b>Miljön</b>, ett i taget, och känn efter vad som blir svårare.</p>
   <ul class="how">
     <li><b>Kör:</b> <kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd> eller <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></li>
-    <li><b>Sug:</b> <kbd>Mellanslag</kbd></li>
+    <li><b data-lawn="Klipp:">Sug:</b> <kbd>Mellanslag</kbd></li>
     <li><b>Vrid kameran:</b> dra i bilden</li>
   </ul>
   </div>
@@ -171,17 +172,23 @@ footer{max-width:1400px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
 <main class="app">
   <div class="app-grid">
     <div>
-      <div class="modes" role="radiogroup" aria-label="Vem styr roboten?">
-        <button type="button" role="radio" data-mode="du" aria-checked="true">🎮 Du styr</button>
-        <button type="button" role="radio" data-mode="ai" aria-checked="false">🤖 AI:n styr</button>
+      <div class="top-row">
+        <div class="modes" role="radiogroup" aria-label="Vem styr roboten?">
+          <button type="button" role="radio" data-mode="du" aria-checked="true">🎮 Du styr</button>
+          <button type="button" role="radio" data-mode="ai" aria-checked="false">🤖 AI:n styr</button>
+        </div>
+        <div class="modes" role="radiogroup" aria-label="Vilken robot?">
+          <button type="button" role="radio" data-robot="stad" aria-checked="true">🧹 Städrobot</button>
+          <button type="button" role="radio" data-robot="gras" aria-checked="false">🌱 Gräsklippare</button>
+        </div>
       </div>
       <div class="three-box" id="view">
         <div class="banner" id="banner" hidden role="status">
           <b id="bannerTitle">Rummet är städat!</b>
           <span id="bannerText"></span>
           <div class="row">
-            <button class="btn go" id="againBtn" type="button">Spela samma rum igen</button>
-            <button class="btn ghost" id="newBtn2" type="button">Nytt rum</button>
+            <button class="btn go" id="againBtn" type="button" data-lawn="Spela samma trädgård igen">Spela samma rum igen</button>
+            <button class="btn ghost" id="newBtn2" type="button" data-lawn="Ny trädgård">Nytt rum</button>
           </div>
         </div>
         <div class="toast hidden" id="toast" aria-hidden="true"></div>
@@ -205,13 +212,13 @@ footer{max-width:1400px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
         <div class="pad" role="group" aria-label="Styr roboten">
           <button class="u" data-act="upp" type="button" aria-label="Kör uppåt">↑</button>
           <button class="l" data-act="vänster" type="button" aria-label="Kör åt vänster">←</button>
-          <button class="suck" data-act="sug" type="button">Sug</button>
+          <button class="suck" data-act="sug" type="button" data-lawn="Klipp">Sug</button>
           <button class="r" data-act="höger" type="button" aria-label="Kör åt höger">→</button>
           <button class="d" data-act="ned" type="button" aria-label="Kör nedåt">↓</button>
         </div>
         <div class="keys" id="keysHelp">
-          <p>Roboten flyttar en ruta per drag. Den suger bara upp smutsen på den ruta den står på, och bara när du trycker <b>Sug</b>.</p>
-          <p>Kör du in i en möbel eller vägg står roboten kvar, men draget räknas ändå.</p>
+          <p data-lawn="Roboten flyttar en ruta per drag. Den klipper bara det höga gräset på den ruta den står på, och bara när du trycker <b>Klipp</b>.">Roboten flyttar en ruta per drag. Den suger bara upp smutsen på den ruta den står på, och bara när du trycker <b>Sug</b>.</p>
+          <p data-lawn="Kör du in i ett hinder eller staketet står roboten kvar, men draget räknas ändå.">Kör du in i en möbel eller vägg står roboten kvar, men draget räknas ändå.</p>
         </div>
       </div>
     </div>
@@ -225,9 +232,9 @@ footer{max-width:1400px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
           <div class="stat"><small id="sDirtLabel">Smuts kvar</small><b id="sDirt">0</b></div>
         </div>
         <ul class="rules">
-          <li>+10 för varje smutsig ruta du suger rent</li>
-          <li>−1 för varje drag (även krockar och onödig sugning)</li>
-          <li id="rDock">+20 när rummet är rent och du står i laddstationen</li>
+          <li data-lawn="+10 för varje ruta med högt gräs du klipper">+10 för varje smutsig ruta du suger rent</li>
+          <li data-lawn="−1 för varje drag (även krockar och onödig klippning)">−1 för varje drag (även krockar och onödig sugning)</li>
+          <li id="rDock" data-lawn="+20 när allt är klippt och du står i laddstationen">+20 när rummet är rent och du står i laddstationen</li>
         </ul>
         <p class="hint" id="rivalLine" hidden></p>
       </section>
@@ -240,7 +247,7 @@ footer{max-width:1400px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
           <dt id="pSeenLabel">Smuts i rummet</dt><dd id="pSeen">–</dd>
         </dl>
         <div class="map-wrap">
-          <small>Robotens karta – det roboten vet om rummet</small>
+          <small data-lawn="Robotens karta – det roboten vet om trädgården">Robotens karta – det roboten vet om rummet</small>
           <canvas id="map" width="240" height="240" role="img" aria-label="Robotens karta över rummet"></canvas>
         </div>
         <ol class="log" id="log" aria-label="Senaste händelser" aria-live="polite"></ol>
@@ -251,21 +258,21 @@ footer{max-width:1400px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
         <div class="meter"><span id="meterText">Svårighet</span><span class="bars" id="meterBars" aria-hidden="true"></span></div>
         <ul class="switches" id="switches"></ul>
         <ul class="env-text" id="envText"></ul>
-        <p class="hint">Rummet börjar om när du slår om ett reglage.</p>
+        <p class="hint" data-lawn="Trädgården börjar om när du slår om ett reglage.">Rummet börjar om när du slår om ett reglage.</p>
       </section>
 
       <section class="panel" aria-labelledby="hRoom">
-        <h3 id="hRoom">Rummet</h3>
+        <h3 id="hRoom" data-lawn="Trädgården">Rummet</h3>
         <div class="seed">
-          <label for="seedIn">Rumsnummer</label>
+          <label for="seedIn" data-lawn="Trädgårdsnummer">Rumsnummer</label>
           <input id="seedIn" type="text" inputmode="numeric" autocomplete="off">
           <button class="btn ghost" id="seedBtn" type="button">Hämta</button>
         </div>
         <div class="seed" style="margin-top:10px">
           <button class="btn ghost" id="restartBtn" type="button">Börja om</button>
-          <button class="btn" id="newBtn" type="button">Nytt rum</button>
+          <button class="btn" id="newBtn" type="button" data-lawn="Ny trädgård">Nytt rum</button>
         </div>
-        <p class="hint">Samma rumsnummer ger alltid samma rum. Skriv upp numret om hela klassen ska spela samma rum.</p>
+        <p class="hint" data-lawn="Samma nummer ger alltid samma trädgård – och samma nummer ger samma utplacering som rummet för städroboten. Skriv upp numret om hela klassen ska spela samma trädgård.">Samma rumsnummer ger alltid samma rum. Skriv upp numret om hela klassen ska spela samma rum.</p>
       </section>
     </aside>
   </div>
@@ -286,12 +293,17 @@ const ACTIONS = ["upp", "ned", "vänster", "höger", "sug", "vänta"];
 const MOVES = { upp: [0, -1], ned: [0, 1], "vänster": [-1, 0], "höger": [1, 0] };
 const POINTS = { step: -1, dirt: 10, dock: 20 };
 
+// Robot: städrobot i ett rum eller robotgräsklippare i en trädgård. Världen, reglerna och agenterna
+// är exakt desamma – bara utseendet och orden byts. "Smuts" är högt gräs, möbler är hinder i trädgården.
+let LAWN = false;
+const tx = (vac, lawn) => (LAWN ? lawn : vac);
+
 const FURNITURE = [
-  { type: "soffa", name: "soffan", w: 3, h: 1 },
-  { type: "bord", name: "bordet", w: 2, h: 2 },
-  { type: "hylla", name: "bokhyllan", w: 2, h: 1 },
-  { type: "fatolj", name: "fåtöljen", w: 1, h: 1 },
-  { type: "vaxt", name: "krukväxten", w: 1, h: 1 }
+  { type: "soffa", name: "soffan", lawnName: "rabatten", w: 3, h: 1 },
+  { type: "bord", name: "bordet", lawnName: "sandlådan", w: 2, h: 2 },
+  { type: "hylla", name: "bokhyllan", lawnName: "vedtraven", w: 2, h: 1 },
+  { type: "fatolj", name: "fåtöljen", lawnName: "stenen", w: 1, h: 1 },
+  { type: "vaxt", name: "krukväxten", lawnName: "äppelträdet", w: 1, h: 1 }
 ];
 
 // Liten, snabb slumpgenerator med frö (mulberry32).
@@ -329,18 +341,24 @@ function distances(blocked, x0, y0) {
 // start = läget när sidan öppnas. Texten easy/hard visas när reglaget står i det andra läget.
 const PROPERTIES = [
   { key: "obs", left: "Fullt observerbar", right: "Delvis observerbar", param: "syn", values: ["full", "delvis"],
-    hard: "Dimma täcker rummet. Roboten ser bara sin egen ruta och rutorna runt om, och kartan visar det den minns." },
+    hard: "Dimma täcker rummet. Roboten ser bara sin egen ruta och rutorna runt om, och kartan visar det den minns.",
+    hardLawn: "Det är natt i trädgården. Roboten ser bara sin egen ruta och rutorna runt om, och kartan visar det den minns." },
   { key: "det", left: "Deterministisk", right: "Stokastisk", param: "slump", values: ["nej", "ja"],
-    hard: "Golvet är halt. Ibland slirar roboten åt sidan, och ibland misslyckas sugningen. Tärningen visar när slumpen slår till." },
+    hard: "Golvet är halt. Ibland slirar roboten åt sidan, och ibland misslyckas sugningen. Tärningen visar när slumpen slår till.",
+    hardLawn: "Gräset är blött. Ibland slirar roboten åt sidan, och ibland tar inte kniven. Tärningen visar när slumpen slår till." },
   { key: "epi", left: "Episodisk", right: "Sekventiell", param: "episod", values: ["ja", "nej"], start: 1,
     easy: "Varje drag är en egen episod. Roboten lyfts till en slumpad ruta, och det enda du ska avgöra är om den ska suga eller gå vidare. Inget du gör påverkar nästa episod – det finns inget att planera.",
-    hard: "Det du gör nu påverkar resten av städningen: varje drag bestämmer var roboten står nästa gång." },
+    easyLawn: "Varje drag är en egen episod. Roboten lyfts till en slumpad ruta, och det enda du ska avgöra är om den ska klippa eller gå vidare. Inget du gör påverkar nästa episod – det finns inget att planera.",
+    hard: "Det du gör nu påverkar resten av städningen: varje drag bestämmer var roboten står nästa gång.",
+    hardLawn: "Det du gör nu påverkar resten av klippningen: varje drag bestämmer var roboten står nästa gång." },
   { key: "sta", left: "Statisk", right: "Dynamisk", param: "dynamisk", values: ["nej", "ja"],
-    hard: "En hund springer runt och drar in ny smuts. Världen ändras även när du står still och funderar, och rutor du redan har städat kan bli smutsiga igen." },
+    hard: "En hund springer runt och drar in ny smuts. Världen ändras även när du står still och funderar, och rutor du redan har städat kan bli smutsiga igen.",
+    hardLawn: "En hund springer runt och river upp tovor i gräsmattan som måste klippas jämnt igen. Världen ändras även när du står still och funderar, och rutor du redan har klippt kan behöva klippas igen." },
   { key: "dis", left: "Diskret", right: "Kontinuerlig", param: "kontinuerlig", values: ["nej", "ja"],
     hard: "Roboten kör fritt i stället för en ruta i taget. Håll inne ↑ för att köra och ← → för att svänga. Varje rutlängd du kör och varje kvarts varv du svänger kostar ett drag." },
   { key: "ag", left: "En agent", right: "Flera agenter", param: "rival", values: ["nej", "ja"],
-    hard: "En blå rivalrobot städar samma rum. Den tar smuts du räknade med och står ibland i vägen. Rivalen är en målbaserad agent." }
+    hard: "En blå rivalrobot städar samma rum. Den tar smuts du räknade med och står ibland i vägen. Rivalen är en målbaserad agent.",
+    hardLawn: "En blå rivalgräsklippare klipper samma trädgård. Den tar gräs du räknade med och står ibland i vägen. Rivalen är en målbaserad agent." }
 ];
 // En episodisk miljö har inget "sedan" – därför går den inte att kombinera med de här.
 const EPISODIC_OFF = ["sta", "dis", "ag"];
@@ -451,20 +469,20 @@ function step(w, action) {
   w.score += POINTS.step;
   let ev;
   if (action !== "sug" && w.settings.epi === 0) {
-    ev = w.dirt[idx(r.x, r.y)] ? { type: "skip-dirty", text: "Gick vidare från en smutsig ruta", points: POINTS.step }
-      : { type: "skip", text: "Gick vidare – rutan var ren", points: POINTS.step };
+    ev = w.dirt[idx(r.x, r.y)] ? { type: "skip-dirty", text: tx("Gick vidare från en smutsig ruta", "Gick vidare från högt gräs"), points: POINTS.step }
+      : { type: "skip", text: tx("Gick vidare – rutan var ren", "Gick vidare – rutan var klippt"), points: POINTS.step };
   } else if (action === "vänta") {
     ev = { type: "wait", text: "Väntade", points: POINTS.step };
   } else if (action === "sug") {
     if (w.dirt[idx(r.x, r.y)] && stochastic && w.chance() < SUCK_FAIL) {
-      ev = { type: "suck-fail", chance: true, text: "Sugningen misslyckades", points: POINTS.step };
+      ev = { type: "suck-fail", chance: true, text: tx("Sugningen misslyckades", "Kniven tog inte"), points: POINTS.step };
     } else if (w.dirt[idx(r.x, r.y)]) {
       w.dirt[idx(r.x, r.y)] = 0;
       w.cleaned++;
       w.score += POINTS.dirt;
-      ev = { type: "suck", x: r.x, y: r.y, text: "Sög upp smutsen", points: POINTS.dirt + POINTS.step };
+      ev = { type: "suck", x: r.x, y: r.y, text: tx("Sög upp smutsen", "Klippte det höga gräset"), points: POINTS.dirt + POINTS.step };
     } else {
-      ev = { type: "suck-empty", text: "Rutan var redan ren", points: POINTS.step };
+      ev = { type: "suck-empty", text: tx("Rutan var redan ren", "Rutan var redan klippt"), points: POINTS.step };
     }
   } else {
     let dir = action, slip = false;
@@ -511,8 +529,8 @@ function step(w, action) {
 // Vad som står i vägen på rutan (x, y) för den som vill dit ("robot", "rival" eller "dog"), eller null.
 // Rivalen och hunden går aldrig in i laddstationen, så att den alltid är fri för din robot.
 function blocker(w, x, y, who) {
-  if (!inside(x, y)) return "väggen";
-  if (w.blocked[idx(x, y)] >= 0) return w.furniture[w.blocked[idx(x, y)]].name;
+  if (!inside(x, y)) return tx("väggen", "staketet");
+  if (w.blocked[idx(x, y)] >= 0) { const f = w.furniture[w.blocked[idx(x, y)]]; return tx(f.name, f.lawnName); }
   if (w.dog && who !== "dog" && w.dog.x === x && w.dog.y === y) return "hunden";
   if (w.rival && who !== "rival" && w.rival.x === x && w.rival.y === y) return "rivalen";
   if (who !== "robot" && w.robot.x === x && w.robot.y === y) return "roboten";
@@ -577,7 +595,7 @@ function rivalStep(w, action) {
 
 // Kontinuerligt läge: står robotens cirkel på (fx, fy) i något? Returnerar vad, eller null.
 function hits(w, fx, fy) {
-  if (fx < RADIUS || fy < RADIUS || fx > N - RADIUS || fy > N - RADIUS) return "väggen";
+  if (fx < RADIUS || fy < RADIUS || fx > N - RADIUS || fy > N - RADIUS) return tx("väggen", "staketet");
   for (let cy = Math.floor(fy - RADIUS); cy <= Math.floor(fy + RADIUS); cy++)
     for (let cx = Math.floor(fx - RADIUS); cx <= Math.floor(fx + RADIUS); cx++) {
       const what = inside(cx, cy) && blocker(w, cx, cy, "robot");
@@ -648,6 +666,12 @@ const AGENT_INFO = {
   modell: "Minns var den har varit och kör till den granne den besökte för längst sedan. Den planerar inte.",
   mal: "Har ett mål: alla rutor rena. Den söker kortaste vägen till närmaste smutsiga eller outforskade ruta.",
   nytta: "Väger nytta mot kostnad och väljer det mål som ger mest nytta per steg."
+};
+const AGENT_INFO_LAWN = {
+  ...AGENT_INFO,
+  slump: "Klipper om gräset är högt, annars kör den åt ett slumpat håll. Den minns ingenting.",
+  reflex: "Följer en fast regellista: klipp om gräset är högt, annars försök köra höger, ned, vänster och upp i den ordningen. Den minns ingenting.",
+  mal: "Har ett mål: hela gräsmattan klippt. Den söker kortaste vägen till närmaste ruta med högt gräs eller outforskade ruta."
 };
 const MAX_AI_MOVES = 300;
 
@@ -758,14 +782,19 @@ function box(w, h, d, color, x = 0, y = 0, z = 0) {
   return m;
 }
 
-// Golv, rutnät och väggar (byggs en gång).
-(function buildRoom() {
+// Golv, rutnät och väggar – eller gräsmatta och staket. Byggs om när man byter robot.
+let baseGroup = null;
+function buildRoom() {
+  if (baseGroup) scene.remove(baseGroup);
+  baseGroup = new THREE.Group();
+  const scene_ = scene, sceneAdd = (o) => baseGroup.add(o);
   const tileGeo = new THREE.BoxGeometry(1, 0.06, 1);
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-    const t = new THREE.Mesh(tileGeo, mat((x + y) % 2 ? 0xD6B48A : 0xCDA97C));
+    // Gräsmattan har klippränder: varannan rad ljusare.
+    const t = new THREE.Mesh(tileGeo, mat(LAWN ? (y % 2 ? 0x6FAE47 : 0x62A03D) : (x + y) % 2 ? 0xD6B48A : 0xCDA97C));
     t.position.copy(cellPos(x, y)).setY(-0.03);
     t.receiveShadow = true;
-    scene.add(t);
+    sceneAdd(t);
   }
   const pts = [];
   for (let i = 0; i <= N; i++) {
@@ -774,19 +803,49 @@ function box(w, h, d, color, x = 0, y = 0, z = 0) {
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
-  scene.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0x8C6E4A, transparent: true, opacity: 0.35 })));
-  const wall = 0xE4DED3, t = 0.16, half = N / 2 + t / 2;
-  scene.add(box(N + 2 * t, 0.9, t, wall, 0, -0.06, -half));
-  scene.add(box(t, 0.9, N, wall, -half, -0.06, 0));
-  scene.add(box(t, 0.9, N, wall, half, -0.06, 0));
-  scene.add(box(N + 2 * t, 0.22, t, wall, 0, -0.06, half));
-})();
+  sceneAdd(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: LAWN ? 0x3E6E27 : 0x8C6E4A, transparent: true, opacity: LAWN ? 0.25 : 0.35 })));
+  if (LAWN) buildFence(sceneAdd);
+  else {
+    const wall = 0xE4DED3, t = 0.16, half = N / 2 + t / 2;
+    sceneAdd(box(N + 2 * t, 0.9, t, wall, 0, -0.06, -half));
+    sceneAdd(box(t, 0.9, N, wall, -half, -0.06, 0));
+    sceneAdd(box(t, 0.9, N, wall, half, -0.06, 0));
+    sceneAdd(box(N + 2 * t, 0.22, t, wall, 0, -0.06, half));
+  }
+  scene_.add(baseGroup);
+  needsRender = true;
+}
+
+// Ett lågt trästaket runt tomten (lägre på framsidan så att det inte skymmer) och gräs utanför.
+function buildFence(add) {
+  const half = N / 2 + 0.08;
+  const outside = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), mat(0x4E8A33));
+  outside.rotation.x = -Math.PI / 2;
+  outside.position.y = -0.065;
+  outside.receiveShadow = true;
+  add(outside);
+  const plank = 0xC8A372, rail = 0x8F6A3E;
+  for (const [side, hgt] of [["n", 0.7], ["w", 0.7], ["e", 0.7], ["s", 0.22]]) {
+    for (let i = 0; i < N * 3; i++) {
+      const u = -N / 2 + (i + 0.5) / 3;
+      const [x, z] = side === "n" ? [u, -half] : side === "s" ? [u, half] : side === "w" ? [-half, u] : [half, u];
+      const horiz = side === "n" || side === "s";
+      add(box(horiz ? 0.22 : 0.05, hgt, horiz ? 0.05 : 0.22, plank, x, -0.06, z));
+    }
+    for (const y of hgt > 0.5 ? [0.15, 0.5] : [0.08]) {
+      const horiz = side === "n" || side === "s";
+      const [x, z] = side === "n" ? [0, -half - 0.05] : side === "s" ? [0, half + 0.05] : side === "w" ? [-half - 0.05, 0] : [half + 0.05, 0];
+      add(box(horiz ? N + 0.3 : 0.05, 0.06, horiz ? 0.05 : N + 0.3, rail, x, y - 0.06, z));
+    }
+  }
+}
 
 // Möbler byggs längs x (längd L, djup D) och vrids om de står på tvären.
 function makeFurniture(f) {
   const g = new THREE.Group();
   const L = Math.max(f.w, f.h), D = Math.min(f.w, f.h);
-  if (f.type === "soffa") {
+  if (LAWN) makeGardenThing(g, f, L, D);
+  else if (f.type === "soffa") {
     const c = 0x4F7CAC;
     g.add(box(L - 0.1, 0.32, D - 0.15, c, 0, 0, 0.02));
     g.add(box(L - 0.1, 0.42, 0.2, c, 0, 0.3, -D / 2 + 0.16));
@@ -830,6 +889,56 @@ function makeFurniture(f) {
   return g;
 }
 
+// Trädgårdens hinder har samma storlek som möblerna, så att samma nummer ger samma trädgård som rum.
+function makeGardenThing(g, f, L, D) {
+  const ball = (r, color, x, y, z, detail = 0) => {
+    const m = new THREE.Mesh(new THREE.IcosahedronGeometry(r, detail), mat(color, { flatShading: true }));
+    m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true;
+    g.add(m); return m;
+  };
+  if (f.type === "soffa") {          // rabatt: jordkant med blommor
+    g.add(box(L - 0.1, 0.14, D - 0.15, 0x6B4A2E));
+    g.add(box(L - 0.02, 0.06, 0.06, 0x9AA0A6, 0, 0, -D / 2 + 0.07));
+    g.add(box(L - 0.02, 0.06, 0.06, 0x9AA0A6, 0, 0, D / 2 - 0.07));
+    const flowers = [0xE5484D, 0xF5C542, 0xB06AD9, 0xF2F2F2, 0xF08A3C];
+    for (let i = 0; i < 9; i++) {
+      const x = -L / 2 + 0.3 + i * (L - 0.6) / 8, z = (i % 2 ? 0.14 : -0.12);
+      g.add(box(0.03, 0.22, 0.03, 0x3F7F3A, x, 0.14, z));
+      ball(0.09, 0x4E9A45, x, 0.24, z);
+      ball(0.07, flowers[i % flowers.length], x, 0.38, z);
+    }
+  } else if (f.type === "bord") {    // sandlåda med sand och en hink
+    const c = 0xB07A45;
+    g.add(box(L - 0.2, 0.22, 0.1, c, 0, 0, -D / 2 + 0.15));
+    g.add(box(L - 0.2, 0.22, 0.1, c, 0, 0, D / 2 - 0.15));
+    g.add(box(0.1, 0.22, D - 0.2, c, -L / 2 + 0.15, 0, 0));
+    g.add(box(0.1, 0.22, D - 0.2, c, L / 2 - 0.15, 0, 0));
+    g.add(box(L - 0.4, 0.14, D - 0.4, 0xE8D49A, 0, 0, 0));
+    const bucket = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.1, 0.22, 14), mat(0xE5484D));
+    bucket.position.set(0.3, 0.25, -0.2); bucket.castShadow = true;
+    g.add(bucket);
+    ball(0.16, 0xE0C88A, -0.3, 0.16, 0.25);
+  } else if (f.type === "hylla") {   // vedtrave
+    for (let row = 0; row < 3; row++) for (let i = 0; i < 6 - row; i++) {
+      const log = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, D - 0.3, 10), mat(i % 2 ? 0x8F6A3E : 0x7A5530));
+      log.rotation.x = Math.PI / 2;
+      log.position.set(-L / 2 + 0.3 + (i + row * 0.5) * 0.25, 0.11 + row * 0.2, 0);
+      log.castShadow = true;
+      g.add(log);
+    }
+  } else if (f.type === "fatolj") {  // stor sten
+    const s = ball(0.38, 0x8E9399, 0, 0.22, 0, 1);
+    s.scale.set(1, 0.7, 0.9);
+    ball(0.16, 0x7D8288, 0.3, 0.1, 0.2, 0);
+  } else if (f.type === "vaxt") {    // äppelträd
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.11, 0.8, 10), mat(0x6B4A2E));
+    trunk.position.y = 0.4; trunk.castShadow = true;
+    g.add(trunk);
+    for (const [x, y, z, r] of [[0, 1.0, 0, 0.42], [0.22, 0.9, 0.1, 0.3], [-0.2, 0.92, -0.08, 0.3], [0.05, 1.25, 0.02, 0.28]]) ball(r, 0x3F8F4F, x, y, z);
+    for (const [x, y, z] of [[0.3, 1.0, 0.2], [-0.25, 1.1, 0.2], [0.1, 0.8, -0.35], [-0.1, 1.3, 0.2]]) ball(0.06, 0xD8322F, x, y, z, 1);
+  }
+}
+
 function makeCharger() {
   const g = new THREE.Group();
   g.add(box(0.86, 0.03, 0.86, 0x37424D));
@@ -853,7 +962,30 @@ function makeDog() {
   return g;
 }
 
+// Robotgräsklippare: kantig kaross på fyra hjul med stora bakhjul (−z är framåt).
+function makeMower(color) {
+  const g = new THREE.Group();
+  g.add(box(0.56, 0.1, 0.66, 0x2B2B33, 0, 0.06, 0));
+  const shell = box(0.5, 0.1, 0.56, color, 0, 0.14, 0.03);
+  shell.material = mat(color, { roughness: 0.45 });
+  g.add(shell);
+  g.add(box(0.4, 0.07, 0.14, color, 0, 0.11, -0.3));
+  for (const [x, z, r] of [[-0.3, 0.2, 0.11], [0.3, 0.2, 0.11], [-0.25, -0.24, 0.07], [0.25, -0.24, 0.07]]) {
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.06, 16), mat(0x1B1B1F));
+    w.rotation.z = Math.PI / 2;
+    w.position.set(x, r, z);
+    w.castShadow = true;
+    g.add(w);
+  }
+  const eye = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 8),
+    new THREE.MeshStandardMaterial({ color: 0x5DFF9A, emissive: 0x2EE070, emissiveIntensity: 1.2 }));
+  eye.position.set(0, 0.26, -0.12);
+  g.add(eye);
+  return g;
+}
+
 function makeRobot(lidColor = 0xE8890C) {
+  if (LAWN) return makeMower(lidColor === 0xE8890C ? 0x84CC16 : lidColor);
   const g = new THREE.Group();
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.38, 0.14, 40), mat(0xEEF1F3, { roughness: 0.4 }));
   body.position.y = 0.09; body.castShadow = true;
@@ -874,7 +1006,29 @@ function makeRobot(lidColor = 0xE8890C) {
 
 const dirtMats = [mat(0x5A4632), mat(0x3D3226), mat(0x7A6650)];
 const dirtGeo = new THREE.SphereGeometry(0.075, 8, 6);
+// Högt gräs: en tuva strån som sticker upp ur gräsmattan.
+const bladeGeo = new THREE.ConeGeometry(0.03, 1, 4);
+bladeGeo.translate(0, 0.5, 0);
+const grassMats = [mat(0x3F7F22), mat(0x4E9A2A), mat(0x8FBF3A)];
+function makeTuft(x, y, seed) {
+  const g = new THREE.Group();
+  const r = makeRng(seed * 131 + idx(x, y));
+  for (let i = 0; i < 22; i++) {
+    const m = new THREE.Mesh(bladeGeo, grassMats[Math.floor(r() * grassMats.length)]);
+    const rad = Math.sqrt(r()) * 0.4, a = r() * Math.PI * 2;
+    m.position.set(Math.cos(a) * rad, 0, Math.sin(a) * rad);
+    m.scale.set(1, 0.22 + r() * 0.2, 1);
+    m.rotation.set((r() - 0.5) * 0.5, 0, (r() - 0.5) * 0.5);
+    m.castShadow = true;
+    g.add(m);
+  }
+  const p = cellPos(x, y);
+  g.position.set(p.x, 0, p.z);
+  return g;
+}
+
 function makeDirt(x, y, seed) {
+  if (LAWN) return makeTuft(x, y, seed);
   const g = new THREE.Group();
   const r = makeRng(seed * 131 + idx(x, y));
   const count = 6 + Math.floor(r() * 4);
@@ -1039,6 +1193,11 @@ function suckMesh(i) {
   if (!d) return;
   dirtMeshes.delete(i);
   const starts = d.children.map((m) => m.position.clone());
+  if (LAWN) {   // gräset klipps: stråna krymper ned mot marken
+    const s0 = d.children.map((m) => m.scale.y);
+    tween(320, (k) => d.children.forEach((m, j) => { m.scale.y = Math.max(0.01, s0[j] * (1 - ease(k))); }), () => group.remove(d));
+    return;
+  }
   tween(320, (k) => {
     d.children.forEach((m, j) => {
       m.position.lerpVectors(starts[j], new THREE.Vector3(0, 0.1, 0), ease(k));
@@ -1121,7 +1280,8 @@ function resize() {
 new ResizeObserver(resize).observe(view);
 
 function applyTheme() {
-  scene.background = new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue("--sky").trim() || "#DCE6EC");
+  const dark = matchMedia("(prefers-color-scheme: dark)").matches && document.documentElement.dataset.theme !== "light" || document.documentElement.dataset.theme === "dark";
+  scene.background = new THREE.Color(LAWN ? (dark ? "#1B2A3A" : "#A9D6F5") : getComputedStyle(document.documentElement).getPropertyValue("--sky").trim() || "#DCE6EC");
   needsRender = true;
 }
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme);
@@ -1167,22 +1327,22 @@ function updatePanel() {
   const p = percept(world), epi = world.settings.epi === 0;
   $("sScore").textContent = world.score;
   $("sMoves").textContent = world.moves;
-  $("sDirtLabel").textContent = epi ? "Episoder kvar" : "Smuts kvar";
+  $("sDirtLabel").textContent = epi ? "Episoder kvar" : tx("Smuts kvar", "Högt gräs kvar");
   $("sDirt").textContent = epi ? world.episodes - world.episode : p.dirtLeft === null ? "?" : p.dirtLeft;
   $("rDock").hidden = epi;
   $("rivalLine").hidden = !world.rival;
-  if (world.rival) $("rivalLine").textContent = "Rivalen: " + world.rival.score + " poäng, " + world.rival.cleaned + " smutsiga rutor uppsugna.";
+  if (world.rival) $("rivalLine").textContent = "Rivalen: " + world.rival.score + " poäng, " + world.rival.cleaned + tx(" smutsiga rutor uppsugna.", " rutor med högt gräs klippta.");
   $("pPos").textContent = "kolumn " + (p.x + 1) + ", rad " + (p.y + 1) + (p.onCharger ? " (laddstationen)" : "");
-  $("pCell").textContent = p.dirty ? "smutsig" : "ren";
-  $("pSeenLabel").textContent = epi ? "Episod" : "Smuts i rummet";
+  $("pCell").textContent = p.dirty ? tx("smutsig", "högt gräs") : tx("ren", "klippt");
+  $("pSeenLabel").textContent = epi ? "Episod" : tx("Smuts i rummet", "Högt gräs");
   if (epi) {
     $("pSeen").textContent = Math.min(world.episode + 1, world.episodes) + " av " + world.episodes;
   } else if (p.dirtLeft === null) {
     const kd = knowGrid().reduce((n, v) => n + (v === 1 ? 1 : 0), 0);
     p.knownDirt = kd;
-    $("pSeen").textContent = p.knownDirt + (p.knownDirt === 1 ? " känd smutsig ruta" : " kända smutsiga rutor") + ", resten okänt";
+    $("pSeen").textContent = p.knownDirt + (p.knownDirt === 1 ? tx(" känd smutsig ruta", " känd ruta") : tx(" kända smutsiga rutor", " kända rutor")) + ", resten okänt";
   } else {
-    $("pSeen").textContent = p.dirtLeft === 0 ? "allt rent – kör hem!" : p.dirtLeft + " rutor (syns alla)";
+    $("pSeen").textContent = p.dirtLeft === 0 ? tx("allt rent – kör hem!", "allt klippt – kör hem!") : p.dirtLeft + " rutor (syns alla)";
   }
   drawMap();
 }
@@ -1209,7 +1369,7 @@ function drawMap() {
       g.globalAlpha = 1;
       continue;
     }
-    g.fillStyle = k === 2 ? col("--muted") : (x + y) % 2 ? "#D6B48A" : "#CDA97C";
+    g.fillStyle = k === 2 ? col("--muted") : LAWN ? (y % 2 ? "#A8D98A" : "#9CCF7E") : (x + y) % 2 ? "#D6B48A" : "#CDA97C";
     g.fillRect(x0, y0, s, s);
     if (k === 3) {
       g.fillStyle = "rgba(60,50,40,.55)";
@@ -1217,7 +1377,12 @@ function drawMap() {
       g.textAlign = "center"; g.textBaseline = "middle";
       g.fillText("?", x0 + s / 2, y0 + s / 2 + 1);
     }
-    if (k === 1) {
+    if (k === 1 && LAWN) {   // högt gräs: några mörkgröna strån
+      g.strokeStyle = "#2F5E1A"; g.lineWidth = Math.max(1.5, s * 0.06); g.lineCap = "round";
+      g.beginPath();
+      for (const dx of [0.22, 0.36, 0.5, 0.64, 0.78]) { g.moveTo(x0 + dx * s, y0 + s * 0.8); g.lineTo(x0 + (dx + 0.06) * s, y0 + s * 0.22); }
+      g.stroke();
+    } else if (k === 1) {
       g.fillStyle = "#4A3A28";
       for (const [dx, dy] of [[0.3, 0.35], [0.62, 0.3], [0.45, 0.62], [0.7, 0.68], [0.25, 0.7]]) {
         g.beginPath(); g.arc(x0 + dx * s, y0 + dy * s, s * 0.08, 0, Math.PI * 2); g.fill();
@@ -1225,7 +1390,7 @@ function drawMap() {
     }
   }
   const ch = world.charger;
-  g.fillStyle = "#2E7D4F";
+  g.fillStyle = LAWN ? "#E0B10A" : "#2E7D4F";
   g.fillRect(ch.x * s + s * 0.15, ch.y * s + s * 0.15, s * 0.7, s * 0.7);
   if (world.settings.obs === 1) {
     // Ram runt det roboten ser just nu.
@@ -1252,7 +1417,7 @@ function drawMap() {
     g.beginPath(); g.arc((world.rival.x + 0.5) * s, (world.rival.y + 0.5) * s, s * 0.32, 0, Math.PI * 2); g.fill();
     g.strokeStyle = "#0F2A4A"; g.lineWidth = 1.5; g.stroke();
   }
-  g.fillStyle = "#E8890C";
+  g.fillStyle = LAWN ? "#84CC16" : "#E8890C";
   g.beginPath(); g.arc(world.robot.fx * s, world.robot.fy * s, s * 0.32, 0, Math.PI * 2); g.fill();
   g.strokeStyle = "#3A2300"; g.lineWidth = 1.5; g.stroke();
 }
@@ -1292,13 +1457,13 @@ function act(action) {
   updatePanel();
   const dice = ev.chance ? "🎲 " : "";
   if (ev.type === "bump") showToast(dice + "Krock med " + ev.what + "!", "bad");
-  else if (ev.type === "suck") showToast("+10 smuts uppsugen", "good");
-  else if (ev.type === "suck-fail") showToast(dice + "Sugningen misslyckades – smutsen ligger kvar", "bad");
-  else if (ev.type === "suck-empty") showToast("Rutan var redan ren", "");
-  else if (ev.type === "skip-dirty") showToast("Smutsen blev kvar", "bad");
+  else if (ev.type === "suck") showToast(tx("+10 smuts uppsugen", "+10 gräs klippt"), "good");
+  else if (ev.type === "suck-fail") showToast(dice + tx("Sugningen misslyckades – smutsen ligger kvar", "Kniven tog inte – gräset står kvar"), "bad");
+  else if (ev.type === "suck-empty") showToast(tx("Rutan var redan ren", "Rutan var redan klippt"), "");
+  else if (ev.type === "skip-dirty") showToast(tx("Smutsen blev kvar", "Det höga gräset blev kvar"), "bad");
   else if (ev.chance) showToast(dice + "Roboten slirade " + DIR_TEXT[world.robot.dir] + "!", "bad");
-  else if (ev.homeNotClean) showToast("Laddstationen: det finns smuts kvar i rummet", "");
-  if (dirtLeft(world) === 0 && !world.done && ev.type === "suck" && !ev.episode) showToast("Allt rent! Kör till laddstationen.", "good");
+  else if (ev.homeNotClean) showToast(tx("Laddstationen: det finns smuts kvar i rummet", "Laddstationen: det finns högt gräs kvar"), "");
+  if (dirtLeft(world) === 0 && !world.done && ev.type === "suck" && !ev.episode) showToast(tx("Allt rent! Kör till laddstationen.", "Allt klippt! Kör till laddstationen."), "good");
   if (ev.docked || ev.lastEpisode) finish();
   return ev;
 }
@@ -1320,7 +1485,7 @@ function rivalTurn() {
   if (ev.type === "move") moveMesh(rivalMesh, v.x, v.y, v.dir, 200);
   if (ev.type === "suck") {
     suckMesh(idx(ev.x, ev.y));
-    if (seenNow(v)) addLog({ text: "Rivalen sög upp smuts", points: 0 });
+    if (seenNow(v)) addLog({ text: tx("Rivalen sög upp smuts", "Rivalen klippte gräs"), points: 0 });
   }
   updateFog(true);
   updatePanel();
@@ -1334,8 +1499,8 @@ function dogTurn() {
   updateFog(true);
   updatePanel();
   if (ev.dropped && seenNow(ev.dropped)) {
-    showToast("Hunden drog in ny smuts!", "bad");
-    addLog({ text: "Hunden drog in smuts", points: 0 });
+    showToast(tx("Hunden drog in ny smuts!", "Hunden rev upp gräsmattan!"), "bad");
+    addLog({ text: tx("Hunden drog in smuts", "Hunden rev upp gräs"), points: 0 });
   }
 }
 
@@ -1369,7 +1534,7 @@ function driveTick(dt) {
     addLog({ text: "Krockade med " + out.bump, points: POINTS.step });
   }
   if (out.cell) updateFog(true);
-  if (out.homeNotClean) showToast("Laddstationen: det finns smuts kvar i rummet", "");
+  if (out.homeNotClean) showToast(tx("Laddstationen: det finns smuts kvar i rummet", "Laddstationen: det finns högt gräs kvar"), "");
   if (out.cell || out.cost || out.docked) updatePanel(); else drawMap();
   if (out.docked) {
     addLog({ text: "Körde in i laddstationen", points: POINTS.dock, docked: true });
@@ -1378,6 +1543,7 @@ function driveTick(dt) {
 }
 
 const ACT_TEXT = { upp: "Kör uppåt", ned: "Kör nedåt", "vänster": "Kör åt vänster", "höger": "Kör åt höger", sug: "Sug", "vänta": "Vänta" };
+const actText = (a) => (a === "sug" ? tx("Sug", "Klipp") : ACT_TEXT[a]);
 
 function aiStep() {
   if (!driver || world.done) { stopRun(); return; }
@@ -1386,18 +1552,18 @@ function aiStep() {
   showPlan3D(d.plan);
   const ev = act(d.action);
   $("thinkWhy").textContent = d.why;
-  let actText = "Handling: " + ACT_TEXT[d.action];
-  if (ev && ev.chance) actText += " – men slumpen ändrade utfallet: " + ev.text.toLowerCase() + ".";
-  $("thinkAct").textContent = actText;
+ let actLine = "Handling: " + actText(d.action);
+  if (ev && ev.chance) actLine += " – men slumpen ändrade utfallet: " + ev.text.toLowerCase() + ".";
+  $("thinkAct").textContent = actLine;
   if (world.done) { stopRun(); return; }
   rivalTurn();
   dogTurn();
   if (d.believesDone && dirtLeft(world) > 0 && world.settings.epi !== 0) {
     stopRun();
-    showBanner("Agenten tror att den är klar", "Men det finns " + dirtLeft(world) + " smutsiga rutor kvar som den inte vet om.", "warn");
+    showBanner("Agenten tror att den är klar", "Men det finns " + dirtLeft(world) + tx(" smutsiga rutor", " rutor med högt gräs") + " kvar som den inte vet om.", "warn");
   } else if (world.moves >= MAX_AI_MOVES) {
     stopRun();
-    showBanner("Agenten gav upp", "Efter " + MAX_AI_MOVES + " drag fanns det " + dirtLeft(world) + " smutsiga rutor kvar.", "warn");
+    showBanner("Agenten gav upp", "Efter " + MAX_AI_MOVES + " drag fanns det " + dirtLeft(world) + tx(" smutsiga rutor", " rutor med högt gräs") + " kvar.", "warn");
   }
 }
 
@@ -1422,26 +1588,26 @@ function newDriver() {
   rivalAgent = world.rival ? AGENTS.mal.make(world.seed + 7) : null;
   dogClock = rivalClock = 0;
   held.clear();
-  const s = world.settings, notes = [AGENT_INFO[$("agentSel").value]];
-  if (s.obs === 1) notes.push("I dimman känner agenten bara av om dess egen ruta är smutsig och om grannrutorna är fria.");
-  if (s.epi === 0) notes.push("Episodiskt: varje drag är en ny episod. Alla agenter suger när rutan är smutsig – minne och planering hjälper inte här.");
-  if (s.sta === 1) notes.push("Ny smuts från hunden märker agenten först när den ser den. Den nyttobaserade agenten börjar patrullera när den upptäcker att världen ändras.");
-  if (s.dis === 1) notes.push("Kontinuerligt: lektionens agenter kan bara tänka i rutor. De lägger ett rutnät över rummet – diskretiserar – och kör mellan rutornas mittpunkter.");
-  if (s.ag === 1) notes.push("Rivalen är en målbaserad agent som städar samtidigt.");
+  const s = world.settings, notes = [(LAWN ? AGENT_INFO_LAWN : AGENT_INFO)[$("agentSel").value]];
+  if (s.obs === 1) notes.push(tx("I dimman känner agenten bara av om dess egen ruta är smutsig och om grannrutorna är fria.", "I mörkret känner agenten bara av om gräset på dess egen ruta är högt och om grannrutorna är fria."));
+  if (s.epi === 0) notes.push(tx("Episodiskt: varje drag är en ny episod. Alla agenter suger när rutan är smutsig – minne och planering hjälper inte här.", "Episodiskt: varje drag är en ny episod. Alla agenter klipper när gräset är högt – minne och planering hjälper inte här."));
+  if (s.sta === 1) notes.push(tx("Ny smuts från hunden märker agenten först när den ser den.", "Gräs som hunden rivit upp märker agenten först när den ser det.") + " Den nyttobaserade agenten börjar patrullera när den upptäcker att världen ändras.");
+  if (s.dis === 1) notes.push("Kontinuerligt: lektionens agenter kan bara tänka i rutor. De lägger ett rutnät över " + tx("rummet", "trädgården") + " – diskretiserar – och kör mellan rutornas mittpunkter.");
+  if (s.ag === 1) notes.push(tx("Rivalen är en målbaserad agent som städar samtidigt.", "Rivalen är en målbaserad agent som klipper samtidigt."));
   $("agentDesc").textContent = notes.join(" ");
 }
 
 const DEFAULT_HELP = $("keysHelp").innerHTML;
 function renderHelp() {
   const h = $("keysHelp");
-  if (settings.epi === 0) h.innerHTML = "<p>Varje drag är en egen episod. Tryck <b>Sug</b> om rutan är smutsig, annars en pil för att gå vidare.</p><p>Efter varje drag lyfts roboten till en ny, slumpad ruta. Det finns ingen laddstation att hinna till.</p>";
+  if (settings.epi === 0) h.innerHTML = tx("<p>Varje drag är en egen episod. Tryck <b>Sug</b> om rutan är smutsig, annars en pil för att gå vidare.</p>", "<p>Varje drag är en egen episod. Tryck <b>Klipp</b> om gräset är högt, annars en pil för att gå vidare.</p>") + "<p>Efter varje drag lyfts roboten till en ny, slumpad ruta. Det finns ingen laddstation att hinna till.</p>";
   else if (settings.dis === 1) h.innerHTML = "<p>Håll inne <b>↑</b> för att köra framåt och <b>↓</b> för att backa. <b>←</b> och <b>→</b> svänger roboten.</p><p>Varje rutlängd du kör och varje kvarts varv du svänger kostar ett drag, och en krock kostar också ett drag.</p>";
-  else h.innerHTML = DEFAULT_HELP;
+  else { h.innerHTML = DEFAULT_HELP; applyWords(h); }
 }
 
 function setMode(m) {
   mode = m;
-  document.querySelectorAll(".modes button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.mode === m)));
+  document.querySelectorAll(".modes [data-mode]").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.mode === m)));
   $("aiBox").hidden = m !== "ai";
   $("humanBox").hidden = m === "ai";
   startWorld(world.seed);
@@ -1462,12 +1628,12 @@ function finish() {
   const who = mode === "ai" ? "Agenten (" + AGENTS[driver.kind].namn.toLowerCase() + ") fick " : "";
   if (world.settings.epi === 0) {
     showBanner("Alla episoder klara!", (who || "Du fick ") + world.score + " poäng. " + world.cleaned + " av " + world.totalDirt +
-      " smutsiga rutor sögs upp på " + world.episodes + " episoder. Hade det hjälpt att minnas tidigare episoder?");
+      tx(" smutsiga rutor sögs upp på ", " rutor med högt gräs klipptes på ") + world.episodes + " episoder. Hade det hjälpt att minnas tidigare episoder?");
     return;
   }
-  const rival = world.rival ? " Rivalen sög upp " + world.rival.cleaned + " av de " + world.totalDirt + " smutsiga rutorna." : "";
-  showBanner("Rummet är städat!", who + world.score + " poäng på " + world.moves + " drag i en " + envWords(world.settings) +
-    " miljö." + rival + (mode === "ai" ? " Klarar du det bättre själv?" : " Kan du klara samma rum på färre drag?"));
+  const rival = world.rival ? tx(" Rivalen sög upp ", " Rivalen klippte ") + world.rival.cleaned + " av de " + world.totalDirt + tx(" smutsiga rutorna.", " rutorna med högt gräs.") : "";
+  showBanner(tx("Rummet är städat!", "Gräsmattan är klippt!"), who + world.score + " poäng på " + world.moves + " drag i en " + envWords(world.settings) +
+    " miljö." + rival + (mode === "ai" ? " Klarar du det bättre själv?" : tx(" Kan du klara samma rum på färre drag?", " Kan du klara samma trädgård på färre drag?")));
 }
 
 let settings = defaultSettings();
@@ -1479,6 +1645,7 @@ function startWorld(seed) {
   $("log").innerHTML = "";
   const url = new URL(location.href);
   url.searchParams.set("rum", seed);
+  if (LAWN) url.searchParams.set("robot", "grasklippare"); else url.searchParams.delete("robot");
   PROPERTIES.forEach((p) => {
     if (settings[p.key] !== (p.start ?? 0)) url.searchParams.set(p.param, p.values[settings[p.key]]);
     else url.searchParams.delete(p.param);
@@ -1537,14 +1704,14 @@ function renderEnv() {
   list.innerHTML = "";
   if (!active.length) {
     const li = document.createElement("li");
-    li.textContent = "Alla reglage står i startläget. Rummet är sekventiellt: det du gör nu påverkar resten av städningen.";
+    li.textContent = tx("Alla reglage står i startläget. Rummet är sekventiellt: det du gör nu påverkar resten av städningen.", "Alla reglage står i startläget. Trädgården är sekventiell: det du gör nu påverkar resten av klippningen.");
     list.appendChild(li);
   }
   active.forEach((p) => {
     const li = document.createElement("li");
     li.innerHTML = "<b></b> ";
     li.firstChild.textContent = (settings[p.key] ? p.right : p.left) + ":";
-    li.append(settings[p.key] ? p.hard : p.easy);
+    li.append(settings[p.key] ? (LAWN && p.hardLawn) || p.hard : (LAWN && p.easyLawn) || p.easy);
     list.appendChild(li);
   });
 }
@@ -1585,6 +1752,31 @@ function useSeedInput() {
 $("seedBtn").addEventListener("click", useSeedInput);
 seedIn.addEventListener("keydown", (e) => { if (e.key === "Enter") useSeedInput(); });
 
+// Byter ord i sidans fasta text: element med data-lawn har en trädgårdsversion.
+function applyWords(root = document) {
+  root.querySelectorAll("[data-lawn]").forEach((el) => {
+    if (el.dataset.vac === undefined) el.dataset.vac = el.innerHTML;
+    el.innerHTML = LAWN ? el.dataset.lawn : el.dataset.vac;
+  });
+}
+function setRobot(lawn) {
+  LAWN = lawn;
+  document.querySelectorAll("[data-robot]").forEach((b) => b.setAttribute("aria-checked", String((b.dataset.robot === "gras") === lawn)));
+  document.title = (lawn ? "Miljölabbet – robotgräsklippare" : "Miljölabbet") + " – AI 1";
+  renderer.domElement.setAttribute("aria-label", tx("Rummet", "Trädgården") + " i 3D, sett snett ovanifrån. Använd piltangenterna för att styra roboten.");
+  $("map").setAttribute("aria-label", "Robotens karta över " + tx("rummet", "trädgården"));
+  applyWords();
+  applyTheme();
+  buildRoom();
+}
+document.querySelectorAll("[data-robot]").forEach((b) => b.addEventListener("click", () => {
+  const lawn = b.dataset.robot === "gras";
+  if (lawn === LAWN) return;
+  setRobot(lawn);
+  startWorld(world.seed);
+  showToast(lawn ? "Nu är du en robotgräsklippare" : "Nu är du en städrobot", "");
+}));
+
 // För felsökning och för att testa modellen i konsolen.
 Object.entries(AGENTS).forEach(([k, a]) => {
   const o = document.createElement("option");
@@ -1593,7 +1785,7 @@ Object.entries(AGENTS).forEach(([k, a]) => {
 });
 $("agentSel").value = "mal";
 $("agentSel").addEventListener("change", () => startWorld(world.seed));
-document.querySelectorAll(".modes button").forEach((b) => b.addEventListener("click", () => { if (b.dataset.mode !== mode) setMode(b.dataset.mode); }));
+document.querySelectorAll(".modes [data-mode]").forEach((b) => b.addEventListener("click", () => { if (b.dataset.mode !== mode) setMode(b.dataset.mode); }));
 $("stepBtn").addEventListener("click", () => { stopRun(); aiStep(); });
 $("runBtn").addEventListener("click", () => (runTimer ? stopRun() : startRun()));
 $("speed").addEventListener("input", () => $("speed").setAttribute("aria-valuetext", SPEED_NAMES[+$("speed").value]));
@@ -1601,8 +1793,8 @@ $("speed").addEventListener("input", () => $("speed").setAttribute("aria-valuete
 window.miljo = { createWorld, step, percept, get world() { return world; }, get settings() { return settings; }, get driver() { return driver; }, act, aiStep, setMode, drive, dogStep, rivalStep };
 
 renderSwitches();
-applyTheme();
 const params = new URLSearchParams(location.search);
+setRobot(params.get("robot") === "grasklippare");
 PROPERTIES.forEach((p) => {
   const v = p.values.indexOf(params.get(p.param));
   settings[p.key] = v >= 0 ? v : p.start ?? 0;

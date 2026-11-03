@@ -444,8 +444,8 @@ dialog textarea{width:100%;font-family:"JetBrains Mono",ui-monospace,Consolas,mo
     if (n > 1 && a.every(function (v, k) { return v === k; })) { t = a[0]; a[0] = a[1]; a[1] = t; }
     return a;
   }
-  var KW = /^(def|return|if|elif|else|for|in|import|from|as|while|True|False|None|and|or|not|pass)$/;
-  var BI = /^(print|input|int|float|str|len|max|min|sum|range|type)$/;
+  var KW = /^(def|return|if|elif|else|for|in|import|from|as|while|break|continue|True|False|None|and|or|not|pass)$/;
+  var BI = /^(print|input|int|float|str|len|max|min|sum|range|type|round|abs)$/;
   function hl(src) {
     var re = /(#.*)|([fF]?"(?:[^"\\\n]|\\.)*"|[fF]?'(?:[^'\\\n]|\\.)*')|([A-Za-z_]\w*)|(\d+(?:\.\d+)?)/g;
     var out = "", last = 0, m;

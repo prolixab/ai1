@@ -99,12 +99,31 @@ window.PYAI = {
       },
       {
         title: "Prata med användaren",
-        tasks: ["p2-input-typ", "p2-int", "p2-fstring", "p2-kod-input", "p2-kod-alder10"],
-        html: "<ul><li><code>input()</code> frågar användaren och väntar på svar. Här öppnas en ruta där du skriver svaret.</li>" +
-          "<li>Svaret är <b>alltid text</b>. Vill du räkna – gör om det med <code>int()</code>.</li>" +
+        tasks: ["p2-input-flode", "p2-input-typ", "p2-int", "p2-fstring", "p2-kod-input", "p2-kod-alder10"],
+        html: "<p>Hittills har programmen gjort exakt samma sak varje gång. Med <code>input()</code> kan programmet <b>fråga</b> användaren och använda svaret. Så här går det till:</p>" +
+          "<ol><li>Programmet <b>stannar</b> på raden och visar texten inom parentesen – frågan.</li>" +
+          "<li>Användaren skriver ett svar och trycker <kbd>Enter</kbd>. Här i webbläsaren öppnas en ruta för svaret. I Thonny eller VS Code skriver du svaret där utskriften syns.</li>" +
+          "<li><code>input()</code> <b>lämnar tillbaka</b> svaret. Spara det i en variabel – annars försvinner det.</li></ol>" +
+          "<ul><li>Avsluta frågan med ett mellanslag, <code>\"Vad heter du? \"</code>, så att svaret inte klistras ihop med frågetecknet.</li>" +
+          "<li>Svaret är <b>alltid text</b> – även om användaren skriver en siffra. Vill du räkna – gör om det med <code>int()</code>.</li>" +
           "<li>Ett <code>f</code> före citattecknet låter dig stoppa in variabler med <code>{ }</code>.</li></ul>" +
           "<p>Prova att ta bort <code>int()</code> och kör igen – vad händer?</p>",
         code: 'namn = input("Vad heter du? ")\nprint(f"Hej {namn}!")\nalder = int(input("Ålder? "))\nprint(f"Om 10 år är du {alder + 10}")'
+      },
+      {
+        title: "Räkna med indata",
+        tasks: ["p2-input-text", "p2-float", "p2-komma", "p2-kod-temp", "p2-kod-snitt"],
+        html: "<p>Svaret från <code>input()</code> är text. Innan du räknar gör du om det till rätt sorts tal:</p>" +
+          "<table><thead><tr><th>Funktion</th><th>Gör om till</th><th>Exempel</th></tr></thead><tbody>" +
+          "<tr><td><code>int()</code></td><td>Heltal</td><td><code>int(\"16\")</code> → <code>16</code></td></tr>" +
+          "<tr><td><code>float()</code></td><td>Decimaltal</td><td><code>float(\"1.75\")</code> → <code>1.75</code></td></tr>" +
+          "<tr><td><code>str()</code></td><td>Text</td><td><code>str(16)</code> → <code>\"16\"</code></td></tr></tbody></table>" +
+          "<ul><li><b>Decimalkomma.</b> Python vill ha punkt. Skriver användaren <code>1,75</code> blir det <code>ValueError</code>. Byt kommat mot en punkt först: <code>input(\"Längd? \").replace(\",\", \".\")</code>.</li>" +
+          "<li><b>Flera värden?</b> Ställ en fråga per värde – ett <code>input()</code> för varje.</li>" +
+          "<li><b>Text där det ska vara ett tal</b>, t.ex. <code>int(\"hej\")</code>, ger också <code>ValueError</code>.</li>" +
+          "<li><code>round(x, 2)</code> avrundar till två decimaler.</li></ul>" +
+          "<p><b>AI-koppling:</b> en modell förstår bara tal. Allt som ska in i den – text, bilder, ljud – måste först göras om till tal, precis som här.</p>",
+        code: 'pris = float(input("Vad kostar pizzan? ").replace(",", "."))\nbitar = int(input("Hur många bitar? "))\nprint(f"Varje bit kostar {round(pris / bitar, 2)} kr")'
       },
       {
         title: "Listor håller många värden",
@@ -115,10 +134,11 @@ window.PYAI = {
       },
       {
         title: "Villkor låter programmet välja",
-        tasks: ["p2-if", "p2-jamfor", "p2-ordna-if", "p2-kod-betyg"],
+        tasks: ["p2-if", "p2-jamfor", "p2-ordna-if", "p2-kod-betyg", "p2-kod-svar"],
         html: "<ul><li><code>if</code> = om, <code>elif</code> = annars om, <code>else</code> = annars.</li><li>Varje villkor slutar med kolon <code>:</code></li>" +
           "<li>Koden som hör till villkoret får <b>indrag</b> – fyra mellanslag eller Tab. I Python är indraget en del av språket.</li>" +
-          "<li>Jämförelser: <code>==</code> <code>!=</code> <code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code>. Obs: <code>=</code> tilldelar, <code>==</code> jämför.</li></ul>",
+          "<li>Jämförelser: <code>==</code> <code>!=</code> <code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code>. Obs: <code>=</code> tilldelar, <code>==</code> jämför.</li>" +
+          "<li>Jämför du ett textsvar från <code>input()</code>? <code>\"Ja\" == \"ja\"</code> är <code>False</code>. Med <code>svar.strip().lower()</code> tas mellanslag runt svaret bort och alla bokstäver blir små – då blir både <code>\" Ja\"</code> och <code>\"JA\"</code> till <code>\"ja\"</code>.</li></ul>",
         code: 'poang = 72\nif poang >= 90:\n    print("Toppen!")\nelif poang >= 60:\n    print("Godkänt")\nelse:\n    print("Försök igen")'
       },
       {
@@ -127,6 +147,16 @@ window.PYAI = {
         html: "<ul><li><code>for</code> går igenom något, ett element i taget.</li><li><code>range(3)</code> ger talen 0, 1 och 2.</li>" +
           "<li><b>AI-koppling:</b> en modell tränas genom att loopa över datan om och om igen – varje varv kallas en <b>epok</b>.</li></ul>",
         code: 'elever = ["Ali", "Sara"]\nfor elev in elever:\n    print(f"Hej {elev}!")\nfor epok in range(2):\n    print("Tränar, varv", epok)'
+      },
+      {
+        title: "while – fråga tills det blir rätt",
+        tasks: ["p2-while", "p2-kod-losen", "p2-kod-gissa"],
+        html: "<p><code>for</code> passar när du vet hur många varv det blir. När du inte vet – t.ex. hur många gånger användaren behöver gissa – använder du <code>while</code>.</p>" +
+          "<ul><li><code>while villkor:</code> kör den indragna koden om och om igen <b>så länge</b> villkoret är sant.</li>" +
+          "<li><code>break</code> hoppar ur loopen direkt. <code>while True:</code> med en <code>break</code> inuti är ett vanligt sätt att fråga tills användaren skriver något särskilt.</li>" +
+          "<li>Något i loopen måste kunna göra villkoret falskt – annars snurrar den för evigt. Fastnar ett program i Thonny eller VS Code stoppar du det med <kbd>Ctrl</kbd>+<kbd>C</kbd>. Fryser sidan här – ladda om den.</li></ul>" +
+          "<p><b>AI-koppling:</b> en chattbot är i grunden en <code>while</code>-loop: läs en fråga, svara, vänta på nästa.</p>",
+        code: 'summa = 0\nwhile True:\n    svar = input("Skriv ett tal (eller klar): ")\n    if svar == "klar":\n        break\n    summa = summa + int(svar)\nprint("Summan är", summa)'
       },
       {
         title: "Felmeddelanden är dina vänner",
@@ -139,6 +169,17 @@ window.PYAI = {
           "<tr><td><code>TypeError</code></td><td>Blandar text och tal, t.ex. <code>\"5\" + 3</code></td></tr></tbody></table>" +
           "<p><b>Tips:</b> skriv några rader i taget och kör ofta. Fråga gärna en AI <i>varför</i> du får ett fel – men be om en ledtråd, inte hela lösningen.</p>",
         code: 'print("5" + 3)'
+      },
+      {
+        title: "Projekt: bygg egna program",
+        tasks: ["p2-kod-kalk", "p2-kod-quiz", "p2-kod-inkop"],
+        html: "<p>Nu kan du allt som behövs för att bygga små riktiga program: ta emot indata, räkna, välja och upprepa. Uppgifterna här är större – så jobba som en programmerare:</p>" +
+          "<ol><li><b>Vad ska in?</b> Vilka frågor ska programmet ställa – och ska svaren vara text eller tal?</li>" +
+          "<li><b>Vad ska ut?</b> Bestäm exakt vad som ska skrivas ut för ett exempel.</li>" +
+          "<li><b>Lite i taget.</b> Skriv några rader, kör, kolla – och bygg vidare.</li>" +
+          "<li><b>Testa konstiga svar.</b> Vad händer om användaren skriver stora bokstäver, ett mellanslag för mycket eller ett decimalkomma?</li></ol>" +
+          "<p>Exemplet är en mycket enkel chattbot. <code>\"namn\" in fraga</code> kollar om ordet finns någonstans i texten. Kör den och bygg vidare i Fri lek!</p>",
+        code: 'print("Hej! Jag är PyBot. Skriv hejdå för att sluta.")\nwhile True:\n    fraga = input("Du: ").strip().lower()\n    if fraga == "hejdå":\n        print("PyBot: Hejdå!")\n        break\n    elif "namn" in fraga or "heter" in fraga:\n        print("PyBot: Jag heter PyBot.")\n    elif "python" in fraga:\n        print("PyBot: Python är mitt favoritspråk!")\n    else:\n        print("PyBot: Det förstod jag inte. Fråga om mitt namn eller om Python.")'
       }
     ],
     p3: [
@@ -335,6 +376,18 @@ assert f"{namn} är {alder} år" in _out, "Utskriften ska bli: namn är ålder �
       explain: "<code>int</code> heltal, <code>float</code> decimaltal, <code>str</code> text och <code>bool</code> sant/falskt."
     },
     {
+      id: "p2-input-flode", part: "p2", type: "mc", title: "Vad gör input()?",
+      q: 'Vad händer när Python kommer till raden <code>namn = input("Vad heter du? ")</code>?',
+      options: [
+        "Programmet visar frågan och väntar tills användaren har skrivit ett svar och tryckt Enter – svaret hamnar i <code>namn</code>",
+        "Python hittar själv på ett namn och sparar det i <code>namn</code>",
+        "Frågan skrivs ut, men programmet fortsätter direkt utan att vänta",
+        "Programmet skriver ut texten <code>namn</code>"
+      ],
+      answer: 0,
+      explain: "<code>input()</code> pausar programmet. När användaren tryckt Enter lämnas svaret tillbaka och sparas i variabeln."
+    },
+    {
       id: "p2-input-typ", part: "p2", type: "mc", title: "Svaret från input()",
       q: "Vilken typ har svaret som <code>input()</code> ger tillbaka?",
       options: ["Alltid text (<code>str</code>)", "Alltid heltal (<code>int</code>)", "Det beror på vad användaren skriver", "<code>bool</code>"],
@@ -374,6 +427,60 @@ assert f"{namn} är {alder} år" in _out, "Utskriften ska bli: namn är ålder �
       hint: "Svaret från <code>input()</code> är text. Gör om det till ett heltal med <code>int()</code> innan du räknar.",
       runs: [{ inputs: ["16"], contains: ["26"] }, { inputs: ["40"], contains: ["50"] }],
       explain: "<code>int()</code> gör om texten till ett tal. Utan den får du <code>TypeError</code>."
+    },
+    {
+      id: "p2-input-text", part: "p2", type: "output", title: "Text plus text",
+      q: "Användaren svarar <code>5</code>. Vad skriver <code>print</code>-raden ut?",
+      code: 'x = input("Ett tal? ")\nprint(x + x)',
+      answer: "55",
+      near: { "10": "Svaret från <code>input()</code> är texten <code>\"5\"</code>. Vad händer när man lägger ihop två texter?" },
+      hint: "Vilken typ har svaret från <code>input()</code>?",
+      explain: "<code>x</code> är texten <code>\"5\"</code>, och <code>+</code> mellan två texter sätter ihop dem: <code>\"55\"</code>. Med <code>int(input(...))</code> hade det blivit 10."
+    },
+    {
+      id: "p2-float", part: "p2", type: "mc", title: "Decimaltal från användaren",
+      q: "Användaren ska skriva sin längd i meter, t.ex. <code>1.75</code>. Vilken rad sparar svaret så att du kan räkna med det?",
+      options: [
+        '<code>langd = float(input("Längd? "))</code>',
+        '<code>langd = int(input("Längd? "))</code>',
+        '<code>langd = input("Längd? ")</code>',
+        '<code>langd = str(input("Längd? "))</code>'
+      ],
+      answer: 0,
+      explain: "<code>float()</code> gör om texten till ett decimaltal. <code>int(\"1.75\")</code> ger <code>ValueError</code>, och utan omvandling är svaret fortfarande text."
+    },
+    {
+      id: "p2-komma", part: "p2", type: "mc", title: "Decimalkomma",
+      q: 'Användaren skriver <code>1,75</code> – med komma. Vad händer på raden <code>langd = float(input("Längd? "))</code>?',
+      options: [
+        "Programmet kraschar med <code>ValueError</code>",
+        "<code>langd</code> blir 1.75",
+        "<code>langd</code> blir 1",
+        "<code>langd</code> blir 175"
+      ],
+      answer: 0,
+      explain: "Python använder punkt som decimaltecken. Byt kommat först: <code>float(input(\"Längd? \").replace(\",\", \".\"))</code>."
+    },
+    {
+      id: "p2-kod-temp", part: "p2", type: "code", title: "Celsius till Fahrenheit",
+      q: "Fråga efter en temperatur i Celsius och skriv ut den i Fahrenheit. Formeln är <code>F = C · 1,8 + 32</code>.<br>Temperaturen kan vara ett decimaltal – även med decimalkomma, t.ex. <code>37,5</code>.",
+      starter: "",
+      solution: 'c = float(input("Grader Celsius? ").replace(",", "."))\nf = c * 1.8 + 32\nprint(f"Det är {f} grader Fahrenheit")',
+      hint: 'Använd <code>float()</code> och <code>.replace(",", ".")</code>. Multiplikation skrivs <code>*</code> och decimaltal med punkt: <code>1.8</code>.',
+      runs: [{ inputs: ["20"], contains: ["68"] }, { inputs: ["-5"], contains: ["23"] }, { inputs: ["37,5"], contains: ["99.5"] }],
+      explain: "Testet körde programmet med 20, −5 och 37,5. Tack vare <code>replace</code> klarar programmet både punkt och komma."
+    },
+    {
+      id: "p2-kod-snitt", part: "p2", type: "code", title: "Medelvärde av tre prov",
+      q: "Fråga efter poängen på tre prov, ett i taget, och skriv ut medelvärdet på sista raden, t.ex. <code>Medelvärdet är 80.0</code>.",
+      starter: "",
+      solution: 'a = int(input("Prov 1? "))\nb = int(input("Prov 2? "))\nc = int(input("Prov 3? "))\nsnitt = (a + b + c) / 3\nprint("Medelvärdet är", round(snitt, 1))',
+      hint: "Tre <code>int(input(...))</code>. Glöm inte parenteserna: <code>(a + b + c) / 3</code> – annars delas bara <code>c</code> med 3.",
+      runs: [
+        { inputs: ["70", "80", "90"], test: "assert '80' in _out.strip().split('\\n')[-1], 'Med 70, 80 och 90 ska medelvärdet bli 80 – på sista raden.'" },
+        { inputs: ["60", "75", "100"], test: "assert '78.3' in _out.strip().split('\\n')[-1], 'Med 60, 75 och 100 ska medelvärdet bli 78.3… – på sista raden.'" }
+      ],
+      explain: "Summan delad med antalet. Utan parenteser räknar Python <code>a + b + c / 3</code> – division går före addition, precis som i matten."
     },
     {
       id: "p2-index", part: "p2", type: "output", title: "Index i en lista",
@@ -447,6 +554,20 @@ assert poang == [72, 85, 90, 64], "Lägg till 64 sist i listan med poang.append(
       explain: "Testet körde programmet med 95, 72 och 30. Villkoren prövas uppifrån – den första som stämmer vinner."
     },
     {
+      id: "p2-kod-svar", part: "p2", type: "code", title: "Ja eller JA?",
+      q: "Fråga <code>Gillar du Python?</code>. Svarar användaren ja – oavsett stora bokstäver och mellanslag – ska programmet skriva <code>Toppen!</code>. Annars ska det skriva <code>Synd, ge det en chans till.</code>",
+      starter: 'svar = input("Gillar du Python? ")\n',
+      solution: 'svar = input("Gillar du Python? ").strip().lower()\nif svar == "ja":\n    print("Toppen!")\nelse:\n    print("Synd, ge det en chans till.")',
+      hint: '<code>svar.strip().lower()</code> gör om <code>" JA "</code> till <code>"ja"</code>. Jämför sedan med <code>==</code>.',
+      runs: [
+        { inputs: ["ja"], contains: ["Toppen!"], excludes: ["Synd"] },
+        { inputs: ["  JA "], contains: ["Toppen!"], excludes: ["Synd"] },
+        { inputs: ["Ja"], contains: ["Toppen!"], excludes: ["Synd"] },
+        { inputs: ["nej"], contains: ["Synd"], excludes: ["Toppen!"] }
+      ],
+      explain: "Användare skriver på alla möjliga sätt. Att städa svaret innan du jämför gör programmet mycket mer användarvänligt."
+    },
+    {
       id: "p2-range", part: "p2", type: "output", title: "for och range",
       q: "Vad skriver programmet ut? (Skriv en rad per utskrift.)",
       code: "for i in range(3):\n    print(i)",
@@ -479,6 +600,39 @@ assert all(p in it for p in [7 * i for i in range(1, 11)]), "Utskriften ska inne
       explain: "Loopen kör den indragna raden tio gånger, en gång för varje tal från <code>range(1, 11)</code>."
     },
     {
+      id: "p2-while", part: "p2", type: "output", title: "Så länge villkoret är sant",
+      q: "Vad skriver programmet ut?",
+      code: "n = 1\nwhile n < 20:\n    n = n * 2\nprint(n)",
+      answer: "32",
+      near: { "16": "Kolla villkoret när <code>n</code> är 16: är 16 &lt; 20? Då blir det ett varv till.", "20": "<code>n</code> dubblas varje varv: 1, 2, 4, 8 …" },
+      hint: "Skriv upp värdet på <code>n</code> efter varje varv: 1, 2, 4 … Loopen slutar först när villkoret är falskt.",
+      explain: "<code>n</code> blir 2, 4, 8, 16 och 32. När <code>n</code> är 32 är villkoret falskt och loopen slutar. <code>print</code> saknar indrag och körs bara en gång, efter loopen."
+    },
+    {
+      id: "p2-kod-losen", part: "p2", type: "code", title: "Lösenordskoll",
+      q: "Fråga efter ett lösenord tills användaren skriver <code>drake</code>. Efter varje fel svar skriver programmet <code>Fel lösenord, försök igen.</code> När svaret är rätt skriver det <code>Välkommen in!</code>",
+      starter: "",
+      solution: 'losen = input("Lösenord? ")\nwhile losen != "drake":\n    print("Fel lösenord, försök igen.")\n    losen = input("Lösenord? ")\nprint("Välkommen in!")',
+      hint: 'Fråga en gång före loopen. Sedan: <code>while losen != "drake":</code> – skriv felmeddelandet och fråga igen inne i loopen.',
+      runs: [
+        { inputs: ["kalle", "1234", "drake"], contains: ["Fel lösenord", "Välkommen in!"] },
+        { inputs: ["drake"], contains: ["Välkommen in!"], excludes: ["Fel lösenord"] }
+      ],
+      explain: "Loopen snurrar så länge svaret är fel. Programmet vet inte i förväg hur många försök som behövs – därför <code>while</code> och inte <code>for</code>."
+    },
+    {
+      id: "p2-kod-gissa", part: "p2", type: "code", title: "Gissa talet",
+      q: "Låt användaren gissa det hemliga talet tills hen hittar det. Efter varje gissning skriver programmet <code>För högt</code>, <code>För lågt</code> eller <code>Rätt!</code> – och vid rätt svar ska loopen sluta.",
+      starter: "hemligt = 7   # testet räknar med 7 – byt till ett slumptal när du är klar\n\n",
+      solution: 'hemligt = 7\n\nwhile True:\n    gissning = int(input("Gissa ett tal mellan 1 och 20: "))\n    if gissning > hemligt:\n        print("För högt")\n    elif gissning < hemligt:\n        print("För lågt")\n    else:\n        print("Rätt!")\n        break',
+      hint: "<code>while True:</code> med en <code>int(input(...))</code> inuti. Jämför med <code>&gt;</code> och <code>&lt;</code>, och avsluta med <code>break</code> när gissningen är rätt.",
+      runs: [
+        { inputs: ["3", "12", "7"], contains: ["För lågt", "För högt", "Rätt!"] },
+        { inputs: ["7"], contains: ["Rätt!"], excludes: ["För högt", "För lågt"] }
+      ],
+      explain: "Spela på riktigt i Fri lek: lägg till <code>import random</code> och skriv <code>hemligt = random.randint(1, 20)</code>. Bästa strategin är att alltid gissa i mitten – då räcker fem gissningar."
+    },
+    {
       id: "p5-sista", part: "p2", type: "mc", title: "Läs felmeddelandet",
       q: "Var i ett felmeddelande ska du börja läsa?",
       options: ["Sista raden", "Första raden", "Mitten", "Ingenstans – starta om programmet"],
@@ -501,6 +655,57 @@ assert all(p in it for p in [7 * i for i in range(1, 11)]), "Utskriften ska inne
       hint: "Läs sista raden i felmeddelandet. Vilket namn känner Python inte till?",
       runs: [{ expect: "Hej Ali!" }],
       explain: "<code>NameError</code> – variabeln var felstavad."
+    },
+    {
+      id: "p2-kod-kalk", part: "p2", type: "code", title: "Projekt: miniräknare",
+      q: "Bygg en miniräknare. Fråga, i den här ordningen, efter<ol><li>ett tal,</li><li>ett räknesätt: <code>+</code>, <code>-</code>, <code>*</code> eller <code>/</code>,</li><li>ett tal till.</li></ol>" +
+        "Skriv ut resultatet. Talen kan vara decimaltal, även med decimalkomma. Skriver användaren ett annat räknesätt ska programmet skriva <code>Okänt räknesätt</code>.",
+      starter: "",
+      solution: 'a = float(input("Första talet? ").replace(",", "."))\nop = input("Räknesätt (+ - * /)? ").strip()\nb = float(input("Andra talet? ").replace(",", "."))\n\nif op == "+":\n    print(a + b)\nelif op == "-":\n    print(a - b)\nelif op == "*":\n    print(a * b)\nelif op == "/":\n    print(a / b)\nelse:\n    print("Okänt räknesätt")',
+      hint: "Tre <code>input()</code>. Räknesättet är text, så jämför med t.ex. <code>op == \"+\"</code>. En <code>elif</code> per räknesätt och <code>else</code> sist.",
+      runs: [
+        { inputs: ["6", "*", "3"], contains: ["18"] },
+        { inputs: ["7", "/", "2"], contains: ["3.5"] },
+        { inputs: ["5", "-", "8"], contains: ["-3"] },
+        { inputs: ["2,5", "+", "1"], contains: ["3.5"] },
+        { inputs: ["2", "%", "3"], contains: ["Okänt räknesätt"] }
+      ],
+      explain: "Indata, omvandling, villkor och utskrift – i ett riktigt program. Vad händer om någon delar med 0? Prova att lägga till ett eget felmeddelande för det."
+    },
+    {
+      id: "p2-kod-quiz", part: "p2", type: "code", title: "Projekt: frågesport",
+      q: "Gör en frågesport. Ställ frågorna i listan <code>fragor</code> en i taget. Är svaret rätt (oavsett stora bokstäver och mellanslag) – skriv <code>Rätt!</code> och ge en poäng. Annars – skriv <code>Fel</code> och det rätta svaret.<br>Sista raden skriver redan ut poängen.",
+      starter: 'fragor = ["Vilket programspråk används mest inom AI?", "Vilken funktion läser in svar från användaren?", "Vad är 6 * 7?"]\nsvar = ["python", "input", "42"]\npoang = 0\n\n# Ställ frågorna en i taget och räkna poängen\n\nprint(f"Du fick {poang} av {len(fragor)} poäng")\n',
+      solution: 'fragor = ["Vilket programspråk används mest inom AI?", "Vilken funktion läser in svar från användaren?", "Vad är 6 * 7?"]\nsvar = ["python", "input", "42"]\npoang = 0\n\nfor i in range(len(fragor)):\n    gissning = input(fragor[i] + " ").strip().lower()\n    if gissning == svar[i]:\n        print("Rätt!")\n        poang = poang + 1\n    else:\n        print(f"Fel – rätt svar är {svar[i]}.")\n\nprint(f"Du fick {poang} av {len(fragor)} poäng")',
+      hint: "<code>for i in range(len(fragor)):</code> ger 0, 1 och 2. Då är <code>fragor[i]</code> frågan och <code>svar[i]</code> det rätta svaret.",
+      runs: [
+        { inputs: ["Python", "input", "42"], contains: ["3 av 3"] },
+        { inputs: ["java", " INPUT ", "42"], contains: ["2 av 3"] },
+        { inputs: ["c", "print", "41"], contains: ["0 av 3"] }
+      ],
+      explain: "Två listor där samma index hör ihop – fråga nummer <code>i</code> och svar nummer <code>i</code>. Lägg till egna frågor i båda listorna, så växer quizet av sig självt."
+    },
+    {
+      id: "p2-kod-inkop", part: "p2", type: "code", title: "Projekt: inköpslista",
+      q: "Låt användaren skriva in varor, en i taget, tills hen skriver <code>klar</code>. Skriv sedan ut <code>Du ska köpa 3 saker:</code> (med rätt antal) följt av varorna på var sin rad. Ordet <code>klar</code> ska inte hamna i listan.",
+      starter: "varor = []\n\n",
+      solution: 'varor = []\n\nwhile True:\n    vara = input("Vara (skriv klar när du är klar): ").strip()\n    if vara == "klar":\n        break\n    varor.append(vara)\n\nprint(f"Du ska köpa {len(varor)} saker:")\nfor vara in varor:\n    print(vara)',
+      hint: "<code>while True:</code> + <code>input()</code> + <code>break</code> när svaret är <code>klar</code>, annars <code>varor.append(vara)</code>. Efter loopen: <code>len(varor)</code> och en <code>for</code>-loop.",
+      runs: [
+        { inputs: ["mjölk", "bröd", "ost", "klar"], test: `
+lines = [l.strip() for l in _out.strip().split("\\n")]
+rub = [k for k, l in enumerate(lines) if "Du ska köpa" in l]
+assert rub, "Skriv ut en rad som börjar med: Du ska köpa"
+assert "3" in lines[rub[-1]], "Med mjölk, bröd och ost ska det stå: Du ska köpa 3 saker:"
+rest = [l.lstrip("-•*0123456789.) ") for l in lines[rub[-1] + 1:] if l]
+assert rest == ["mjölk", "bröd", "ost"], "Efter rubriken ska mjölk, bröd och ost stå på var sin rad – utan klar."
+` },
+        { inputs: ["klar"], test: `
+lines = [l.strip() for l in _out.strip().split("\\n")]
+assert any("Du ska köpa" in l and "0" in l for l in lines), "Skriver användaren klar direkt ska det stå: Du ska köpa 0 saker:"
+` }
+      ],
+      explain: "Listan växer med <code>append()</code> så länge användaren vill. Samma mönster – samla in data i en loop – används när man bygger upp träningsdata till en AI."
     },
 
     /* ---------- 03 Programmera en agent ---------- */

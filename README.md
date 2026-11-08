@@ -9,6 +9,8 @@ Digitalt kursmaterial för **AI 1** på Teknikprogrammet vid Erik Dahlbergsgymna
 ├── index.html          ← Startsida / materialöversikt
 ├── assembler/
 │   └── index.html      ← Assembler-simulator (maskinspråk)
+├── data-i-datorn/
+│   └── index.html      ← Så lagras data (bitar, byte, text, bilder, minne)
 └── README.md
 ```
 

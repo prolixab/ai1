@@ -147,6 +147,47 @@ section.part:last-of-type{border-bottom:0}
 .units{font:.9rem var(--mono);border-collapse:collapse;margin-top:6px}
 .units td{padding:3px 14px 3px 0;border-bottom:1px solid var(--line)}
 
+/* 7. data i AI */
+.sub{font-size:1.15rem;margin:22px 0 6px}
+.gpix{width:max-content;display:grid;grid-template-columns:repeat(8,30px);grid-auto-rows:30px;gap:1px;background:#333;padding:1px;border-radius:4px;touch-action:none;user-select:none}
+.gpix button{border:0;padding:0;border-radius:1px}
+.gnums{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:1px;font:.72rem/30px var(--mono);text-align:center;min-width:300px}
+.gnums span{border-radius:3px}
+.flat{font:.74rem/1.7 var(--mono);overflow-wrap:anywhere;background:var(--soft);border-radius:8px;padding:8px 10px;margin-top:10px;max-height:9.5em;overflow:auto}
+.tokens{display:flex;flex-wrap:wrap;gap:4px;margin-top:12px}
+.tok{border-radius:6px;padding:2px 6px 0;font:600 1rem var(--mono);display:flex;flex-direction:column;align-items:center;white-space:pre}
+.tok small{font:.66rem var(--mono);opacity:.75}
+.words{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.words button{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:3px 12px;font-weight:600}
+.words button.a{background:var(--b1);border-color:var(--b1);color:#fff}
+.words button.b{background:var(--b2);border-color:var(--b2);color:#fff}
+.vec{display:grid;grid-template-columns:80px repeat(6,minmax(0,1fr));gap:4px;align-items:end;font-size:.78rem;margin-top:8px}
+.vec .h{color:var(--muted);text-align:center;font-size:.72rem}
+.vec .w{font-weight:700;align-self:center}
+.vec .cellbar{height:44px;background:var(--soft);border-radius:4px;position:relative;overflow:hidden}
+.vec .cellbar i{position:absolute;left:0;right:0;bottom:0;border-radius:4px}
+.vec .cellbar b{position:absolute;inset:0;display:grid;place-items:center;font:600 .74rem var(--mono)}
+.simbar{height:16px;background:var(--soft);border-radius:99px;overflow:hidden;margin:6px 0}
+.simbar i{display:block;height:100%;background:var(--accent)}
+.analogy{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-weight:700}
+.analogy select{font:inherit;padding:4px 8px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+.onehot{display:flex;gap:6px;margin-top:8px}
+.onehot span{width:42px;height:42px;border-radius:8px;display:grid;place-items:center;font:700 1rem var(--mono);background:var(--soft)}
+.onehot span.hot{background:var(--on);color:var(--on-ink)}
+.prob{display:grid;grid-template-columns:70px 1fr 50px 1.3fr 54px;gap:8px;align-items:center;font-size:.88rem;margin-top:6px}
+.prob input{width:100%}
+.prob .simbar{margin:0}
+.ptable{border-collapse:collapse;font-size:.9rem;width:100%;margin-top:10px}
+.ptable th,.ptable td{text-align:left;padding:5px 10px 5px 0;border-bottom:1px solid var(--line)}
+.ptable td.mono{white-space:nowrap}
+.ptable .err{color:var(--bad)}
+@media (max-width:560px){
+  .gpix{grid-template-columns:repeat(8,26px);grid-auto-rows:26px}.gnums{font-size:.62rem;line-height:26px;min-width:0}
+  .prob{grid-template-columns:56px 1fr 40px;}.prob .simbar,.prob .pv{grid-column:1/-1}
+  .ptable{font-size:.8rem}
+  .vec{grid-template-columns:62px repeat(6,minmax(0,1fr));gap:3px}.vec .h{font-size:.58rem;overflow-wrap:anywhere;hyphens:auto}.vec .w{font-size:.72rem}
+}
+
 /* quiz */
 .q{margin:0 0 16px}
 .q p{font-weight:600;margin-bottom:6px}
@@ -174,7 +215,7 @@ footer{max-width:1040px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
     <a class="back-link" href="../index.html">← Kurssidan AI 1</a>
     <p class="kicker">AI 1 · Datorns uppbyggnad</p>
     <h1>Så lagras data</h1>
-    <p class="lede">En dator kan bara lagra ettor och nollor. Ändå sparar den text, bilder, musik och hela AI-modeller. Här får du själv slå på bitar och se hur det går till – och upptäcka att samma bitar kan betyda helt olika saker.</p>
+    <p class="lede">En dator kan bara lagra ettor och nollor. Ändå sparar den text, bilder, musik och hela AI-modeller. Här får du själv slå på bitar och se hur det går till, upptäcka att samma bitar kan betyda helt olika saker – och se hur en AI ser på data.</p>
     <nav class="toc" aria-label="Delar">
       <a href="#bitar">1. Bitar</a>
       <a href="#betydelse">2. Samma byte</a>
@@ -182,6 +223,7 @@ footer{max-width:1040px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
       <a href="#bilder">4. Bilder och färger</a>
       <a href="#minnet">5. Minnet</a>
       <a href="#storlek">6. Hur mycket?</a>
+      <a href="#ai">7. Data i AI</a>
       <a href="#test">Testa dig själv</a>
     </nav>
   </div>
@@ -329,6 +371,109 @@ footer{max-width:1040px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
         <p><b>AI och data:</b> En AI-modell är egentligen bara väldigt många tal – <i>parametrar</i> – sparade i minnet. Varje parameter tar ofta 2 byte. En modell med 7 miljarder parametrar behöver alltså 14 GB bara för att få plats.</p>
       </div>
     </div>
+  </div>
+</section>
+
+<section class="part" id="ai">
+  <h2><span class="num">7</span> Data i AI</h2>
+  <p class="lead">En AI-modell förstår inte bilder, ord eller kategorier. Den räknar bara med <b>tal</b>. Allt som ska in i en modell måste därför först göras om till listor av tal – och det som kommer ut är också tal som vi måste tolka. Här ser du hur det går till.</p>
+
+  <h3 class="sub">a) Bilder blir tal</h3>
+  <p class="lead">En gråskalebild är redan tal: ett per pixel, 0 = svart och 255 = vitt, precis som siffrorna i <a href="../maskinogat/">Maskinögat</a>. Innan bilden går in i nätverket gör man två saker: talen <b>normaliseras</b> till 0–1, och rutnätet <b>plattas till</b> till en enda lång lista. Måla en siffra (dra över rutorna) och se vad nätverket får.</p>
+  <div class="panel">
+    <div class="row" style="align-items:flex-start;gap:18px">
+      <div>
+        <div class="gpix" id="gpix" aria-label="Rita genom att klicka eller dra"></div>
+        <div class="row" style="margin-top:10px">
+          <label class="small">Pensel <select id="brush" style="font:inherit;padding:2px 6px;border-radius:6px"><option value="255">vit</option><option value="140">grå</option><option value="0">sudd</option></select></label>
+          <button class="btn" type="button" id="g7">Siffran 7</button>
+          <button class="btn" type="button" id="gclear">Rensa</button>
+        </div>
+      </div>
+      <div style="flex:1;min-width:260px">
+        <div class="tabs" role="tablist" aria-label="Visa talen som" style="margin-top:0">
+          <button type="button" role="tab" data-gscale="raw" aria-selected="true">0–255</button>
+          <button type="button" role="tab" data-gscale="norm" aria-selected="false">Normaliserat 0–1</button>
+        </div>
+        <div class="gnums" id="gnums"></div>
+      </div>
+    </div>
+    <p class="small" style="margin:12px 0 0"><b>Det nätverket får</b> – 8 × 8 = 64 tal i en lista, ett per ingång:</p>
+    <div class="flat" id="gflat"></div>
+    <p class="muted small" style="margin:.6em 0 0">Varför 0–1? Små tal i samma skala gör det lättare för nätverket att lära sig, eftersom ingen ingång "skriker" högre än de andra. En färgbild blir tre sådana rutnät (R, G, B) – ett mobilfoto på 12 megapixlar blir 36 miljoner tal.</p>
+  </div>
+
+  <h3 class="sub">b) Text blir tokens</h3>
+  <p class="lead">En språkmodell delar upp texten i <b>tokens</b> – hela ord eller bitar av ord – och varje token har ett nummer i modellens ordlista. Vanliga ord blir en token, ovanliga ord delas upp i flera bitar. Det är de här numren, inte bokstäverna, som modellen räknar med.</p>
+  <div class="panel">
+    <label for="tokin" class="muted small">Din text</label>
+    <input class="textin" id="tokin" type="text" value="Katten sitter på mattan och spinner förnöjsamt." autocomplete="off" spellcheck="false">
+    <div class="tokens" id="tokens" aria-live="polite"></div>
+    <p class="counts" id="tokcount"></p>
+    <p class="muted small" style="margin:0">Förenklad uppdelning med en liten påhittad ordlista. Riktiga modeller har en ordlista med runt 100 000 tokens, som tagits fram genom att räkna vilka bokstavsföljder som är vanligast i enorma mängder text. Därför delas svenska ord ofta upp i fler bitar än engelska.</p>
+  </div>
+
+  <h3 class="sub">c) Ord blir vektorer – embeddings</h3>
+  <p class="lead">Ett token-nummer säger ingenting om vad ordet betyder: nummer 512 och 513 behöver inte ha med varandra att göra. Därför gör modellen om varje token till en <b>vektor</b> – en lista med tal där ord med liknande betydelse får liknande tal. Det kallas en <b>embedding</b>. Klicka på två ord och jämför dem.</p>
+  <div class="grid2">
+    <div class="panel">
+      <div class="words" id="words"></div>
+      <div id="vecs"></div>
+      <p class="small" style="margin:10px 0 0" id="simtext"></p>
+      <div class="simbar"><i id="simbar"></i></div>
+      <p class="muted small" style="margin:.6em 0 0">Likheten mäts som <i>cosinuslikhet</i>: hur mycket vektorerna pekar åt samma håll. 100 % = samma riktning.</p>
+    </div>
+    <div class="panel">
+      <h3 style="font-size:1rem;margin-bottom:8px">Räkna med betydelser</h3>
+      <p class="small">Eftersom orden är tal kan man räkna med dem. Ta <i>kung</i>, dra bort det som är <i>man</i> och lägg till <i>kvinna</i> – vilket ord ligger närmast resultatet?</p>
+      <div class="analogy"><select id="anA"></select> − <select id="anB"></select> + <select id="anC"></select> ≈ <span id="anR" class="mono" style="color:var(--accent)"></span></div>
+      <p class="muted small" id="anNote" style="margin:.8em 0 0"></p>
+      <div class="callout" style="margin-top:12px">
+        <p class="small">Här har vi hittat på sex tydliga egenskaper själva. I en riktig modell har varje ord hundratals eller tusentals tal, och ingen har bestämt vad de betyder – modellen har <b>lärt sig</b> dem genom att se vilka ord som brukar stå nära varandra i text.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="sub">d) Svar och kategorier</h3>
+  <div class="grid2">
+    <div class="panel">
+      <p class="small">När vi tränar en modell att känna igen djur måste också <b>svaren</b> vara tal. Kategorin görs om till en lista med en etta på rätt plats och nollor på resten – <b>one-hot</b>.</p>
+      <div class="words" id="cats"></div>
+      <div class="onehot" id="onehot" aria-live="polite"></div>
+      <p class="muted small" style="margin:.8em 0 0">Varför inte bara katt = 1, hund = 2, fågel = 3? Då skulle modellen tro att en hund ligger "mellan" en katt och en fågel, och att fågel är "mer" än katt.</p>
+    </div>
+    <div class="panel">
+      <p class="small">Ut ur modellen kommer råa poäng, ett tal per kategori. Funktionen <b>softmax</b> gör om dem till <b>sannolikheter</b> som tillsammans blir 100 %. Ändra poängen och se vad modellen "tror".</p>
+      <div id="probs"></div>
+      <p class="muted small" style="margin:.8em 0 0">Lägg märke till att en liten skillnad i poäng kan ge stor skillnad i sannolikhet. Modellen gissar alltid något – även på en bild som inte föreställer något av djuren.</p>
+    </div>
+  </div>
+
+  <h3 class="sub">e) Hur exakt behöver talen vara?</h3>
+  <p class="lead">En modell består av miljontals eller miljarder <b>parametrar</b> (vikter) – decimaltal som justerats under träningen. Varje tal kan sparas med fler eller färre bitar. Färre bitar ger en mindre och snabbare modell, men talen blir mindre exakta. Att krympa en modell så kallas <b>kvantisering</b>.</p>
+  <div class="grid2">
+    <div class="panel">
+      <label class="small" for="wval">En vikt: <b class="mono" id="wshow"></b></label>
+      <input id="wval" type="range" min="-1" max="1" step="0.0001" value="0.1234" style="width:100%">
+      <table class="ptable" id="ptable"></table>
+      <p class="muted small" style="margin:.8em 0 0">Med 8 och 4 bitar sparas vikten som ett heltal som sedan skalas om: med 4 bitar finns bara 15 möjliga värden mellan −1 och 1.</p>
+    </div>
+    <div class="panel">
+      <div class="calc">
+        <label for="mparams">Modell</label>
+        <select id="mparams">
+          <option value="100000">Litet nät, 100 000 parametrar</option>
+          <option value="1.5e9">Liten språkmodell, 1,5 miljarder</option>
+          <option value="7e9" selected>Mellanstor språkmodell, 7 miljarder</option>
+          <option value="7e10">Stor språkmodell, 70 miljarder</option>
+        </select>
+      </div>
+      <div class="ladder" id="mladder" style="margin-top:12px"></div>
+      <p class="muted small" style="margin:.8em 0 0">En vanlig bärbar dator har 8–16 GB arbetsminne. Därför körs språkmodeller på egna datorer och mobiler nästan alltid kvantiserade – med en liten förlust i kvalitet.</p>
+    </div>
+  </div>
+  <div class="callout">
+    <p><b>Sammanfattning:</b> Bilder, text och kategorier blir listor av tal på väg in i modellen, modellen själv är en enorm mängd tal, och det som kommer ut är tal som vi tolkar som svar. Under ytan är allt det samma byte som i del 1–5.</p>
   </div>
 </section>
 
@@ -623,6 +768,189 @@ const SIZES = [
   }).join("");
 })();
 
+/* ---------- 7. Data i AI ---------- */
+// a) Bilder blir tal
+const SEVEN = [
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 60, 230, 255, 255, 250, 120, 0],
+  [0, 20, 90, 90, 110, 255, 90, 0],
+  [0, 0, 0, 0, 170, 220, 10, 0],
+  [0, 0, 0, 40, 255, 90, 0, 0],
+  [0, 0, 0, 150, 220, 10, 0, 0],
+  [0, 0, 20, 245, 110, 0, 0, 0],
+  [0, 0, 60, 200, 20, 0, 0, 0],
+];
+const gimg = SEVEN.flat();
+let gscale = "raw", gpaint = false;
+const gBtns = [];
+for (let i = 0; i < 64; i++) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.setAttribute("aria-label", `Pixel ${i + 1}`);
+  const paint = () => { gimg[i] = +$("brush").value; renderG(); };
+  b.addEventListener("pointerdown", (e) => { e.preventDefault(); gpaint = true; paint(); });
+  b.addEventListener("pointerenter", () => { if (gpaint) paint(); });
+  b.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); paint(); } });
+  $("gpix").append(b);
+  gBtns.push(b);
+}
+window.addEventListener("pointerup", () => { gpaint = false; });
+const gfmt = (v) => gscale === "raw" ? String(v) : (v / 255).toFixed(2).replace(/^0\./, ".").replace(/^1\.00$/, "1").replace(/^\.00$/, "0");
+function renderG() {
+  gBtns.forEach((b, i) => { b.style.background = `rgb(${gimg[i]},${gimg[i]},${gimg[i]})`; });
+  $("gnums").innerHTML = gimg.map((v) => `<span style="background:color-mix(in srgb,var(--on) ${Math.round(v / 255 * 45)}%,transparent)">${gfmt(v)}</span>`).join("");
+  $("gflat").textContent = "[" + gimg.map((v) => gscale === "raw" ? v : +(v / 255).toFixed(2)).join(", ") + "]";
+}
+$("g7").addEventListener("click", () => { SEVEN.flat().forEach((v, i) => { gimg[i] = v; }); renderG(); });
+$("gclear").addEventListener("click", () => { gimg.fill(0); renderG(); });
+document.querySelectorAll("[data-gscale]").forEach((b) => b.addEventListener("click", () => {
+  gscale = b.dataset.gscale;
+  document.querySelectorAll("[data-gscale]").forEach((t) => t.setAttribute("aria-selected", String(t === b)));
+  renderG();
+}));
+
+// b) Text blir tokens – en förenklad tokeniserare med en liten påhittad ordlista.
+const VOCAB = ("och i att det som en på är av för med till den har de inte om ett han men var jag sig från vi så kan man när år säga hon under också efter upp eller nu vid dig mig du ska hade bara sitter katt katten hund hunden mattan hej bil huset dag tid ai data dator modell bild text ord lär lära sig " +
+  "the a and of to in is it that for you on with ka at ter en ing er ar na de lig het skap ning ande ade or ast pp st sp nn pin ner förn öj sam samt t s n").split(" ");
+const VOCAB_ID = new Map();
+VOCAB.forEach((w, i) => { if (!VOCAB_ID.has(w)) VOCAB_ID.set(w, 220 + i * 37); });
+function tokenId(piece) {
+  if (VOCAB_ID.has(piece)) return VOCAB_ID.get(piece);
+  let h = 2166136261;
+  for (const ch of piece) h = Math.imul(h ^ ch.codePointAt(0), 16777619);
+  return 3000 + ((h >>> 0) % 97000);
+}
+// Ett ord: helt om det finns i ordlistan, annars så långa kända bitar som möjligt från vänster (max 4 tecken).
+function splitWord(w) {
+  const low = w.toLowerCase();
+  if (VOCAB_ID.has(low)) return [w];
+  const out = [];
+  let i = 0;
+  const chars = Array.from(w);
+  while (i < chars.length) {
+    let len = Math.min(4, chars.length - i);
+    while (len > 1 && !VOCAB_ID.has(chars.slice(i, i + len).join("").toLowerCase())) len--;
+    out.push(chars.slice(i, i + len).join(""));
+    i += len;
+  }
+  return out;
+}
+const TOKCOL = ["--b1", "--b2", "--b3", "--b4"];
+function renderTokens() {
+  const text = $("tokin").value;
+  const toks = [];
+  for (const m of text.matchAll(/\s*[\p{L}\p{N}]+|\s*[^\s\p{L}\p{N}]|\s+$/gu)) {
+    const lead = m[0].match(/^\s*/)[0], word = m[0].slice(lead.length);
+    if (!word) continue;
+    splitWord(word).forEach((p, k) => toks.push({ text: (k === 0 ? lead.replace(/\s+/, "␣") : "") + p, id: tokenId(p.toLowerCase()) }));
+  }
+  $("tokens").innerHTML = toks.map((t, i) => `<span class="tok" style="background:color-mix(in srgb,var(${TOKCOL[i % 4]}) 22%,transparent)">${esc(t.text)}<small>${t.id}</small></span>`).join("");
+  const nChars = Array.from(text).length;
+  $("tokcount").textContent = `${nChars} tecken → ${toks.length} tokens → modellen får listan [${toks.map((t) => t.id).join(", ")}]`;
+}
+$("tokin").addEventListener("input", renderTokens);
+
+// c) Embeddings – handgjorda vektorer med fem tydliga egenskaper.
+const DIMS = ["människa", "kunglig", "kvinnlig", "ung", "djur", "mat"];
+const EMB = {
+  kung: [1, 1, 0, 0, 0, 0], drottning: [1, 1, 1, 0, 0, 0], prins: [1, 1, 0, 1, 0, 0], prinsessa: [1, 1, 1, 1, 0, 0],
+  man: [1, 0, 0, 0, 0, 0], kvinna: [1, 0, 1, 0, 0, 0], pojke: [1, 0, 0, 1, 0, 0], flicka: [1, 0, 1, 1, 0, 0],
+  hund: [0, 0, 0, 0, 1, 0], valp: [0, 0, 0, 1, 1, 0], katt: [0, 0, 0.4, 0, 1, 0], kattunge: [0, 0, 0.4, 1, 1, 0],
+  lejon: [0, 0.5, 0, 0, 1, 0], äpple: [0, 0, 0, 0, 0, 1], korv: [0, 0, 0, 0, 0.3, 1],
+};
+const WORDS = Object.keys(EMB);
+let wa = "kung", wb = "drottning";
+const dot = (a, b) => a.reduce((s, v, i) => s + v * b[i], 0);
+const cos = (a, b) => dot(a, b) / (Math.hypot(...a) * Math.hypot(...b) || 1);
+$("words").innerHTML = WORDS.map((w) => `<button type="button" data-w="${w}">${w}</button>`).join("");
+let pickNext = "a";
+$("words").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+  const w = b.dataset.w;
+  if (w === wa || w === wb) return;
+  if (pickNext === "a") wa = w; else wb = w;
+  pickNext = pickNext === "a" ? "b" : "a";
+  renderEmb();
+}));
+function vecRow(name, v, color) {
+  return `<span class="w" style="color:var(${color})">${name}</span>` + v.map((x) => `<div class="cellbar"><i style="height:${x * 100}%;background:color-mix(in srgb,var(${color}) 60%,transparent)"></i><b>${+x.toFixed(2)}</b></div>`).join("");
+}
+function renderEmb() {
+  $("words").querySelectorAll("button").forEach((b) => { b.className = b.dataset.w === wa ? "a" : b.dataset.w === wb ? "b" : ""; });
+  $("vecs").innerHTML = `<div class="vec"><span></span>${DIMS.map((d) => `<span class="h">${d}</span>`).join("")}${vecRow(wa, EMB[wa], "--b1")}${vecRow(wb, EMB[wb], "--b2")}</div>`;
+  const c = cos(EMB[wa], EMB[wb]);
+  $("simtext").innerHTML = `Likhet mellan <b>${wa}</b> och <b>${wb}</b>: <b class="mono">${Math.round(c * 100)} %</b>`;
+  $("simbar").style.width = `${Math.max(0, c) * 100}%`;
+}
+for (const [id, w] of [["anA", "kung"], ["anB", "man"], ["anC", "kvinna"]]) {
+  $(id).innerHTML = WORDS.map((x) => `<option${x === w ? " selected" : ""}>${x}</option>`).join("");
+  $(id).addEventListener("change", renderAnalogy);
+}
+function renderAnalogy() {
+  const [a, b, c] = ["anA", "anB", "anC"].map((id) => $(id).value);
+  const v = EMB[a].map((x, i) => x - EMB[b][i] + EMB[c][i]);
+  const ranked = WORDS.filter((w) => ![a, b, c].includes(w)).map((w) => [w, cos(v, EMB[w])]).sort((x, y) => y[1] - x[1]);
+  $("anR").textContent = ranked[0][0];
+  $("anNote").textContent = `Resultatet blev vektorn [${v.map((x) => +x.toFixed(2)).join(", ")}]. Närmast: ${ranked.slice(0, 3).map(([w, s]) => `${w} (${Math.round(s * 100)} %)`).join(", ")}. Prova också pojke − man + kvinna, eller valp − hund + katt.`;
+}
+
+// d) One-hot och softmax
+const CATS = ["katt", "hund", "fågel"];
+let cat = 0;
+const logits = [2.0, 1.0, -1.0];
+$("cats").innerHTML = CATS.map((c, i) => `<button type="button" data-c="${i}">${c}</button>`).join("");
+$("cats").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { cat = +b.dataset.c; renderOneHot(); }));
+function renderOneHot() {
+  $("cats").querySelectorAll("button").forEach((b) => { b.className = +b.dataset.c === cat ? "a" : ""; });
+  $("onehot").innerHTML = CATS.map((c, i) => `<span class="${i === cat ? "hot" : ""}" title="${c}">${i === cat ? 1 : 0}</span>`).join("") + `<span style="background:none;width:auto;font-weight:400;font-size:.85rem" class="muted">= [${CATS.map((_, i) => (i === cat ? 1 : 0)).join(", ")}]</span>`;
+}
+$("probs").innerHTML = CATS.map((c, i) => `<div class="prob"><b>${c}</b><input type="range" min="-4" max="6" step="0.1" value="${logits[i]}" aria-label="Poäng för ${c}" data-l="${i}"><span class="mono" data-lv="${i}"></span><div class="simbar"><i data-pb="${i}"></i></div><span class="mono pv" data-pv="${i}"></span></div>`).join("");
+$("probs").querySelectorAll("input").forEach((inp) => inp.addEventListener("input", () => { logits[+inp.dataset.l] = +inp.value; renderProbs(); }));
+function renderProbs() {
+  const ex = logits.map((x) => Math.exp(x)), sum = ex.reduce((a, b) => a + b, 0);
+  logits.forEach((l, i) => {
+    const p = ex[i] / sum;
+    $("probs").querySelector(`[data-lv="${i}"]`).textContent = l.toFixed(1).replace(".", ",");
+    $("probs").querySelector(`[data-pb="${i}"]`).style.width = `${p * 100}%`;
+    $("probs").querySelector(`[data-pv="${i}"]`).textContent = `${(p * 100).toFixed(1).replace(".", ",")} %`;
+  });
+}
+
+// e) Precision och kvantisering
+function toHalf(x) {
+  if (x === 0) return 0;
+  const s = Math.sign(x), a = Math.abs(x);
+  if (a >= 65520) return s * Infinity;
+  const e = Math.floor(Math.log2(a));
+  const step = e < -14 ? 2 ** -24 : 2 ** (e - 10);
+  return s * Math.round(a / step) * step;
+}
+const quant = (x, levels) => Math.round(Math.max(-1, Math.min(1, x)) * levels) / levels;
+const FORMATS = [
+  ["float32", "32 bitar", 4, (x) => Math.fround(x)],
+  ["float16", "16 bitar", 2, toHalf],
+  ["int8", "8 bitar", 1, (x) => quant(x, 127)],
+  ["int4", "4 bitar", 0.5, (x) => quant(x, 7)],
+];
+const sv = (x, d) => x.toLocaleString("sv-SE", { minimumFractionDigits: d, maximumFractionDigits: d });
+function renderPrecision() {
+  const x = +$("wval").value;
+  $("wshow").textContent = sv(x, 4);
+  $("ptable").innerHTML = `<tr><th>Format</th><th>Per tal</th><th>Sparas som</th><th>Fel</th></tr>` +
+    FORMATS.map(([name, bits, , f]) => {
+      const y = f(x), err = Math.abs(y - x);
+      return `<tr><td><b>${name}</b></td><td class="mono">${bits}</td><td class="mono">${sv(y, 7)}</td><td class="mono${err > 0.01 ? " err" : ""}">${err < 5e-8 ? "≈ 0" : sv(err, 7)}</td></tr>`;
+    }).join("");
+}
+$("wval").addEventListener("input", renderPrecision);
+function renderModelSize() {
+  const n = +$("mparams").value;
+  $("mladder").innerHTML = FORMATS.map(([name, bits, bytes]) => {
+    const size = n * bytes, w = bytes / 4 * 100;   // linjär skala: float32 = hela stapeln
+    return `<div class="rung"><span><b>${name}</b> <span class="muted small">(${bits})</span></span><div class="bar"><i style="width:${w}%"></i></div><span class="v">${fmtBytes(size)}</span></div>`;
+  }).join("");
+}
+$("mparams").addEventListener("change", renderModelSize);
+
 /* ---------- Testa dig själv ---------- */
 const QUIZ = [
   { q: "Hur många olika värden kan en byte (8 bitar) ha?", o: ["8", "16", "255", "256"], a: 3, why: "2⁸ = 256 värden: 0 till och med 255." },
@@ -631,6 +959,9 @@ const QUIZ = [
   { q: "Hur många byte tar ordet \"får\" i UTF-8?", o: ["3", "4", "6", "24"], a: 1, why: "f och r tar en byte var, å tar två: 1 + 2 + 1 = 4 byte." },
   { q: "En byte är 01000001. Vad betyder den?", o: ["65", "A", "Ett mörkgrått pixelvärde", "Det beror på hur programmet läser den"], a: 3, why: "Alla tre stämmer! Bitarna betyder ingenting förrän ett program bestämmer hur de ska tolkas." },
   { q: "En gråskalebild är 100 × 100 pixlar. Hur många byte är den okomprimerad?", o: ["100", "200", "10 000", "30 000"], a: 2, why: "100 · 100 = 10 000 pixlar, en byte var. I färg (RGB) hade det blivit 30 000." },
+  { q: "Vad får en språkmodell in när du skriver en fråga?", o: ["Bokstäverna, en i taget", "En lista med tokennummer", "En bild av texten", "Ordens betydelse direkt"], a: 1, why: "Texten delas upp i tokens, och varje token blir ett nummer. Numren görs sedan om till vektorer (embeddings)." },
+  { q: "Varför får ord med liknande betydelse liknande embeddings?", o: ["Någon har skrivit in dem för hand", "De har liknande stavning", "Modellen har lärt sig det av att se vilka ord som står nära varandra i text", "De har tokennummer nära varandra"], a: 2, why: "I riktiga modeller bestämmer ingen talen för hand – de lärs in under träningen." },
+  { q: "En modell har 7 miljarder parametrar. Hur stor blir den med 8 bitar (1 byte) per parameter?", o: ["7 MB", "7 GB", "28 GB", "56 GB"], a: 1, why: "7 miljarder × 1 byte = 7 GB. Med float32 (4 byte) blir det 28 GB – kvantisering gör modellen fyra gånger mindre." },
 ];
 let qRight = 0, qDone = 0;
 $("quiz").innerHTML = QUIZ.map((x, i) => `<div class="q" data-q="${i}"><p>${i + 1}. ${esc(x.q)}</p><div class="opts">${x.o.map((o, j) => `<button class="btn" type="button" data-j="${j}">${esc(o)}</button>`).join("")}</div><div class="why" hidden></div></div>`).join("");
@@ -658,6 +989,14 @@ renderPix();
 renderColor();
 renderSize();
 fill("text");
+renderG();
+renderTokens();
+renderEmb();
+renderAnalogy();
+renderOneHot();
+renderProbs();
+renderPrecision();
+renderModelSize();
 </script>
 </body>
 </html>

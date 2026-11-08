@@ -11,6 +11,8 @@ Digitalt kursmaterial för **AI 1** på Teknikprogrammet vid Erik Dahlbergsgymna
 │   └── index.html      ← Assembler-simulator (maskinspråk)
 ├── data-i-datorn/
 │   └── index.html      ← Så lagras data (bitar, byte, text, bilder, minne)
+├── sokning/
+│   └── index.html      ← Sökning (BFS, DFS, Dijkstra, girig sökning, A*)
 └── README.md
 ```
 

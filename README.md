@@ -14,13 +14,15 @@ Digitalt kursmaterial för **AI 1** på Teknikprogrammet vid Erik Dahlbergsgymna
 └── README.md
 ```
 
-## Publicera på GitHub Pages
+## Publicering
 
-1. Skapa ett nytt GitHub-repository (t.ex. `ai1-material`)
-2. Ladda upp alla filer — behåll mappstrukturen
-3. Gå till **Settings → Pages**
-4. Under *Source*: välj **Deploy from a branch** → `main` → `/ (root)`
-5. Klicka **Save** — sidan är live på `https://<användarnamn>.github.io/ai1-material/`
+Sidan publiceras med **Coolify** från grenen `main`. Det är en helt statisk
+webbplats: inga byggsteg, bara HTML, CSS och JavaScript som serveras som de är.
+
+- Varje sida har `<meta charset="utf-8">`, så att å, ä och ö visas rätt även om
+  webbservern inte skickar teckenkodningen.
+- Använd relativa länkar mellan sidorna (t.ex. `../perceptron/`), så att
+  materialet fungerar oavsett vilken domän det ligger på.
 
 ## Lägg till nytt material
 
@@ -33,7 +35,7 @@ Lägg sedan till ett kort i `index.html` på startsidan som pekar dit.
 framstegen sparas i webbläsaren, samt en lärarvy (`larare.html`, inte länkad
 från startsidan). Uppgifterna ligger i `python-for-ai/ovningar.js`.
 
-GitHub Pages kan inte köra serverkod, så framstegen skickas till en
+Webbplatsen är statisk och kör ingen serverkod, så framstegen skickas till en
 Vercel-funktion (`api/progress.js` i repot `prolixab/courses`). Adressen står i
 `api` överst i `ovningar.js`. Är den tom fungerar övningen ändå, och läraren kan
 samla in framstegen via elevernas *framstegskoder*.

@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sökning – AI 1</title>
+<meta name="description" content="Interaktivt material för AI 1: hur en AI söker efter en väg. Bredden först, djupet först, Dijkstra, girig sökning och A* – steg för steg på en karta och i ett rutnät.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2314112b'/><path d='M7 24 L13 14 L20 18 L25 8' fill='none' stroke='%23f5a23a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/><circle cx='7' cy='24' r='3' fill='%2360a5fa'/><circle cx='25' cy='8' r='3' fill='%234cc98f'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<style>
+:root{
+  --paper:#f5f6f8; --surface:#ffffff; --soft:#eef0f5; --ink:#18202a; --muted:#5d6874; --line:#dde2e8;
+  --accent:#5b3fd4; --ok:#1f8a5b; --bad:#c8403a; --hero:#14112b; --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --start:#2563eb; --goal:#16a34a; --wall:#2b2f3a; --mud:#a47148;
+  --frontier:#fde68a; --explored:#c7d2fe; --current:#f97316; --path:#e11d48; --cell:#ffffff;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0f1116; --surface:#171a22; --soft:#1f2330; --ink:#e6e9ef; --muted:#98a2b0; --line:#2a2f3b;
+    --accent:#a594ff; --ok:#4cc98f; --bad:#f2756b; --hero:#0b0a1a;
+    --start:#60a5fa; --goal:#4ade80; --wall:#cbd2dc; --mud:#8b5e3c;
+    --frontier:#8a6d12; --explored:#3b3f78; --current:#f97316; --path:#fb7185; --cell:#1b1f29;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0f1116; --surface:#171a22; --soft:#1f2330; --ink:#e6e9ef; --muted:#98a2b0; --line:#2a2f3b;
+  --accent:#a594ff; --ok:#4cc98f; --bad:#f2756b; --hero:#0b0a1a;
+  --start:#60a5fa; --goal:#4ade80; --wall:#cbd2dc; --mud:#8b5e3c;
+  --frontier:#8a6d12; --explored:#3b3f78; --current:#f97316; --path:#fb7185; --cell:#1b1f29;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+h1,h2,h3{line-height:1.2;margin:0}
+p{margin:0 0 .9em}
+a{color:var(--accent)}
+button,select,input{font:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)} .small{font-size:.88rem}
+
+.hero{background:var(--hero);color:#ebe8ff;padding:36px 0 24px;
+  background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px),radial-gradient(circle at 85% 20%,#3b2a8f 0,transparent 50%);
+  background-size:32px 32px,32px 32px,auto}
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+.back-link{display:inline-block;color:#b3a6ff;text-decoration:none;font-size:.9rem;margin-bottom:16px}
+.back-link:hover{color:#fff}
+.kicker{text-transform:uppercase;letter-spacing:.12em;font-size:.8rem;color:#b3a6ff;margin:0}
+.hero h1{font-size:clamp(2.2rem,7vw,3.4rem);margin:.2rem 0 .5rem;letter-spacing:-.02em}
+.hero .lede{font-size:1.1rem;max-width:740px;color:#cdc7f0}
+.toc{display:flex;flex-wrap:wrap;gap:6px 8px;margin-top:14px}
+.toc a{color:#ebe8ff;text-decoration:none;font-size:.9rem;border:1px solid #3a3466;border-radius:999px;padding:3px 12px}
+.toc a:hover{background:#2a2457}
+
+main{padding:8px 0 40px}
+section.part{padding:28px 0;border-bottom:1px solid var(--line)}
+section.part:last-of-type{border-bottom:0}
+.part h2{font-size:1.6rem;margin-bottom:.4rem;display:flex;align-items:center;gap:10px}
+.num{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;font-size:1rem;flex:none}
+.lead{max-width:780px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:16px;align-items:start}
+.callout{border-left:4px solid var(--accent);background:var(--soft);border-radius:8px;padding:10px 14px;margin:14px 0 0;max-width:860px}
+.callout p:last-child{margin:0}
+.btn{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:6px 14px;font-weight:600;min-height:40px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+select.sel{padding:6px 10px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-height:40px}
+.toast{font-weight:700;min-height:1.6em}
+.toast.ok{color:var(--ok)} .toast.bad{color:var(--bad)}
+.parts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:10px;margin-top:10px}
+.parts div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:.92rem}
+.parts b{display:block;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:2px}
+
+/* algoritmväljare */
+.algos{display:flex;flex-wrap:wrap;gap:4px;padding:4px;border:1px solid var(--line);border-radius:12px;background:var(--surface);width:fit-content;max-width:100%}
+.algos button{border:0;border-radius:8px;padding:6px 12px;background:transparent;color:var(--muted);font-weight:700;min-height:38px}
+.algos button[aria-checked="true"]{background:var(--accent);color:#fff}
+.algo-desc{font-size:.92rem;color:var(--muted);margin:8px 0 12px;max-width:820px}
+
+/* kartan */
+.map svg{width:100%;height:auto;display:block;touch-action:manipulation}
+.map .edge{stroke:var(--line);stroke-width:3}
+.map .edge.tree{stroke:var(--muted)}
+.map .edge.path{stroke:var(--path);stroke-width:6}
+.map .km{font:600 11px var(--mono);fill:var(--muted);paint-order:stroke;stroke:var(--surface);stroke-width:4px}
+.map .node circle{fill:var(--cell);stroke:var(--muted);stroke-width:2.5;transition:fill .15s}
+.map .node text{font:600 13px system-ui,sans-serif;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:4px}
+.map .node .hv{font:11px var(--mono);fill:var(--muted)}
+.map .node.frontier circle{fill:var(--frontier)}
+.map .node.explored circle{fill:var(--explored)}
+.map .node.current circle{fill:var(--current);stroke:var(--current)}
+.map .node.start circle{stroke:var(--start);stroke-width:5}
+.map .node.goal circle{stroke:var(--goal);stroke-width:5}
+.map .node.pick{cursor:pointer}
+.map .node.pick circle{stroke-dasharray:4 3}
+.fr{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;min-height:40px}
+.fr button,.fr span{border:1.5px solid var(--line);background:var(--frontier);color:var(--ink);border-radius:8px;padding:3px 9px;font-size:.84rem;text-align:left;line-height:1.3}
+.fr button{cursor:pointer}
+.fr .nx{border-color:var(--current);box-shadow:0 0 0 2px color-mix(in srgb,var(--current) 40%,transparent)}
+.fr small{display:block;font:.72rem var(--mono);color:var(--muted)}
+.dslabel{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:12px}
+.log{list-style:none;margin:10px 0 0;padding:0;font-size:.88rem;max-height:13em;overflow:auto;border-top:1px solid var(--line)}
+.log li{padding:4px 0;border-bottom:1px solid var(--line)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.84rem;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:13px;height:13px;border-radius:3px;margin-right:5px;vertical-align:-2px;border:1px solid var(--line)}
+
+/* rutnätet */
+.gridwrap{overflow:hidden}
+.board{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;width:100%;max-width:760px}
+.board div{aspect-ratio:1;background:var(--cell);position:relative;display:grid;place-items:center;font:600 clamp(6px,1.3vw,10px) var(--mono);color:var(--ink);transition:background .08s}
+.board .wall{background:var(--wall)}
+.board .mud{background:var(--mud);color:#fff}
+.board .mud::after{content:"5";opacity:.65}
+.board .explored{background:var(--explored)}
+.board .mud.explored{background:color-mix(in srgb,var(--mud) 55%,var(--explored))}
+.board .frontier{background:var(--frontier)}
+.board .current{background:var(--current)}
+.board .path{background:var(--path);color:#fff}
+.board .start{background:var(--start)!important;border-radius:4px}
+.board .goal{background:var(--goal)!important;border-radius:4px}
+.board .start::after{content:"S";color:#fff;font-size:clamp(8px,1.6vw,13px)}
+.board .goal::after{content:"M";color:#fff;font-size:clamp(8px,1.6vw,13px)}
+.board .ord{position:absolute;inset:0;display:grid;place-items:center}
+.tools{display:flex;flex-wrap:wrap;gap:4px}
+.tools button{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:4px 10px;font-weight:600;min-height:36px}
+.tools button[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 15%,var(--surface))}
+.tools i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px;max-width:760px}
+.stat{background:var(--soft);border-radius:8px;padding:6px 10px}
+.stat small{display:block;color:var(--muted);font-size:.76rem}
+.stat b{font:700 1.3rem var(--mono)}
+.speed{display:inline-flex;align-items:center;gap:6px;font-size:.9rem}
+
+/* jämförelse */
+.cmp{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr));gap:12px;margin-top:12px}
+.cmp .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px}
+.cmp canvas{width:100%;height:auto;display:block;border-radius:4px;image-rendering:pixelated;margin:6px 0}
+.cmp h3{font-size:.95rem}
+.cmp .kv{display:flex;justify-content:space-between;font-size:.85rem}
+.cmp .kv b{font-family:var(--mono)}
+.cmp .best{color:var(--ok)} .cmp .worse{color:var(--bad)}
+
+/* tabell */
+.sum{width:100%;border-collapse:collapse;font-size:.92rem;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.sum th,.sum td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.sum th{background:var(--soft);font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+
+/* quiz */
+.q{margin:0 0 16px}
+.q p{font-weight:600;margin-bottom:6px}
+.q .opts{display:flex;flex-wrap:wrap;gap:6px}
+.q .opts button.right{background:var(--ok);border-color:var(--ok);color:#fff}
+.q .opts button.wrong{background:var(--bad);border-color:var(--bad);color:#fff}
+.q .why{font-size:.9rem;color:var(--muted);margin-top:6px}
+
+footer{max-width:1100px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:var(--muted)}
+@media (max-width:560px){
+  .wrap{padding:0 16px}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .map .scroller{overflow-x:auto;margin:0 -8px;padding:0 8px}
+  .map svg{min-width:540px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <a class="back-link" href="../index.html">← Kurssidan AI 1</a>
+    <p class="kicker">AI 1 · Introduktion till AI</p>
+    <h1>Sökning</h1>
+    <p class="lede">Hur hittar en GPS vägen, en spelfigur fram till dig eller en robot till laddstationen? De <b>söker</b>. Här får du se fem sökalgoritmer arbeta steg för steg – och själv vara algoritmen.</p>
+    <nav class="toc" aria-label="Delar">
+      <a href="#problem">1. Sökproblem</a>
+      <a href="#kartan">2. Kartan</a>
+      <a href="#du">3. Du är algoritmen</a>
+      <a href="#sandladan">4. Sandlådan</a>
+      <a href="#jamfor">5. Jämför</a>
+      <a href="#sammanfattning">6. Sammanfattning</a>
+      <a href="#test">Testa dig själv</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section class="part" id="problem">
+  <h2><span class="num">1</span> Vad är ett sökproblem?</h2>
+  <p class="lead">En <b>målbaserad agent</b> – som roboten i <a href="../agenter-och-miljoer/#k4">Agenter och miljöer</a> – vet vart den vill. Frågan är hur den kommer dit. Då formulerar man ett <b>sökproblem</b> med fyra delar:</p>
+  <div class="parts">
+    <div><b>Starttillstånd</b>Var vi börjar. Jönköping, eller rutan där roboten står.</div>
+    <div><b>Handlingar</b>Vad man kan göra i varje tillstånd. Köra längs en väg, gå ett steg.</div>
+    <div><b>Måltest</b>Hur man vet att man är framme. Är vi i Vetlanda?</div>
+    <div><b>Kostnad</b>Vad varje handling kostar. Kilometer, minuter eller antal steg.</div>
+  </div>
+  <p class="lead" style="margin-top:14px">Alla sökalgoritmer gör i grunden samma sak. De har en lista över platser de har sett men inte undersökt än – <b>fronten</b>. I varje steg plockar de ut <i>en</i> plats ur fronten, <b>expanderar</b> den (tittar på dess grannar) och lägger grannarna i fronten. Det enda som skiljer algoritmerna åt är <b>vilken plats de plockar ut härnäst</b>.</p>
+</section>
+
+<section class="part" id="kartan">
+  <h2><span class="num">2</span> Sökning på kartan</h2>
+  <p class="lead">Här är några orter runt Jönköping med ungefärliga vägavstånd. Välj en algoritm och tryck på <i>Ett steg</i>. Följ fronten under kartan: det är den som avgör vart sökningen går.</p>
+  <div class="algos" role="radiogroup" aria-label="Algoritm" id="mapAlgos"></div>
+  <p class="algo-desc" id="mapDesc"></p>
+  <div class="grid2">
+    <div class="panel map">
+      <div class="scroller"><svg id="mapSvg" viewBox="0 0 640 490" role="img" aria-label="Karta över orter runt Jönköping"></svg></div>
+      <div class="legend">
+        <span><i style="background:var(--frontier)"></i>i fronten</span>
+        <span><i style="background:var(--explored)"></i>expanderad</span>
+        <span><i style="background:var(--current)"></i>expanderas nu</span>
+        <span><i style="background:var(--path)"></i>funnen väg</span>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="row">
+        <label class="small">Från <select class="sel" id="mapFrom"></select></label>
+        <label class="small">Till <select class="sel" id="mapTo"></select></label>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" type="button" id="mapStep">Ett steg</button>
+        <button class="btn" type="button" id="mapRun">▶ Kör</button>
+        <button class="btn" type="button" id="mapReset">Börja om</button>
+      </div>
+      <p class="toast" id="mapMsg" aria-live="polite" style="margin:10px 0 0"></p>
+      <div class="dslabel" id="mapDs"></div>
+      <div class="fr" id="mapFrontier"></div>
+      <ol class="log" id="mapLog" aria-label="Vad som hänt"></ol>
+    </div>
+  </div>
+  <div class="callout">
+    <p><b>g</b> = hur långt vi redan har kört från start. <b>h</b> = fågelvägen kvar till målet – en <i>heuristik</i>, en kvalificerad gissning. <b>f = g + h</b> är A*:s uppskattning av hela resans längd. Avstånden är ungefärliga.</p>
+  </div>
+</section>
+
+<section class="part" id="du">
+  <h2><span class="num">3</span> Du är algoritmen</h2>
+  <p class="lead">Nu bestämmer du. Fronten visas här i bokstavsordning – inte i den ordning algoritmen tar dem. Klicka på den ort du tror att algoritmen expanderar härnäst, på kartan ovan eller i listan.</p>
+  <div class="panel">
+    <div class="row">
+      <span class="small">Algoritm:</span>
+      <div class="algos" role="radiogroup" aria-label="Algoritm att spela" id="guessAlgos"></div>
+      <button class="btn primary" type="button" id="guessStart">Starta</button>
+    </div>
+    <p class="toast" id="guessMsg" aria-live="polite" style="margin:10px 0 0"></p>
+    <div class="dslabel">Fronten (bokstavsordning)</div>
+    <div class="fr" id="guessFrontier"></div>
+    <p class="muted small" id="guessScore" style="margin:.8em 0 0"></p>
+  </div>
+  <div class="callout">
+    <p><b>Tips:</b> Bredden först tar alltid den som lades till <i>först</i> (lägst nummer). Djupet först tar den som lades till <i>sist</i>. Dijkstra tar lägst <i>g</i>, girig sökning lägst <i>h</i>, och A* lägst <i>f</i>.</p>
+  </div>
+</section>
+
+<section class="part" id="sandladan">
+  <h2><span class="num">4</span> Sandlådan</h2>
+  <p class="lead">I ett rutnät är varje ruta en plats och varje steg upp, ner, åt höger eller vänster en handling. Rita väggar och lera (lera kostar 5 i stället för 1) och se hur algoritmerna letar sig fram från <b style="color:var(--start)">S</b> till <b style="color:var(--goal)">M</b>.</p>
+  <div class="algos" role="radiogroup" aria-label="Algoritm" id="gridAlgos"></div>
+  <p class="algo-desc" id="gridDesc"></p>
+  <div class="panel gridwrap">
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <div class="tools" role="group" aria-label="Rita" id="tools">
+        <button type="button" data-tool="wall" aria-pressed="true"><i style="background:var(--wall)"></i>Vägg</button>
+        <button type="button" data-tool="mud" aria-pressed="false"><i style="background:var(--mud)"></i>Lera</button>
+        <button type="button" data-tool="empty" aria-pressed="false"><i style="background:var(--cell);border:1px solid var(--line)"></i>Sudda</button>
+        <button type="button" data-tool="start" aria-pressed="false"><i style="background:var(--start)"></i>Start</button>
+        <button type="button" data-tool="goal" aria-pressed="false"><i style="background:var(--goal)"></i>Mål</button>
+      </div>
+      <div class="row">
+        <select class="sel" id="preset" aria-label="Färdiga banor">
+          <option value="">Färdiga banor …</option>
+          <option value="trap">Fällan</option>
+          <option value="maze">Labyrint</option>
+          <option value="mud">Lerfloden</option>
+          <option value="random">Slumpade väggar</option>
+          <option value="empty">Tomt</option>
+        </select>
+      </div>
+    </div>
+    <div class="board" id="board" aria-label="Rutnät. Klicka eller dra för att rita."></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn primary" type="button" id="gRun">▶ Kör</button>
+      <button class="btn" type="button" id="gStep">Ett steg</button>
+      <button class="btn" type="button" id="gEnd">Hoppa till slutet</button>
+      <button class="btn" type="button" id="gClear">Rensa sökningen</button>
+      <label class="speed">Fart <input type="range" id="gSpeed" min="1" max="60" value="20"></label>
+      <label class="speed"><input type="checkbox" id="gOrder"> Visa ordningen</label>
+    </div>
+    <div class="stats">
+      <div class="stat"><small>Expanderade rutor</small><b id="sExp">0</b></div>
+      <div class="stat"><small>Största fronten</small><b id="sFr">0</b></div>
+      <div class="stat"><small>Vägens längd (steg)</small><b id="sLen">–</b></div>
+      <div class="stat"><small>Vägens kostnad</small><b id="sCost">–</b></div>
+    </div>
+    <p class="toast" id="gMsg" aria-live="polite" style="margin:10px 0 0"></p>
+  </div>
+  <div class="callout">
+    <p><b>Uppdrag:</b> Välj <i>Fällan</i> och kör girig sökning och sedan A*. Varför går den giriga in i fällan? Välj <i>Lerfloden</i> och jämför bredden först med Dijkstra – vem hittar den <i>kortaste</i> vägen, och vem hittar den <i>billigaste</i>? Slå på <i>Visa ordningen</i> och jämför hur bredden först och djupet först breder ut sig.</p>
+  </div>
+</section>
+
+<section class="part" id="jamfor">
+  <h2><span class="num">5</span> Jämför alla algoritmer</h2>
+  <p class="lead">Kör alla fem algoritmerna på banan i sandlådan just nu. Bilderna visar vilka rutor varje algoritm behövde undersöka (blått) och vägen den hittade (rött). Rita om banan och jämför igen.</p>
+  <button class="btn primary" type="button" id="cmpRun">Jämför på banan ovan</button>
+  <div class="cmp" id="cmp"></div>
+  <p class="muted small" id="cmpNote" style="margin-top:10px"></p>
+</section>
+
+<section class="part" id="sammanfattning">
+  <h2><span class="num">6</span> Sammanfattning</h2>
+  <div class="tablewrap">
+  <table class="sum">
+    <thead><tr><th>Algoritm</th><th>Väljer härnäst</th><th>Fronten är en</th><th>Billigaste vägen?</th><th>Bra att veta</th></tr></thead>
+    <tbody>
+      <tr><td><b>Bredden först</b><br><span class="muted small">BFS</span></td><td>Den som lades till först</td><td>Kö</td><td>Ja, om alla steg kostar lika mycket</td><td>Söker i ringar utåt. Kräver mycket minne.</td></tr>
+      <tr><td><b>Djupet först</b><br><span class="muted small">DFS</span></td><td>Den som lades till sist</td><td>Stack</td><td>Nej</td><td>Går så långt det går och backar sedan. Kräver lite minne, men vägen kan bli lång och krokig.</td></tr>
+      <tr><td><b>Dijkstra</b><br><span class="muted small">lägsta kostnad först</span></td><td>Lägst g – billigast hittills</td><td>Prioritetskö</td><td>Ja</td><td>Tar hänsyn till kostnader, men letar åt alla håll eftersom den inte vet var målet ligger.</td></tr>
+      <tr><td><b>Girig sökning</b><br><span class="muted small">bästa först</span></td><td>Lägst h – ser närmast målet ut</td><td>Prioritetskö</td><td>Nej</td><td>Ofta mycket snabb, men kan luras in i återvändsgränder.</td></tr>
+      <tr><td><b>A*</b><br><span class="muted small">"A-stjärna"</span></td><td>Lägst f = g + h</td><td>Prioritetskö</td><td>Ja, om h aldrig överskattar</td><td>Kombinerar Dijkstra och girig sökning. Används i GPS:er och dataspel.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout">
+    <p><b>Oinformerad eller informerad?</b> Bredden först, djupet först och Dijkstra är <b>oinformerade</b>: de vet inget om var målet ligger. Girig sökning och A* är <b>informerade</b>: de använder en heuristik, en uppskattning av hur långt det är kvar. En bra heuristik gör att man kan strunta i stora delar av kartan.</p>
+    <p><b>AI i dag:</b> Sökning används fortfarande överallt där det finns tydliga regler – vägplanering, robotar, logistik och spel. I schack och go kombineras sökning med neurala nätverk som har lärt sig en bra heuristik: hur bra en ställning ser ut.</p>
+  </div>
+</section>
+
+<section class="part" id="test">
+  <h2><span class="num">?</span> Testa dig själv</h2>
+  <div class="panel" id="quiz"></div>
+  <p class="toast" id="quizscore" aria-live="polite"></p>
+</section>
+
+</main>
+<footer>Allt körs i din webbläsare. Avstånden på kartan är ungefärliga. · <a href="../agenter-och-miljoer/">Agenter och miljöer</a> · <a href="../miljolabbet/">Miljölabbet</a></footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+const ALGOS = {
+  bfs: { kort: "Bredden först", ds: "Fronten är en kö – först in, först ut",
+    desc: "Bredden först (BFS) undersöker allt som ligger ett steg bort, sedan allt två steg bort, och så vidare. Den bryr sig inte om kostnader." },
+  dfs: { kort: "Djupet först", ds: "Fronten är en stack – sist in, först ut",
+    desc: "Djupet först (DFS) går så långt den kan åt ett håll och backar först när det tar stopp. Den tar alltid det senast tillagda." },
+  ucs: { kort: "Dijkstra", ds: "Fronten är en prioritetskö sorterad efter g",
+    desc: "Dijkstra (lägsta kostnad först) tar alltid det som är billigast att nå från start, g. Den hittar den billigaste vägen." },
+  greedy: { kort: "Girig", ds: "Fronten är en prioritetskö sorterad efter h",
+    desc: "Girig bästa först-sökning tar alltid det som ser ut att ligga närmast målet, h. Den struntar i hur långt den redan har åkt." },
+  astar: { kort: "A*", ds: "Fronten är en prioritetskö sorterad efter f = g + h",
+    desc: "A* tar det som har lägst f = g + h: kostnaden hittills plus en uppskattning av resten. Med en heuristik som aldrig överskattar hittar den billigaste vägen, och letar mindre än Dijkstra." },
+};
+const ALGO_KEYS = Object.keys(ALGOS);
+
+/* =====================================================================
+ * Sökmotorn: samma kod för kartan och rutnätet.
+ * P = { start, goal, neighbors(n) -> [[granne, kostnad], …], h(n) }
+ * Varje steg expanderar en nod och lämnar ifrån sig en ögonblicksbild.
+ * Måltestet görs när en nod plockas ut ur fronten.
+ * ===================================================================== */
+function* search(algo, P) {
+  const frontier = [];
+  let counter = 0;
+  const pri = (e) => algo === "ucs" ? e.g : algo === "greedy" ? e.h : algo === "astar" ? e.g + e.h : e.order;
+  const push = (n, g, parent) => { const e = { n, g, h: P.h(n), parent, order: ++counter }; e.f = e.g + e.h; e.p = pri(e); frontier.push(e); return e; };
+  const pick = () => {
+    if (algo === "bfs") return 0;
+    if (algo === "dfs") return frontier.length - 1;
+    let bi = 0;
+    for (let i = 1; i < frontier.length; i++) {
+      const a = frontier[i], b = frontier[bi];
+      if (a.p < b.p - 1e-9 || (Math.abs(a.p - b.p) < 1e-9 && a.order < b.order)) bi = i;
+    }
+    return bi;
+  };
+  // Fronten i den ordning noderna kommer att plockas ut (dubbletter visas en gång).
+  const view = () => {
+    let list;
+    if (algo === "bfs") list = frontier.slice();
+    else if (algo === "dfs") list = frontier.slice().reverse();
+    else list = frontier.slice().sort((a, b) => a.p - b.p || a.order - b.order);
+    const seen = new Set();
+    return list.filter((e) => !explored.has(e.n) && !seen.has(e.n) && seen.add(e.n));
+  };
+  const explored = new Set(), parent = new Map(), gOf = new Map(), best = new Map(), reached = new Set();
+  let expanded = 0, maxF = 1;
+  push(P.start, 0, null);
+  reached.add(P.start); best.set(P.start, 0);
+  while (frontier.length) {
+    const next = view()[0];
+    const e = frontier.splice(pick(), 1)[0];
+    if (explored.has(e.n)) continue;   // en gammal kopia som redan har expanderats
+    explored.add(e.n); parent.set(e.n, e.parent); gOf.set(e.n, e.g); expanded++;
+    const snap = { current: e, explored, parent, gOf, expanded, order: [...explored] };
+    if (e.n === P.goal) {
+      const path = [];
+      for (let n = e.n; n !== null; n = parent.get(n)) path.unshift(n);
+      yield { ...snap, done: true, found: true, path, cost: e.g, frontier: view(), added: [], maxF };
+      return;
+    }
+    const added = [];
+    const nb = P.neighbors(e.n);
+    for (const [m, c] of algo === "dfs" ? nb.slice().reverse() : nb) {
+      if (explored.has(m)) continue;
+      const g = e.g + c;
+      if (algo === "bfs" || algo === "greedy") { if (reached.has(m)) continue; reached.add(m); }
+      else if (algo === "ucs" || algo === "astar") { if (best.has(m) && best.get(m) <= g) continue; best.set(m, g); }
+      push(m, g, e.n);
+      added.push(m);
+    }
+    maxF = Math.max(maxF, view().length);
+    yield { ...snap, done: false, frontier: view(), added, maxF, next };
+  }
+  yield { done: true, found: false, explored, parent, gOf, expanded, frontier: [], added: [], maxF, order: [...explored] };
+}
+
+function algoPicker(host, initial, onChange) {
+  host.innerHTML = ALGO_KEYS.map((k) => `<button type="button" role="radio" data-a="${k}" aria-checked="${k === initial}">${ALGOS[k].kort}</button>`).join("");
+  host.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    host.querySelectorAll("button").forEach((x) => x.setAttribute("aria-checked", String(x === b)));
+    onChange(b.dataset.a);
+  }));
+}
+
+/* =====================================================================
+ * Kartan
+ * ===================================================================== */
+const TOWNS = {
+  "Jönköping": [57.7826, 14.1618], "Huskvarna": [57.7860, 14.2900], "Habo": [57.9070, 14.0740], "Mullsjö": [57.9170, 13.8800],
+  "Gränna": [58.0250, 14.4620], "Tranås": [58.0370, 14.9750], "Nässjö": [57.6530, 14.6960], "Eksjö": [57.6670, 14.9710],
+  "Vetlanda": [57.4280, 15.0780], "Vaggeryd": [57.4970, 14.1460], "Värnamo": [57.1860, 14.0400],
+};
+const ROADS = [["Jönköping", "Huskvarna"], ["Jönköping", "Habo"], ["Habo", "Mullsjö"], ["Mullsjö", "Jönköping"], ["Jönköping", "Vaggeryd"],
+  ["Vaggeryd", "Värnamo"], ["Huskvarna", "Gränna"], ["Gränna", "Tranås"], ["Huskvarna", "Nässjö"], ["Nässjö", "Tranås"], ["Nässjö", "Eksjö"],
+  ["Eksjö", "Tranås"], ["Eksjö", "Vetlanda"], ["Nässjö", "Vetlanda"], ["Värnamo", "Vetlanda"]];
+const NAMES = Object.keys(TOWNS);
+// Fågelvägen i km (platt jord duger på de här avstånden).
+function crow(a, b) {
+  const [la1, lo1] = TOWNS[a], [la2, lo2] = TOWNS[b];
+  const dx = (lo2 - lo1) * Math.cos((la1 + la2) / 2 * Math.PI / 180) * 111.3, dy = (la2 - la1) * 111.3;
+  return Math.hypot(dx, dy);
+}
+// Vägavståndet uppskattas som fågelvägen + 20 %, så h överskattar aldrig.
+const KM = new Map();
+const ADJ = Object.fromEntries(NAMES.map((n) => [n, []]));
+for (const [a, b] of ROADS) {
+  const d = Math.round(crow(a, b) * 1.2);
+  KM.set(a + "|" + b, d); KM.set(b + "|" + a, d);
+  ADJ[a].push([b, d]); ADJ[b].push([a, d]);
+}
+for (const n of NAMES) ADJ[n].sort((x, y) => x[0].localeCompare(y[0], "sv"));
+// Placering i bilden.
+const lats = NAMES.map((n) => TOWNS[n][0]), lons = NAMES.map((n) => TOWNS[n][1]);
+const LA0 = Math.min(...lats), LA1 = Math.max(...lats), LO0 = Math.min(...lons), LO1 = Math.max(...lons);
+const POS = Object.fromEntries(NAMES.map((n) => [n, [60 + (TOWNS[n][1] - LO0) / (LO1 - LO0) * 520, 50 + (LA1 - TOWNS[n][0]) / (LA1 - LA0) * 370]]));
+
+let mapAlgo = "bfs", mapGen = null, mapSnap = null, mapTimer = null, mapFrom = "Jönköping", mapTo = "Vetlanda";
+const mapProblem = () => ({ start: mapFrom, goal: mapTo, neighbors: (n) => ADJ[n], h: (n) => Math.round(crow(n, mapTo)) });
+
+function drawMapBase() {
+  const svg = $("mapSvg");
+  let s = "";
+  for (const [a, b] of ROADS) {
+    const [x1, y1] = POS[a], [x2, y2] = POS[b];
+    s += `<line class="edge" data-e="${a}|${b}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+  }
+  for (const [a, b] of ROADS) {
+    const [x1, y1] = POS[a], [x2, y2] = POS[b];
+    s += `<text class="km" x="${(x1 + x2) / 2}" y="${(y1 + y2) / 2 + 4}" text-anchor="middle">${KM.get(a + "|" + b)}</text>`;
+  }
+  // Var namnet står i förhållande till orten, så att etiketterna inte krockar.
+  const PLACE = { "Jönköping": "left", "Huskvarna": "below", "Nässjö": "below", "Vetlanda": "below", "Tranås": "above", "Gränna": "above" };
+  for (const n of NAMES) {
+    const [x, y] = POS[n], at = PLACE[n] || "right";
+    const [tx, ty, hy, anchor] = at === "left" ? [x - 18, y - 2, y + 12, "end"] : at === "below" ? [x, y + 30, y + 44, "middle"]
+      : at === "above" ? [x, y - 34, y - 20, "middle"] : [x + 18, y - 2, y + 12, "start"];
+    s += `<g class="node" data-n="${n}" tabindex="-1"><circle cx="${x}" cy="${y}" r="13"/>
+      <text x="${tx}" y="${ty}" text-anchor="${anchor}">${n}</text>
+      <text class="hv" data-hv="${n}" x="${tx}" y="${hy}" text-anchor="${anchor}"></text></g>`;
+  }
+  svg.innerHTML = s;
+  svg.querySelectorAll(".node").forEach((g) => g.addEventListener("click", () => guessClick(g.dataset.n)));
+}
+
+function mapReset() {
+  clearTimeout(mapTimer); mapTimer = null; $("mapRun").textContent = "▶ Kör";
+  mapGen = search(mapAlgo, mapProblem());
+  mapSnap = null;
+  $("mapLog").innerHTML = "";
+  $("mapMsg").textContent = ""; $("mapMsg").className = "toast";
+  renderMap();
+}
+function mapStepOnce() {
+  if (mapSnap && mapSnap.done) return false;
+  const r = mapGen.next();
+  if (r.done) return false;
+  mapSnap = r.value;
+  const s = mapSnap, e = s.current;
+  if (s.found) {
+    log(`Plockar ut <b>${e.n}</b> – det är målet! Vägen: ${s.path.join(" → ")} (${s.cost} km).`);
+    $("mapMsg").textContent = `Framme! ${s.path.length - 1} vägsträckor, ${s.cost} km. ${s.expanded} orter expanderades.`;
+    $("mapMsg").className = "toast ok";
+  } else if (s.done) {
+    log("Fronten är tom – det finns ingen väg."); $("mapMsg").textContent = "Ingen väg hittades."; $("mapMsg").className = "toast bad";
+  } else {
+    log(`Expanderar <b>${e.n}</b>${mapAlgo === "bfs" || mapAlgo === "dfs" ? "" : ` (${valueText(e)})`}. ` +
+      (s.added.length ? `Lägger till ${s.added.join(", ")} i fronten.` : "Inga nya grannar."));
+  }
+  renderMap();
+  return !s.done;
+}
+function valueText(e) {
+  return mapAlgo === "ucs" ? `g = ${e.g}` : mapAlgo === "greedy" ? `h = ${e.h}` : `f = ${e.g} + ${e.h} = ${e.f}`;
+}
+function log(html) {
+  const li = document.createElement("li");
+  li.innerHTML = html;
+  $("mapLog").prepend(li);
+}
+function chipText(e, a = mapAlgo) {
+  const v = a === "bfs" || a === "dfs" ? `tillagd som nr ${e.order}` : a === "ucs" ? `g ${e.g}` : a === "greedy" ? `h ${e.h}` : `f ${e.g}+${e.h} = ${e.f}`;
+  return `${esc(e.n)}<small>${v}</small>`;
+}
+function renderMap() {
+  const s = mapSnap;
+  const front = s ? s.frontier : [{ n: mapFrom, g: 0, h: mapProblem().h(mapFrom), f: mapProblem().h(mapFrom), order: 1 }];
+  const inFront = new Set(front.map((e) => e.n));
+  const pathEdges = new Set();
+  if (s && s.found) for (let i = 1; i < s.path.length; i++) { pathEdges.add(s.path[i - 1] + "|" + s.path[i]); pathEdges.add(s.path[i] + "|" + s.path[i - 1]); }
+  const treeEdges = new Set();
+  if (s) for (const [n, p] of s.parent) if (p) { treeEdges.add(n + "|" + p); treeEdges.add(p + "|" + n); }
+  $("mapSvg").querySelectorAll(".edge").forEach((l) => {
+    l.classList.toggle("path", pathEdges.has(l.dataset.e));
+    l.classList.toggle("tree", !pathEdges.has(l.dataset.e) && treeEdges.has(l.dataset.e));
+  });
+  const showH = mapAlgo === "greedy" || mapAlgo === "astar";
+  $("mapSvg").querySelectorAll(".node").forEach((g) => {
+    const n = g.dataset.n;
+    g.classList.toggle("start", n === mapFrom);
+    g.classList.toggle("goal", n === mapTo);
+    g.classList.toggle("explored", !!s && s.explored.has(n) && !(s.current && s.current.n === n));
+    g.classList.toggle("current", !!s && !!s.current && s.current.n === n);
+    g.classList.toggle("frontier", inFront.has(n) && !(s && s.explored.has(n)));
+    g.classList.toggle("pick", guess.on && inFront.has(n));
+    g.querySelector(".hv").textContent = showH ? `h ${Math.round(crow(n, mapTo))}` : "";
+  });
+  $("mapDs").textContent = guess.on ? "Du är algoritmen – fronten i bokstavsordning. Klicka på nästa ort." : ALGOS[mapAlgo].ds;
+  if (guess.on && s && !s.done) {
+    $("mapFrontier").innerHTML = front.slice().sort((a, b) => a.n.localeCompare(b.n, "sv")).map((e) => `<button type="button" data-n="${esc(e.n)}">${chipText(e)}</button>`).join("");
+    $("mapFrontier").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => guessClick(b.dataset.n)));
+    return;
+  }
+  $("mapFrontier").innerHTML = front.length ? front.map((e, i) => `<span class="${i === 0 && !(s && s.done) ? "nx" : ""}">${chipText(e)}</span>`).join("")
+    : `<span class="muted small" style="background:none;border:0">tom</span>`;
+}
+
+NAMES.slice().sort((a, b) => a.localeCompare(b, "sv")).forEach((n) => {
+  $("mapFrom").insertAdjacentHTML("beforeend", `<option${n === mapFrom ? " selected" : ""}>${n}</option>`);
+  $("mapTo").insertAdjacentHTML("beforeend", `<option${n === mapTo ? " selected" : ""}>${n}</option>`);
+});
+$("mapFrom").addEventListener("change", () => { mapFrom = $("mapFrom").value; guess.on = false; mapReset(); });
+$("mapTo").addEventListener("change", () => { mapTo = $("mapTo").value; guess.on = false; mapReset(); });
+algoPicker($("mapAlgos"), mapAlgo, (a) => { mapAlgo = a; $("mapDesc").textContent = ALGOS[a].desc; guess.on = false; renderGuess(); mapReset(); });
+$("mapDesc").textContent = ALGOS[mapAlgo].desc;
+$("mapStep").addEventListener("click", () => { if (guess.on) { guess.on = false; renderGuess(); } clearTimeout(mapTimer); mapTimer = null; $("mapRun").textContent = "▶ Kör"; mapStepOnce(); });
+$("mapReset").addEventListener("click", () => { guess.on = false; renderGuess(); mapReset(); });
+$("mapRun").addEventListener("click", () => {
+  if (mapTimer) { clearTimeout(mapTimer); mapTimer = null; $("mapRun").textContent = "▶ Kör"; return; }
+  if (guess.on) { guess.on = false; renderGuess(); }
+  if (mapSnap && mapSnap.done) mapReset();
+  $("mapRun").textContent = "⏸ Pausa";
+  const tick = () => { if (mapStepOnce()) mapTimer = setTimeout(tick, 800); else { mapTimer = null; $("mapRun").textContent = "▶ Kör"; } };
+  tick();
+});
+
+/* ---------- Du är algoritmen ---------- */
+const guess = { on: false, algo: "astar", right: 0, wrong: 0 };
+algoPicker($("guessAlgos"), guess.algo, (a) => { guess.algo = a; });
+$("guessStart").addEventListener("click", () => {
+  mapAlgo = guess.algo;
+  $("mapAlgos").querySelectorAll("button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.a === mapAlgo)));
+  $("mapDesc").textContent = ALGOS[mapAlgo].desc;
+  mapReset();
+  mapStepOnce();               // startorten expanderas alltid först
+  guess.on = true; guess.right = 0; guess.wrong = 0;
+  gsay(`Du är ${ALGOS[guess.algo].kort}: ${mapFrom} är expanderad. Vilken ort tar algoritmen nu?`);
+  renderGuess(); renderMap();
+  $("kartan").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+function renderGuess() {
+  const box = $("guessFrontier");
+  if (!guess.on || !mapSnap) { box.innerHTML = `<span class="muted small" style="background:none;border:0">Välj en algoritm och tryck på Starta. Kartan ovan används.</span>`; $("guessScore").textContent = ""; renderMap(); return; }
+  const list = mapSnap.frontier.slice().sort((a, b) => a.n.localeCompare(b.n, "sv"));
+  box.innerHTML = list.map((e) => `<button type="button" data-n="${esc(e.n)}">${chipText(e, guess.algo)}</button>`).join("") || `<span class="muted small" style="background:none;border:0">tom</span>`;
+  box.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => guessClick(b.dataset.n)));
+  $("guessScore").textContent = `Rätt: ${guess.right} · Fel: ${guess.wrong}`;
+}
+function gsay(text, kind = "") {
+  for (const el of [$("guessMsg"), $("mapMsg")]) { el.textContent = text; el.className = "toast" + (kind ? " " + kind : ""); }
+}
+function guessClick(n) {
+  if (!guess.on || !mapSnap || mapSnap.done) return;
+  const front = mapSnap.frontier;
+  if (!front.some((e) => e.n === n)) { gsay(`${n} finns inte i fronten.`, "bad"); return; }
+  const want = front[0];
+  if (n === want.n) {
+    guess.right++;
+    mapStepOnce();
+    if (mapSnap.found) {
+      guess.on = false;
+      gsay(`Rätt – och ${n} är målet! Du var ${ALGOS[guess.algo].kort} med ${guess.right} rätt och ${guess.wrong} fel. Vägen: ${mapSnap.path.join(" → ")} (${mapSnap.cost} km).`, "ok");
+    } else {
+      gsay(`Rätt! ${n} expanderas. Vilken ort tar algoritmen nu?`, "ok");
+    }
+  } else {
+    guess.wrong++;
+    const e = front.find((x) => x.n === n);
+    const why = guess.algo === "bfs" ? `Bredden först tar den som lades till först – ${want.n} (nr ${want.order}) kom före ${n} (nr ${e.order}).`
+      : guess.algo === "dfs" ? `Djupet först tar den som lades till sist – ${want.n} (nr ${want.order}) kom efter ${n} (nr ${e.order}).`
+      : guess.algo === "ucs" ? `Dijkstra tar lägst g. ${n} har g ${e.g}, men någon annan har lägre.`
+      : guess.algo === "greedy" ? `Girig sökning tar lägst h. ${n} har h ${e.h}, men någon annan har lägre.`
+      : `A* tar lägst f. ${n} har f = ${e.f}, men någon annan har lägre.`;
+    gsay("Inte riktigt. " + why, "bad");
+  }
+  renderGuess();
+}
+
+/* =====================================================================
+ * Rutnätet
+ * ===================================================================== */
+const W = 25, H = 15;
+const EMPTY = 0, WALL = 1, MUD = 2, MUD_COST = 5;
+const grid = new Uint8Array(W * H);
+let start = { x: 3, y: 7 }, goal = { x: 21, y: 7 };
+let gAlgo = "astar", tool = "wall";
+const id = (x, y) => y * W + x;
+const gridProblem = () => ({
+  start: id(start.x, start.y), goal: id(goal.x, goal.y),
+  neighbors(n) {
+    const x = n % W, y = (n - x) / W, out = [];
+    for (const [dx, dy] of [[0, -1], [1, 0], [0, 1], [-1, 0]]) {
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      const c = grid[id(nx, ny)];
+      if (c === WALL) continue;
+      out.push([id(nx, ny), c === MUD ? MUD_COST : 1]);
+    }
+    return out;
+  },
+  h(n) { const x = n % W, y = (n - x) / W; return Math.abs(x - goal.x) + Math.abs(y - goal.y); },
+});
+
+const board = $("board");
+board.style.gridTemplateColumns = `repeat(${W},minmax(0,1fr))`;
+const cells = [];
+for (let i = 0; i < W * H; i++) { const d = document.createElement("div"); board.append(d); cells.push(d); }
+
+let gGen = null, gSnap = null, gTimer = null;
+function gReset() {
+  clearTimeout(gTimer); gTimer = null; $("gRun").textContent = "▶ Kör";
+  gGen = null; gSnap = null;
+  $("gMsg").textContent = ""; $("gMsg").className = "toast";
+  renderGrid();
+}
+function gStep() {
+  if (!gGen) gGen = search(gAlgo, gridProblem());
+  if (gSnap && gSnap.done) return false;
+  const r = gGen.next();
+  if (r.done) return false;
+  gSnap = r.value;
+  if (gSnap.done) {
+    $("gMsg").textContent = gSnap.found ? `${ALGOS[gAlgo].kort} hittade en väg: ${gSnap.path.length - 1} steg, kostnad ${gSnap.cost}.` : "Det finns ingen väg till målet.";
+    $("gMsg").className = "toast " + (gSnap.found ? "ok" : "bad");
+  }
+  return !gSnap.done;
+}
+function renderGrid() {
+  const s = gSnap, showOrder = $("gOrder").checked;
+  const front = new Set(s ? s.frontier.map((e) => e.n) : []);
+  const path = new Set(s && s.found ? s.path : []);
+  const rank = new Map();
+  if (s && showOrder) s.order.forEach((n, i) => rank.set(n, i + 1));
+  for (let i = 0; i < W * H; i++) {
+    const c = cells[i], t = grid[i];
+    let cls = t === WALL ? "wall" : t === MUD ? "mud" : "";
+    if (s) {
+      if (path.has(i)) cls += " path";
+      else if (s.current && s.current.n === i && !s.done) cls += " current";
+      else if (s.explored.has(i)) cls += " explored";
+      else if (front.has(i)) cls += " frontier";
+    }
+    if (i === id(start.x, start.y)) cls += " start";
+    if (i === id(goal.x, goal.y)) cls += " goal";
+    c.className = cls;
+    const r = rank.get(i);
+    c.innerHTML = r && !cls.includes("start") && !cls.includes("goal") ? `<span class="ord">${r}</span>` : "";
+  }
+  $("sExp").textContent = s ? s.expanded : 0;
+  $("sFr").textContent = s ? s.maxF : 0;
+  $("sLen").textContent = s && s.found ? s.path.length - 1 : "–";
+  $("sCost").textContent = s && s.found ? s.cost : "–";
+}
+function gRunToggle() {
+  if (gTimer) { clearTimeout(gTimer); gTimer = null; $("gRun").textContent = "▶ Kör"; return; }
+  if (gSnap && gSnap.done) gReset();
+  $("gRun").textContent = "⏸ Pausa";
+  const tick = () => {
+    const per = Math.max(1, Math.round(+$("gSpeed").value / 15));
+    let more = true;
+    for (let k = 0; k < per && more; k++) more = gStep();
+    renderGrid();
+    if (more) gTimer = setTimeout(tick, 1000 / Math.min(60, +$("gSpeed").value));
+    else { gTimer = null; $("gRun").textContent = "▶ Kör"; }
+  };
+  tick();
+}
+$("gRun").addEventListener("click", gRunToggle);
+$("gStep").addEventListener("click", () => { clearTimeout(gTimer); gTimer = null; $("gRun").textContent = "▶ Kör"; gStep(); renderGrid(); });
+$("gEnd").addEventListener("click", () => { clearTimeout(gTimer); gTimer = null; $("gRun").textContent = "▶ Kör"; while (gStep()); renderGrid(); });
+$("gClear").addEventListener("click", gReset);
+$("gOrder").addEventListener("change", renderGrid);
+algoPicker($("gridAlgos"), gAlgo, (a) => { gAlgo = a; $("gridDesc").textContent = ALGOS[a].desc; gReset(); });
+$("gridDesc").textContent = ALGOS[gAlgo].desc;
+
+// Rita
+$("tools").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+  tool = b.dataset.tool;
+  $("tools").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+}));
+let drawing = false;
+function cellFromEvent(e) {
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const c = el && el.closest("#board > div");
+  return c ? cells.indexOf(c) : -1;
+}
+function paint(i) {
+  if (i < 0) return;
+  const x = i % W, y = (i - x) / W;
+  const isStart = i === id(start.x, start.y), isGoal = i === id(goal.x, goal.y);
+  if (tool === "start") { if (!isGoal) { start = { x, y }; grid[i] = EMPTY; } }
+  else if (tool === "goal") { if (!isStart) { goal = { x, y }; grid[i] = EMPTY; } }
+  else if (!isStart && !isGoal) grid[i] = tool === "wall" ? WALL : tool === "mud" ? MUD : EMPTY;
+  gReset();
+}
+board.addEventListener("pointerdown", (e) => { e.preventDefault(); drawing = true; board.setPointerCapture(e.pointerId); paint(cellFromEvent(e)); });
+board.addEventListener("pointermove", (e) => { if (drawing && tool !== "start" && tool !== "goal") paint(cellFromEvent(e)); });
+board.addEventListener("pointerup", () => { drawing = false; });
+board.addEventListener("pointercancel", () => { drawing = false; });
+
+// Färdiga banor
+function preset(kind) {
+  grid.fill(EMPTY);
+  start = { x: 3, y: 7 }; goal = { x: 21, y: 7 };
+  if (kind === "trap") {
+    // Tre väggar där det som ser närmast ut leder fel: girig sökning hittar en väg
+    // som kostar 44, men den billigaste kostar 28.
+    for (let y = 3; y <= 13; y++) grid[id(6, y)] = WALL;
+    for (let x = 14; x < W; x++) grid[id(x, 6)] = WALL;
+    for (let y = 11; y < H; y++) grid[id(21, y)] = WALL;
+  } else if (kind === "mud") {
+    // En flod av lera rakt emellan. Över den är kortast i steg, runt den är billigast.
+    for (let x = 11; x <= 13; x++) for (let y = 2; y < H; y++) grid[id(x, y)] = MUD;
+  } else if (kind === "maze") {
+    grid.fill(WALL);
+    const seen = new Set(), stack = [[1, 1]];
+    grid[id(1, 1)] = EMPTY; seen.add(id(1, 1));
+    while (stack.length) {
+      const [x, y] = stack[stack.length - 1];
+      const opts = [[0, -2], [2, 0], [0, 2], [-2, 0]].map(([dx, dy]) => [x + dx, y + dy, dx, dy])
+        .filter(([nx, ny]) => nx > 0 && ny > 0 && nx < W - 1 && ny < H - 1 && !seen.has(id(nx, ny)));
+      if (!opts.length) { stack.pop(); continue; }
+      const [nx, ny, dx, dy] = opts[Math.floor(Math.random() * opts.length)];
+      grid[id(x + dx / 2, y + dy / 2)] = EMPTY; grid[id(nx, ny)] = EMPTY; seen.add(id(nx, ny));
+      stack.push([nx, ny]);
+    }
+    // Några extra öppningar så att det finns mer än en väg.
+    for (let k = 0; k < 18; k++) {
+      const x = 1 + Math.floor(Math.random() * (W - 2)), y = 1 + Math.floor(Math.random() * (H - 2));
+      if ((x + y) % 2 === 1) grid[id(x, y)] = EMPTY;
+    }
+    start = { x: 1, y: 1 }; goal = { x: W - 2, y: H - 2 };
+  } else if (kind === "random") {
+    for (let i = 0; i < W * H; i++) grid[i] = Math.random() < 0.28 ? WALL : Math.random() < 0.08 ? MUD : EMPTY;
+  }
+  grid[id(start.x, start.y)] = EMPTY; grid[id(goal.x, goal.y)] = EMPTY;
+  gReset();
+}
+$("preset").addEventListener("change", () => { if ($("preset").value) preset($("preset").value); $("preset").value = ""; });
+
+/* =====================================================================
+ * Jämför
+ * ===================================================================== */
+function runAll(algo) {
+  let last = null;
+  for (const s of search(algo, gridProblem())) last = s;
+  return last;
+}
+function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+$("cmpRun").addEventListener("click", () => {
+  const res = ALGO_KEYS.map((k) => [k, runAll(k)]);
+  const found = res.filter(([, r]) => r.found);
+  const bestCost = found.length ? Math.min(...found.map(([, r]) => r.cost)) : null;
+  const fewest = Math.min(...res.map(([, r]) => r.expanded));
+  const col = { cell: css("--cell"), wall: css("--wall"), mud: css("--mud"), exp: css("--explored"), path: css("--path"), start: css("--start"), goal: css("--goal") };
+  $("cmp").innerHTML = res.map(([k, r]) => `<div class="card"><h3>${ALGOS[k].kort}</h3><canvas width="${W * 6}" height="${H * 6}" data-k="${k}"></canvas>
+    <div class="kv"><span>Expanderade</span><b class="${r.expanded === fewest ? "best" : ""}">${r.expanded}</b></div>
+    <div class="kv"><span>Vägens kostnad</span><b class="${r.found ? (r.cost === bestCost ? "best" : "worse") : ""}">${r.found ? r.cost : "–"}</b></div>
+    <div class="kv"><span>Steg</span><b>${r.found ? r.path.length - 1 : "–"}</b></div></div>`).join("");
+  res.forEach(([k, r]) => {
+    const g = $("cmp").querySelector(`canvas[data-k="${k}"]`).getContext("2d");
+    const path = new Set(r.found ? r.path : []);
+    for (let i = 0; i < W * H; i++) {
+      const x = i % W, y = (i - x) / W;
+      g.fillStyle = grid[i] === WALL ? col.wall : path.has(i) ? col.path : r.explored.has(i) ? col.exp : grid[i] === MUD ? col.mud : col.cell;
+      if (i === id(start.x, start.y)) g.fillStyle = col.start;
+      if (i === id(goal.x, goal.y)) g.fillStyle = col.goal;
+      g.fillRect(x * 6, y * 6, 6, 6);
+    }
+  });
+  $("cmpNote").textContent = bestCost === null ? "Ingen algoritm hittade en väg – målet går inte att nå."
+    : `Grönt = bäst. Rött = dyrare väg än den billigaste möjliga (${bestCost}). Dijkstra och A* hittar alltid den billigaste vägen; A* brukar behöva undersöka färre rutor.`;
+});
+
+/* =====================================================================
+ * Testa dig själv
+ * ===================================================================== */
+const QUIZ = [
+  { q: "Vad är det enda som skiljer sökalgoritmerna åt?", o: ["Hur snabb datorn är", "Vilken nod de plockar ut ur fronten härnäst", "Hur kartan ser ut", "Om de har ett mål"], a: 1, why: "Alla lägger grannar i fronten och plockar ut en i taget. Ordningen avgör allt." },
+  { q: "Vilken datastruktur använder bredden först för sin front?", o: ["Stack", "Kö", "Prioritetskö", "Ingen"], a: 1, why: "En kö: först in, först ut. Därför breder sökningen ut sig i ringar." },
+  { q: "Alla steg kostar lika mycket. Vilken algoritm hittar säkert den kortaste vägen?", o: ["Djupet först", "Girig sökning", "Bredden först", "Ingen av dem"], a: 2, why: "Bredden först hittar vägen med minst antal steg. Med olika kostnader behövs Dijkstra eller A*." },
+  { q: "Vad är en heuristik?", o: ["Den exakta kostnaden kvar till målet", "En uppskattning av hur långt det är kvar", "Kostnaden hittills", "En lista över besökta noder"], a: 1, why: "Till exempel fågelvägen till målet. Den är en kvalificerad gissning, inte det exakta svaret." },
+  { q: "Varför kan girig sökning hitta en onödigt lång väg?", o: ["Den tittar bara på hur nära målet det ser ut, inte på hur långt den redan har gått", "Den använder en stack", "Den har ingen heuristik", "Den söker baklänges"], a: 0, why: "Den följer h blint och kan luras in i en återvändsgränd, som i Fällan." },
+  { q: "Vad sorterar A* fronten efter?", o: ["g", "h", "f = g + h", "Ordningen noderna lades till"], a: 2, why: "Kostnaden hittills plus uppskattningen av resten. Om h aldrig överskattar hittar A* den billigaste vägen." },
+];
+let qRight = 0, qDone = 0;
+$("quiz").innerHTML = QUIZ.map((x, i) => `<div class="q" data-q="${i}"><p>${i + 1}. ${esc(x.q)}</p><div class="opts">${x.o.map((o, j) => `<button class="btn" type="button" data-j="${j}">${esc(o)}</button>`).join("")}</div><div class="why" hidden></div></div>`).join("");
+document.querySelectorAll(".q").forEach((qd) => {
+  const x = QUIZ[+qd.dataset.q];
+  qd.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    if (qd.dataset.done) return;
+    qd.dataset.done = "1";
+    const ok = +b.dataset.j === x.a;
+    b.classList.add(ok ? "right" : "wrong");
+    qd.querySelector(`[data-j="${x.a}"]`).classList.add("right");
+    const why = qd.querySelector(".why");
+    why.hidden = false;
+    why.textContent = (ok ? "Rätt! " : "Inte riktigt. ") + x.why;
+    qDone++; if (ok) qRight++;
+    $("quizscore").textContent = `${qRight} av ${qDone} rätt` + (qDone === QUIZ.length ? (qRight === QUIZ.length ? " – alla rätt!" : " – ladda om sidan för att försöka igen.") : "");
+    $("quizscore").className = "toast" + (qDone === QUIZ.length && qRight === QUIZ.length ? " ok" : "");
+  }));
+});
+
+/* ---------- start ---------- */
+drawMapBase();
+mapReset();
+renderGuess();
+preset("trap");
+
+// För felsökning i konsolen.
+window.sok = { search, gridProblem, mapProblem, ADJ, KM, grid, setSG(a, b) { start = a; goal = b; } };
+</script>
+</body>
+</html>

@@ -97,11 +97,6 @@ select.sel{padding:6px 10px;border:1.5px solid var(--line);border-radius:8px;bac
 .map .node.goal circle{stroke:var(--goal);stroke-width:5}
 .map .node.pick{cursor:pointer}
 .map .node.pick circle{stroke-dasharray:4 3}
-.fr{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;min-height:40px}
-.fr button,.fr span{border:1.5px solid var(--line);background:var(--frontier);color:var(--ink);border-radius:8px;padding:3px 9px;font-size:.84rem;text-align:left;line-height:1.3}
-.fr button{cursor:pointer}
-.fr .nx{border-color:var(--current);box-shadow:0 0 0 2px color-mix(in srgb,var(--current) 40%,transparent)}
-.fr small{display:block;font:.72rem var(--mono);color:var(--muted)}
 .dslabel{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:12px}
 .log{list-style:none;margin:10px 0 0;padding:0;font-size:.88rem;max-height:13em;overflow:auto;border-top:1px solid var(--line)}
 .log li{padding:4px 0;border-bottom:1px solid var(--line)}
@@ -158,6 +153,82 @@ select.sel{padding:6px 10px;border:1.5px solid var(--line);border-radius:8px;bac
 .q .opts button.wrong{background:var(--bad);border-color:var(--bad);color:#fff}
 .q .why{font-size:.9rem;color:var(--muted);margin-top:6px}
 
+/* 0. träd och grafer */
+.sub{font-size:1.15rem;margin:24px 0 6px}
+.t0 svg{width:100%;height:auto;display:block}
+.t0 .e{stroke:var(--muted);stroke-width:2.5}
+.t0 .e.hl{stroke:var(--accent);stroke-width:5}
+.t0 .e.extra{stroke:var(--path);stroke-width:3;stroke-dasharray:7 5}
+.t0 .n{cursor:pointer}
+.t0 .n circle{fill:var(--cell);stroke:var(--muted);stroke-width:2.5}
+.t0 .n text{font:700 15px system-ui,sans-serif;fill:var(--ink);pointer-events:none}
+.t0 .n.sel circle{fill:var(--accent);stroke:var(--accent)}
+.t0 .n.sel text{fill:#fff}
+.t0 .n.mark circle{fill:var(--frontier)}
+.t0 .n.kid circle{stroke:var(--accent);stroke-width:4}
+.t0 .lvl{font:600 11px var(--mono);fill:var(--muted)}
+.terms{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:.92rem;margin:10px 0 0}
+.terms dt{font-weight:700}
+.terms dd{margin:0;color:var(--muted)}
+.info{background:var(--soft);border-radius:10px;padding:10px 12px;min-height:5.5em}
+.info b.kind{color:var(--accent)}
+.bf{display:grid;grid-template-columns:auto 1fr auto;gap:8px 12px;align-items:center;max-width:620px}
+.bf input[type=range]{width:100%}
+.bf input[type=number]{width:5.5em;padding:4px 8px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+.levels{display:grid;grid-template-columns:auto 1fr auto;gap:4px 10px;align-items:center;font-size:.88rem;margin-top:12px;max-width:760px}
+.levels .bar{height:14px;background:var(--soft);border-radius:99px;overflow:hidden}
+.levels .bar i{display:block;height:100%;background:var(--accent);border-radius:99px;min-width:2px}
+.levels .v{font:600 .85rem var(--mono);text-align:right;white-space:nowrap}
+.bigres{font:700 1.1rem var(--mono);margin-top:12px}
+.dots svg{width:100%;height:auto;display:block;max-height:240px;margin-top:10px}
+
+/* sökträdet */
+.treebox{overflow:auto;max-height:560px;margin-top:4px}
+.treebox svg{display:block;margin:0 auto;width:100%;height:auto}
+.st .te{stroke:var(--muted);stroke-width:2}
+.st .te.path{stroke:var(--path);stroke-width:5}
+.st .te.drop{stroke-dasharray:4 4;opacity:.55}
+.st .tk{font:600 10px var(--mono);fill:var(--muted);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
+.st .tn rect{fill:var(--cell);stroke:var(--muted);stroke-width:2}
+.st .tn text{font:600 12px system-ui,sans-serif;fill:var(--ink)}
+.st .tn .tv{font:10px var(--mono);fill:var(--muted)}
+.st .tn.frontier rect{fill:var(--frontier)}
+.st .tn.explored rect{fill:var(--explored)}
+.st .tn.current rect{fill:var(--current);stroke:var(--current)}
+.st .tn.onpath rect{stroke:var(--path);stroke-width:3.5}
+.st .tn.drop{opacity:.5}
+.st .tn.drop rect{stroke-dasharray:4 3;fill:none}
+.st .tn.start rect{stroke:var(--start);stroke-width:3.5}
+.st .tn.goal rect{stroke:var(--goal);stroke-width:3.5}
+.st .tn.new{animation:pop .35s ease-out}
+@keyframes pop{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.map .node.hl circle{stroke:var(--accent);stroke-width:6}
+
+/* fronten som datastruktur */
+.chip{border:1.5px solid var(--line);background:var(--frontier);color:var(--ink);border-radius:8px;padding:3px 9px;font-size:.84rem;text-align:left;line-height:1.3}
+button.chip{cursor:pointer}
+button.chip:hover{border-color:var(--accent)}
+.chip.nx{border-color:var(--current);box-shadow:0 0 0 2px color-mix(in srgb,var(--current) 40%,transparent)}
+.chip small{display:block;font:.72rem var(--mono);color:var(--muted)}
+.ds{margin-top:6px}
+.dsq{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dsq .pipe{display:flex;flex-wrap:wrap;gap:6px;padding:6px 8px;border-top:3px solid var(--line);border-bottom:3px solid var(--line);flex:1;min-width:160px}
+.ds .end{font:700 .72rem var(--mono);color:var(--muted);white-space:nowrap}
+.dss{display:flex;align-items:flex-start;gap:12px}
+.dss .pile{display:flex;flex-direction:column;gap:4px;min-width:190px;padding:6px;border:3px solid var(--line);border-top:0;border-radius:0 0 10px 10px}
+.dss .pile .chip{width:100%}
+.dss .side{display:flex;flex-direction:column;gap:4px;padding-top:4px}
+.dsp ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-width:340px}
+.dsp li{display:grid;grid-template-columns:26px 1fr;align-items:center;gap:6px}
+.dsp li > span:first-child{font:700 .8rem var(--mono);color:var(--muted);text-align:right}
+.dsp .chip{display:flex;justify-content:space-between;gap:10px;width:100%}
+.dsp .chip b{font-family:var(--mono)}
+.dsa{display:flex;flex-wrap:wrap;gap:6px}
+.empty{color:var(--muted);font-size:.88rem}
+.modes{display:inline-flex;flex-wrap:wrap;gap:4px;padding:4px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.modes button{border:0;border-radius:8px;padding:5px 12px;background:transparent;color:var(--muted);font-weight:700;min-height:36px}
+.modes button[aria-checked="true"]{background:var(--accent);color:#fff}
+
 footer{max-width:1100px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:var(--muted)}
 @media (max-width:560px){
   .wrap{padding:0 16px}
@@ -176,6 +247,7 @@ footer{max-width:1100px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
     <h1>Sökning</h1>
     <p class="lede">Hur hittar en GPS vägen, en spelfigur fram till dig eller en robot till laddstationen? De <b>söker</b>. Här får du se fem sökalgoritmer arbeta steg för steg – och själv vara algoritmen.</p>
     <nav class="toc" aria-label="Delar">
+      <a href="#trad">0. Träd och grafer</a>
       <a href="#problem">1. Sökproblem</a>
       <a href="#kartan">2. Kartan</a>
       <a href="#du">3. Du är algoritmen</a>
@@ -188,6 +260,58 @@ footer{max-width:1100px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
 </header>
 
 <main class="wrap">
+
+<section class="part" id="trad">
+  <h2><span class="num">0</span> Träd och grafer</h2>
+  <p class="lead">Sökning bygger på två sorters strukturer. En <b>graf</b> är ett antal <b>noder</b> (punkter) förbundna med <b>kanter</b> (linjer) – som orterna och vägarna på kartan längre ner. Ett <b>träd</b> är en särskild sorts graf: allt utgår från en enda nod och det finns inga cykler, så det finns exakt en väg mellan två noder. Klicka på noderna och se vad de kallas.</p>
+  <div class="grid2">
+    <div class="panel t0">
+      <svg id="t0svg" viewBox="0 0 520 330" role="img" aria-label="Ett träd med noderna A till N. Klicka på en nod."></svg>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" type="button" data-t0="root">Visa roten</button>
+        <button class="btn" type="button" data-t0="leaves">Visa löven</button>
+        <button class="btn" type="button" data-t0="depth">Visa djup <span id="t0d">1</span></button>
+        <button class="btn" type="button" id="t0graph" aria-pressed="false">Gör om till graf</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="info" id="t0info" aria-live="polite"></div>
+      <dl class="terms">
+        <dt>Rot</dt><dd>Noden högst upp, som allt utgår från. Den har ingen förälder.</dd>
+        <dt>Förälder, barn</dt><dd>En nod direkt ovanför är föräldern, noderna direkt under är barnen.</dd>
+        <dt>Syskon</dt><dd>Noder med samma förälder.</dd>
+        <dt>Löv</dt><dd>En nod utan barn – längst ut på en gren.</dd>
+        <dt>Djup</dt><dd>Hur många kanter det är från roten. Roten har djup 0.</dd>
+        <dt>Gren, väg</dt><dd>Kanterna från roten ner till en nod.</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="callout">
+    <p><b>Graf och sökträd.</b> Kartan är en graf: från Jönköping kan man köra via Habo och Mullsjö och komma tillbaka – en cykel. När en algoritm söker bygger den ett <b>sökträd</b> ovanpå grafen. Roten är starten, och varje nod i trädet är ett sätt att ta sig dit från start. I avsnitt 2 ser du sökträdet växa bredvid kartan.</p>
+  </div>
+
+  <h3 class="sub">Förgreningsfaktor</h3>
+  <p class="lead">Hur många barn har varje nod? Det kallas <b>förgreningsfaktor</b>, <i>b</i>. På kartan har en ort i snitt ungefär 3 vägar, i rutnätet längre ner kan man gå åt 4 håll. Varje nivå i trädet får <i>b</i> gånger fler noder än nivån ovanför – dra i reglagen och se hur fort det växer.</p>
+  <div class="panel">
+    <div class="bf">
+      <label for="bfB">Förgreningsfaktor <i>b</i></label><input type="range" id="bfB" min="1" max="10" value="3"><input type="number" id="bfBn" min="1" max="400" value="3" aria-label="Förgreningsfaktor">
+      <label for="bfD">Djup <i>d</i></label><input type="range" id="bfD" min="0" max="12" value="4"><span class="mono" id="bfDv">4</span>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" type="button" data-bf="2,4">Binärt träd (b = 2)</button>
+      <button class="btn" type="button" data-bf="4,8">Rutnätet (b = 4)</button>
+      <button class="btn" type="button" data-bf="35,6">Schack (b ≈ 35)</button>
+      <button class="btn" type="button" data-bf="250,6">Go (b ≈ 250)</button>
+    </div>
+    <div class="dots" id="bfDots"></div>
+    <div class="levels" id="bfLevels"></div>
+    <div class="bigres" id="bfTotal"></div>
+    <p class="muted small" id="bfTime" style="margin:.4em 0 0"></p>
+  </div>
+  <div class="callout">
+    <p><b>Därför räcker det inte att prova allt.</b> Antalet noder på djup <i>d</i> är <i>b<sup>d</sup></i> – det växer <b>exponentiellt</b>. Bredden först måste dessutom hålla en hel nivå i minnet samtidigt. Därför behövs smartare sökning med en heuristik, som A*, och i schack och go en heuristik som ett neuralt nätverk har lärt sig.</p>
+  </div>
+</section>
 
 <section class="part" id="problem">
   <h2><span class="num">1</span> Vad är ett sökproblem?</h2>
@@ -203,9 +327,19 @@ footer{max-width:1100px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
 
 <section class="part" id="kartan">
   <h2><span class="num">2</span> Sökning på kartan</h2>
-  <p class="lead">Här är några orter runt Jönköping med ungefärliga vägavstånd. Välj en algoritm och tryck på <i>Ett steg</i>. Följ fronten under kartan: det är den som avgör vart sökningen går.</p>
+  <p class="lead">Här är några orter runt Jönköping med ungefärliga vägavstånd. Välj en algoritm och tryck på <i>Ett steg</i>. Bredvid kartan växer <b>sökträdet</b>, och under dem ser du <b>fronten</b> – den avgör vart sökningen går härnäst.</p>
   <div class="algos" role="radiogroup" aria-label="Algoritm" id="mapAlgos"></div>
   <p class="algo-desc" id="mapDesc"></p>
+  <div class="panel" style="margin-bottom:16px">
+    <div class="row">
+      <label class="small">Från <select class="sel" id="mapFrom"></select></label>
+      <label class="small">Till <select class="sel" id="mapTo"></select></label>
+      <button class="btn primary" type="button" id="mapStep">Ett steg</button>
+      <button class="btn" type="button" id="mapRun">▶ Kör</button>
+      <button class="btn" type="button" id="mapReset">Börja om</button>
+    </div>
+    <p class="toast" id="mapMsg" aria-live="polite" style="margin:10px 0 0"></p>
+  </div>
   <div class="grid2">
     <div class="panel map">
       <div class="scroller"><svg id="mapSvg" viewBox="0 0 640 490" role="img" aria-label="Karta över orter runt Jönköping"></svg></div>
@@ -217,38 +351,51 @@ footer{max-width:1100px;margin:0 auto;padding:0 20px 32px;font-size:.9rem;color:
       </div>
     </div>
     <div class="panel">
-      <div class="row">
-        <label class="small">Från <select class="sel" id="mapFrom"></select></label>
-        <label class="small">Till <select class="sel" id="mapTo"></select></label>
+      <h3 style="font-size:1rem">Sökträdet</h3>
+      <p class="muted small" style="margin:2px 0 0">Roten är starten. Varje gång en ort expanderas får den barn – grannarna som läggs i fronten. Peka på en nod för att se orten på kartan.</p>
+      <div class="treebox" id="treeBox"><svg id="treeSvg" class="st" role="img" aria-label="Sökträdet"></svg></div>
+      <div class="legend">
+        <span><i style="background:var(--frontier)"></i>i fronten</span>
+        <span><i style="background:var(--explored)"></i>expanderad</span>
+        <span><i style="border:2px dashed var(--muted);background:none"></i>överbliven kopia</span>
       </div>
-      <div class="row" style="margin-top:10px">
-        <button class="btn primary" type="button" id="mapStep">Ett steg</button>
-        <button class="btn" type="button" id="mapRun">▶ Kör</button>
-        <button class="btn" type="button" id="mapReset">Börja om</button>
-      </div>
-      <p class="toast" id="mapMsg" aria-live="polite" style="margin:10px 0 0"></p>
-      <div class="dslabel" id="mapDs"></div>
-      <div class="fr" id="mapFrontier"></div>
+    </div>
+  </div>
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel">
+      <div class="dslabel" id="mapDs" style="margin-top:0"></div>
+      <div id="mapFrontier"></div>
+    </div>
+    <div class="panel">
+      <div class="dslabel" style="margin-top:0">Vad som har hänt</div>
       <ol class="log" id="mapLog" aria-label="Vad som hänt"></ol>
     </div>
   </div>
   <div class="callout">
     <p><b>g</b> = hur långt vi redan har kört från start. <b>h</b> = fågelvägen kvar till målet – en <i>heuristik</i>, en kvalificerad gissning. <b>f = g + h</b> är A*:s uppskattning av hela resans längd. Avstånden är ungefärliga.</p>
+    <p><b>Överblivna kopior</b> (streckade i trädet): djupet först, Dijkstra och A* kan lägga samma ort i fronten flera gånger. När orten väl har expanderats struntar algoritmen i de andra kopiorna.</p>
   </div>
 </section>
 
 <section class="part" id="du">
   <h2><span class="num">3</span> Du är algoritmen</h2>
-  <p class="lead">Nu bestämmer du. Fronten visas här i bokstavsordning – inte i den ordning algoritmen tar dem. Klicka på den ort du tror att algoritmen expanderar härnäst, på kartan ovan eller i listan.</p>
+  <p class="lead">Nu bestämmer du. Klicka på den ort du tror att algoritmen expanderar härnäst – på kartan, i sökträdet eller i fronten. Välj om fronten ska visas i <b>bokstavsordning</b> (svårast: du måste själv räkna ut ordningen) eller i <b>algoritmens ordning</b>, som en kö, en stack eller en sorterad lista.</p>
   <div class="panel">
     <div class="row">
       <span class="small">Algoritm:</span>
       <div class="algos" role="radiogroup" aria-label="Algoritm att spela" id="guessAlgos"></div>
       <button class="btn primary" type="button" id="guessStart">Starta</button>
     </div>
+    <div class="row" style="margin-top:10px">
+      <span class="small">Visa fronten:</span>
+      <div class="modes" role="radiogroup" aria-label="Visa fronten" id="frMode">
+        <button type="button" role="radio" data-m="alpha" aria-checked="true">Bokstavsordning</button>
+        <button type="button" role="radio" data-m="ds" aria-checked="false">Algoritmens ordning</button>
+      </div>
+    </div>
     <p class="toast" id="guessMsg" aria-live="polite" style="margin:10px 0 0"></p>
-    <div class="dslabel">Fronten (bokstavsordning)</div>
-    <div class="fr" id="guessFrontier"></div>
+    <div class="dslabel" id="guessDs">Fronten</div>
+    <div id="guessFrontier"></div>
     <p class="muted small" id="guessScore" style="margin:.8em 0 0"></p>
   </div>
   <div class="callout">
@@ -368,7 +515,9 @@ function* search(algo, P) {
   const frontier = [];
   let counter = 0;
   const pri = (e) => algo === "ucs" ? e.g : algo === "greedy" ? e.h : algo === "astar" ? e.g + e.h : e.order;
-  const push = (n, g, parent) => { const e = { n, g, h: P.h(n), parent, order: ++counter }; e.f = e.g + e.h; e.p = pri(e); frontier.push(e); return e; };
+  const all = [];   // alla poster som någonsin lagts i fronten – noderna i sökträdet
+  const expandedIds = new Set();
+  const push = (n, g, parent, pid) => { const e = { n, g, h: P.h(n), parent, pid, order: ++counter }; e.f = e.g + e.h; e.p = pri(e); frontier.push(e); all.push(e); return e; };
   const pick = () => {
     if (algo === "bfs") return 0;
     if (algo === "dfs") return frontier.length - 1;
@@ -390,14 +539,15 @@ function* search(algo, P) {
   };
   const explored = new Set(), parent = new Map(), gOf = new Map(), best = new Map(), reached = new Set();
   let expanded = 0, maxF = 1;
-  push(P.start, 0, null);
+  push(P.start, 0, null, null);
   reached.add(P.start); best.set(P.start, 0);
   while (frontier.length) {
     const next = view()[0];
     const e = frontier.splice(pick(), 1)[0];
     if (explored.has(e.n)) continue;   // en gammal kopia som redan har expanderats
     explored.add(e.n); parent.set(e.n, e.parent); gOf.set(e.n, e.g); expanded++;
-    const snap = { current: e, explored, parent, gOf, expanded, order: [...explored] };
+    expandedIds.add(e.order);
+    const snap = { current: e, explored, parent, gOf, expanded, order: [...explored], tree: all, expandedIds };
     if (e.n === P.goal) {
       const path = [];
       for (let n = e.n; n !== null; n = parent.get(n)) path.unshift(n);
@@ -411,13 +561,13 @@ function* search(algo, P) {
       const g = e.g + c;
       if (algo === "bfs" || algo === "greedy") { if (reached.has(m)) continue; reached.add(m); }
       else if (algo === "ucs" || algo === "astar") { if (best.has(m) && best.get(m) <= g) continue; best.set(m, g); }
-      push(m, g, e.n);
+      push(m, g, e.n, e.order);
       added.push(m);
     }
     maxF = Math.max(maxF, view().length);
     yield { ...snap, done: false, frontier: view(), added, maxF, next };
   }
-  yield { done: true, found: false, explored, parent, gOf, expanded, frontier: [], added: [], maxF, order: [...explored] };
+  yield { done: true, found: false, explored, parent, gOf, expanded, frontier: [], added: [], maxF, order: [...explored], tree: all, expandedIds };
 }
 
 function algoPicker(host, initial, onChange) {
@@ -492,6 +642,7 @@ function mapReset() {
   clearTimeout(mapTimer); mapTimer = null; $("mapRun").textContent = "▶ Kör";
   mapGen = search(mapAlgo, mapProblem());
   mapSnap = null;
+  lastTreeSize = 0;
   $("mapLog").innerHTML = "";
   $("mapMsg").textContent = ""; $("mapMsg").className = "toast";
   renderMap();
@@ -527,6 +678,91 @@ function chipText(e, a = mapAlgo) {
   const v = a === "bfs" || a === "dfs" ? `tillagd som nr ${e.order}` : a === "ucs" ? `g ${e.g}` : a === "greedy" ? `h ${e.h}` : `f ${e.g}+${e.h} = ${e.f}`;
   return `${esc(e.n)}<small>${v}</small>`;
 }
+// Fronten som datastruktur. list är i den ordning algoritmen plockar ut posterna.
+function dsHTML(list, algo, { clickable = false, markNext = false, alpha = false } = {}) {
+  const chip = (e, i, inner = chipText(e, algo)) => clickable
+    ? `<button type="button" class="chip${markNext && i === 0 ? " nx" : ""}" data-n="${esc(e.n)}">${inner}</button>`
+    : `<span class="chip${markNext && i === 0 ? " nx" : ""}">${inner}</span>`;
+  if (!list.length) return `<p class="empty">Fronten är tom.</p>`;
+  if (alpha) {
+    const sorted = list.slice().sort((a, b) => a.n.localeCompare(b.n, "sv"));
+    return `<div class="ds dsa">${sorted.map((e) => chip(e, -1)).join("")}</div>`;
+  }
+  if (algo === "bfs") {
+    return `<div class="ds dsq"><span class="end">UT ←</span><div class="pipe">${list.map((e, i) => chip(e, i)).join("")}</div><span class="end">← IN</span></div>
+      <p class="muted small" style="margin:.5em 0 0">En kö: nya orter ställer sig sist, och den som har väntat längst tas ut först.</p>`;
+  }
+  if (algo === "dfs") {
+    return `<div class="ds dss"><div class="pile">${list.map((e, i) => chip(e, i)).join("")}</div>
+      <div class="side"><span class="end">↑ UT från toppen</span><span class="end">↓ IN på toppen</span></div></div>
+      <p class="muted small" style="margin:.5em 0 0">En stack, som en hög tallrikar: det som lades dit sist ligger överst och tas först.</p>`;
+  }
+  const key = algo === "ucs" ? "g" : algo === "greedy" ? "h" : "f";
+  return `<div class="ds dsp"><ol>${list.map((e, i) => `<li><span>${i + 1}.</span>${chip(e, i, `<span>${esc(e.n)}</span><b>${key} ${e[key]}</b>`)}</li>`).join("")}</ol></div>
+    <p class="muted small" style="margin:.5em 0 0">En prioritetskö: alltid sorterad, lägst ${key} först. Nya orter sorteras in på sin plats.</p>`;
+}
+function wireDs(host) { host.querySelectorAll("button.chip").forEach((b) => b.addEventListener("click", () => guessClick(b.dataset.n))); }
+
+// Sökträdet: en nod per post som lagts i fronten, kopplad till posten den kom ifrån.
+let lastTreeSize = 0;
+function renderTree() {
+  const s = mapSnap, P = mapProblem();
+  const nodes = s ? s.tree : [{ n: mapFrom, g: 0, h: P.h(mapFrom), f: P.h(mapFrom), order: 1, pid: null }];
+  const kids = new Map(nodes.map((e) => [e.order, []]));
+  for (const e of nodes) if (e.pid !== null) kids.get(e.pid).push(e);
+  const shown = new Set(s ? s.frontier.map((e) => e.order) : [1]);
+  const onPath = new Set();
+  if (s && s.found) for (let e = s.current; e; e = nodes.find((x) => x.order === e.pid)) onPath.add(e.order);
+  // Enkel trädlayout: löven får x = 0, 1, 2 … och en förälder hamnar mitt över sina barn.
+  let leaf = 0, depth = 0;
+  const pos = new Map();
+  (function place(e, d) {
+    depth = Math.max(depth, d);
+    const ch = kids.get(e.order);
+    if (!ch.length) pos.set(e.order, [leaf++, d]);
+    else { ch.forEach((c) => place(c, d + 1)); pos.set(e.order, [(pos.get(ch[0].order)[0] + pos.get(ch[ch.length - 1].order)[0]) / 2, d]); }
+  })(nodes[0], 0);
+  const SX = 92, SY = 78, NW = 80, NH = 26, PAD = 14;
+  const X = (e) => PAD + NW / 2 + pos.get(e.order)[0] * SX, Y = (e) => PAD + 4 + pos.get(e.order)[1] * SY;
+  const width = PAD * 2 + NW + Math.max(0, leaf - 1) * SX, height = PAD * 2 + NH + 22 + depth * SY;
+  const status = (e) => {
+    if (s && s.expandedIds.has(e.order)) return s.current && s.current.order === e.order && !s.done ? "current" : "explored";
+    if (!s) return "frontier";
+    return shown.has(e.order) ? "frontier" : "drop";
+  };
+  let out = "";
+  for (const e of nodes) if (e.pid !== null) {
+    const p = nodes.find((x) => x.order === e.pid);
+    // Kanten börjar under förälderns värde, och avståndet står nära barnet så att etiketterna inte krockar.
+    const x1 = X(p), y1 = Y(p) + NH + 17, x2 = X(e), y2 = Y(e);
+    const cls = onPath.has(e.order) ? "path" : status(e) === "drop" ? "drop" : "";
+    out += `<line class="te ${cls}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+    const kx = x1 + (x2 - x1) * 0.72, ky = y1 + (y2 - y1) * 0.72;
+    out += `<text class="tk" x="${kx + (x2 >= x1 ? 5 : -5)}" y="${ky}" text-anchor="${x2 >= x1 ? "start" : "end"}">${KM.get(p.n + "|" + e.n)}</text>`;
+  }
+  const valOf = (e) => mapAlgo === "bfs" || mapAlgo === "dfs" ? `#${e.order}` : mapAlgo === "ucs" ? `g ${e.g}` : mapAlgo === "greedy" ? `h ${e.h}` : `f ${e.f}`;
+  nodes.forEach((e, i) => {
+    const st = status(e);
+    const cls = ["tn", st, onPath.has(e.order) ? "onpath" : "", e.n === mapFrom && e.pid === null ? "start" : "", e.n === mapTo ? "goal" : "", i >= lastTreeSize && s ? "new" : ""].join(" ");
+    const x = X(e), y = Y(e);
+    out += `<g class="${cls}" data-n="${esc(e.n)}" style="transform-origin:${x}px ${y}px"><rect x="${x - NW / 2}" y="${y}" width="${NW}" height="${NH}" rx="13"/>
+      <text x="${x}" y="${y + 17}" text-anchor="middle">${esc(e.n)}</text>
+      <text class="tv" x="${x}" y="${y + NH + 13}" text-anchor="middle">${valOf(e)}</text></g>`;
+  });
+  lastTreeSize = nodes.length;
+  const svg = $("treeSvg");
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.style.maxWidth = `${Math.max(width, 200)}px`;
+  svg.style.minWidth = `${Math.min(width * 0.8, 480)}px`;   // läsbar även på mobil – rutan skrollar i sidled
+  svg.innerHTML = out;
+  svg.querySelectorAll(".tn").forEach((g) => {
+    g.style.cursor = guess.on ? "pointer" : "default";
+    g.addEventListener("mouseenter", () => $("mapSvg").querySelector(`.node[data-n="${g.dataset.n}"]`)?.classList.add("hl"));
+    g.addEventListener("mouseleave", () => $("mapSvg").querySelector(`.node[data-n="${g.dataset.n}"]`)?.classList.remove("hl"));
+    g.addEventListener("click", () => guessClick(g.dataset.n));
+  });
+}
+
 function renderMap() {
   const s = mapSnap;
   const front = s ? s.frontier : [{ n: mapFrom, g: 0, h: mapProblem().h(mapFrom), f: mapProblem().h(mapFrom), order: 1 }];
@@ -550,14 +786,15 @@ function renderMap() {
     g.classList.toggle("pick", guess.on && inFront.has(n));
     g.querySelector(".hv").textContent = showH ? `h ${Math.round(crow(n, mapTo))}` : "";
   });
-  $("mapDs").textContent = guess.on ? "Du är algoritmen – fronten i bokstavsordning. Klicka på nästa ort." : ALGOS[mapAlgo].ds;
+  renderTree();
   if (guess.on && s && !s.done) {
-    $("mapFrontier").innerHTML = front.slice().sort((a, b) => a.n.localeCompare(b.n, "sv")).map((e) => `<button type="button" data-n="${esc(e.n)}">${chipText(e)}</button>`).join("");
-    $("mapFrontier").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => guessClick(b.dataset.n)));
+    $("mapDs").textContent = guess.mode === "alpha" ? "Du är algoritmen – fronten i bokstavsordning. Klicka på nästa ort." : `Du är algoritmen – ${ALGOS[mapAlgo].ds.toLowerCase()}. Klicka på nästa ort.`;
+    $("mapFrontier").innerHTML = dsHTML(front, mapAlgo, { clickable: true, alpha: guess.mode === "alpha" });
+    wireDs($("mapFrontier"));
     return;
   }
-  $("mapFrontier").innerHTML = front.length ? front.map((e, i) => `<span class="${i === 0 && !(s && s.done) ? "nx" : ""}">${chipText(e)}</span>`).join("")
-    : `<span class="muted small" style="background:none;border:0">tom</span>`;
+  $("mapDs").textContent = ALGOS[mapAlgo].ds;
+  $("mapFrontier").innerHTML = dsHTML(front, mapAlgo, { markNext: !(s && s.done) });
 }
 
 NAMES.slice().sort((a, b) => a.localeCompare(b, "sv")).forEach((n) => {
@@ -580,7 +817,12 @@ $("mapRun").addEventListener("click", () => {
 });
 
 /* ---------- Du är algoritmen ---------- */
-const guess = { on: false, algo: "astar", right: 0, wrong: 0 };
+const guess = { on: false, algo: "astar", right: 0, wrong: 0, mode: "alpha" };
+$("frMode").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+  guess.mode = b.dataset.m;
+  $("frMode").querySelectorAll("button").forEach((x) => x.setAttribute("aria-checked", String(x === b)));
+  renderGuess();
+}));
 algoPicker($("guessAlgos"), guess.algo, (a) => { guess.algo = a; });
 $("guessStart").addEventListener("click", () => {
   mapAlgo = guess.algo;
@@ -595,11 +837,12 @@ $("guessStart").addEventListener("click", () => {
 });
 function renderGuess() {
   const box = $("guessFrontier");
-  if (!guess.on || !mapSnap) { box.innerHTML = `<span class="muted small" style="background:none;border:0">Välj en algoritm och tryck på Starta. Kartan ovan används.</span>`; $("guessScore").textContent = ""; renderMap(); return; }
-  const list = mapSnap.frontier.slice().sort((a, b) => a.n.localeCompare(b.n, "sv"));
-  box.innerHTML = list.map((e) => `<button type="button" data-n="${esc(e.n)}">${chipText(e, guess.algo)}</button>`).join("") || `<span class="muted small" style="background:none;border:0">tom</span>`;
-  box.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => guessClick(b.dataset.n)));
+  if (!guess.on || !mapSnap) { $("guessDs").textContent = "Fronten"; box.innerHTML = `<p class="empty">Välj en algoritm och tryck på Starta. Kartan och sökträdet ovan används.</p>`; $("guessScore").textContent = ""; renderMap(); return; }
+  $("guessDs").textContent = guess.mode === "alpha" ? "Fronten i bokstavsordning" : ALGOS[guess.algo].ds;
+  box.innerHTML = dsHTML(mapSnap.frontier, guess.algo, { clickable: true, alpha: guess.mode === "alpha" });
+  wireDs(box);
   $("guessScore").textContent = `Rätt: ${guess.right} · Fel: ${guess.wrong}`;
+  renderMap();
 }
 function gsay(text, kind = "") {
   for (const el of [$("guessMsg"), $("mapMsg")]) { el.textContent = text; el.className = "toast" + (kind ? " " + kind : ""); }
@@ -630,6 +873,122 @@ function guessClick(n) {
   }
   renderGuess();
 }
+
+/* =====================================================================
+ * 0. Träd och grafer
+ * ===================================================================== */
+const T0 = { A: null, B: "A", C: "A", D: "A", E: "B", F: "B", G: "C", H: "D", I: "D", J: "D", K: "E", L: "E", M: "G", N: "I" };
+const T0_EXTRA = [["F", "G"], ["J", "C"]];   // två extra kanter gör trädet till en graf med cykler
+const T0_KIDS = Object.fromEntries(Object.keys(T0).map((n) => [n, Object.keys(T0).filter((k) => T0[k] === n)]));
+const t0depth = (n) => (T0[n] ? 1 + t0depth(T0[n]) : 0);
+const t0path = (n) => (T0[n] ? [...t0path(T0[n]), n] : [n]);
+const T0_POS = (() => {
+  const pos = {}; let leaf = 0;
+  (function place(n) {
+    const ch = T0_KIDS[n];
+    if (!ch.length) pos[n] = [leaf++, t0depth(n)];
+    else { ch.forEach(place); pos[n] = [(pos[ch[0]][0] + pos[ch[ch.length - 1]][0]) / 2, t0depth(n)]; }
+  })("A");
+  return Object.fromEntries(Object.entries(pos).map(([n, [x, d]]) => [n, [96 + x * 58, 40 + d * 80]]));
+})();
+let t0sel = null, t0mark = new Set(), t0graph = false, t0d = 1;
+function renderT0() {
+  const hlEdges = new Set();
+  if (t0sel) { const p = t0path(t0sel); for (let i = 1; i < p.length; i++) hlEdges.add(p[i]); }
+  let s = "";
+  for (let d = 0; d <= 3; d++) s += `<text class="lvl" x="4" y="${40 + d * 80 + 4}">djup ${d}</text>`;
+  for (const [n, p] of Object.entries(T0)) if (p) {
+    const [x1, y1] = T0_POS[p], [x2, y2] = T0_POS[n];
+    s += `<line class="e${hlEdges.has(n) ? " hl" : ""}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+  }
+  if (t0graph) for (const [a, b] of T0_EXTRA) {
+    const [x1, y1] = T0_POS[a], [x2, y2] = T0_POS[b];
+    s += `<line class="e extra" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+  }
+  for (const [n, [x, y]] of Object.entries(T0_POS)) {
+    const cls = ["n", n === t0sel ? "sel" : "", t0mark.has(n) ? "mark" : "", t0sel && T0_KIDS[t0sel].includes(n) ? "kid" : ""].join(" ");
+    s += `<g class="${cls}" data-n="${n}" tabindex="0" role="button" aria-label="Nod ${n}"><circle cx="${x}" cy="${y}" r="17"/><text x="${x}" y="${y + 5}" text-anchor="middle">${n}</text></g>`;
+  }
+  $("t0svg").innerHTML = s;
+  $("t0svg").querySelectorAll(".n").forEach((g) => {
+    const pick = () => { t0sel = g.dataset.n; t0mark = new Set(); renderT0(); };
+    g.addEventListener("click", pick);
+    g.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+  });
+  const info = $("t0info");
+  if (t0graph) {
+    info.innerHTML = `<b class="kind">Nu är det en graf, inte ett träd.</b> De två röda kanterna skapar <b>cykler</b>: man kan gå A → B → F → G → C → A och komma tillbaka dit man började, och det finns flera vägar till samma nod. Så ser kartan ut – och därför måste sökalgoritmerna hålla reda på vilka orter de redan har expanderat.`;
+  } else if (t0sel) {
+    const n = t0sel, kids = T0_KIDS[n], sib = T0[n] ? T0_KIDS[T0[n]].filter((k) => k !== n) : [];
+    const kind = !T0[n] ? "Roten" : !kids.length ? "Ett löv" : "En inre nod";
+    info.innerHTML = `<b class="kind">${n}: ${kind}</b> · djup ${t0depth(n)}<br>
+      Förälder: <b>${T0[n] || "–"}</b> · Barn: <b>${kids.join(", ") || "inga"}</b> · Syskon: <b>${sib.join(", ") || "inga"}</b><br>
+      Vägen från roten: <b>${t0path(n).join(" → ")}</b>`;
+  } else if (t0mark.size) {
+    info.innerHTML = info.dataset.msg;
+  } else info.innerHTML = `<span class="muted">Klicka på en nod i trädet.</span>`;
+}
+document.querySelectorAll("[data-t0]").forEach((b) => b.addEventListener("click", () => {
+  t0sel = null;
+  const all = Object.keys(T0);
+  if (b.dataset.t0 === "root") { t0mark = new Set(["A"]); $("t0info").dataset.msg = `<b class="kind">Roten är A.</b> Det är den enda noden utan förälder – i ett sökträd är det starten.`; }
+  else if (b.dataset.t0 === "leaves") { t0mark = new Set(all.filter((n) => !T0_KIDS[n].length)); $("t0info").dataset.msg = `<b class="kind">Löven:</b> ${[...t0mark].join(", ")}. De har inga barn. I ett sökträd är löven det som ännu inte har expanderats – fronten.`; }
+  else {
+    t0mark = new Set(all.filter((n) => t0depth(n) === t0d));
+    $("t0info").dataset.msg = `<b class="kind">Djup ${t0d}:</b> ${[...t0mark].join(", ")}. De ligger ${t0d} ${t0d === 1 ? "kant" : "kanter"} från roten. Bredden först undersöker en sådan nivå i taget.`;
+    t0d = t0d % 3 + 1; $("t0d").textContent = t0d;
+  }
+  renderT0();
+}));
+$("t0graph").addEventListener("click", () => {
+  t0graph = !t0graph;
+  $("t0graph").setAttribute("aria-pressed", String(t0graph));
+  $("t0graph").textContent = t0graph ? "Tillbaka till träd" : "Gör om till graf";
+  renderT0();
+});
+
+// Förgreningsfaktor: antal noder per nivå.
+function sci(n) {
+  if (n < 1e9) return Math.round(n).toLocaleString("sv-SE");
+  const e = Math.floor(Math.log10(n)), m = n / 10 ** e;
+  return `${m.toFixed(1).replace(".", ",")} · 10<sup>${e}</sup>`;
+}
+function duration(sec) {
+  const YEAR = 3.156e7;
+  if (sec < 1) return "under en sekund";
+  if (sec < 60) return `${Math.round(sec)} sekunder`;
+  if (sec < 3600) return `${Math.round(sec / 60)} minuter`;
+  if (sec < 86400) return `${Math.round(sec / 3600)} timmar`;
+  if (sec < YEAR) return `${Math.round(sec / 86400)} dygn`;
+  if (sec / YEAR > 1.38e10) return `${sci(sec / YEAR)} år – mycket längre än universums ålder (cirka 14 miljarder år)`;
+  return `${sci(sec / YEAR)} år`;
+}
+function renderBF() {
+  const b = Math.max(1, Math.min(400, Math.round(+$("bfBn").value) || 1)), d = +$("bfD").value;
+  $("bfDv").textContent = d;
+  const counts = Array.from({ length: d + 1 }, (_, k) => b ** k);
+  const total = counts.reduce((a, c) => a + c, 0), max = counts[counts.length - 1];
+  $("bfLevels").innerHTML = counts.map((c, k) => `<span class="small">djup ${k}</span><div class="bar"><i style="width:${(c / max * 100).toFixed(2)}%"></i></div><span class="v">${sci(c)}</span>`).join("");
+  $("bfTotal").innerHTML = `Totalt ${sci(total)} noder`;
+  $("bfTime").innerHTML = `Om datorn hinner undersöka en miljon noder per sekund tar det ${duration(total / 1e6)}.`;
+  // Rita trädet som prickar när det är litet nog.
+  const dots = $("bfDots");
+  if (total > 400) { dots.innerHTML = `<p class="muted small" style="margin:10px 0 0">Trädet har för många noder för att ritas – staplarna visar hur de fördelar sig.</p>`; return; }
+  const Wd = 600, Hd = 30 + d * 50, rows = counts.map((c, k) => Array.from({ length: c }, (_, i) => [((i + 0.5) / c) * Wd, 16 + k * 50]));
+  let s = "";
+  if (total <= 160) for (let k = 1; k <= d; k++) rows[k].forEach(([x, y], i) => { const [px, py] = rows[k - 1][Math.floor(i / b)]; s += `<line x1="${px}" y1="${py}" x2="${x}" y2="${y}" stroke="var(--line)" stroke-width="1.5"/>`; });
+  const r = Math.max(2, Math.min(9, Wd / Math.max(1, max) / 2.6));
+  rows.forEach((row, k) => row.forEach(([x, y]) => { s += `<circle cx="${x}" cy="${y}" r="${r}" fill="${k === d ? "var(--frontier)" : "var(--explored)"}" stroke="var(--muted)" stroke-width="1"/>`; }));
+  dots.innerHTML = `<svg viewBox="0 0 ${Wd} ${Hd}" role="img" aria-label="Trädet ritat som prickar">${s}</svg>`;
+}
+$("bfB").addEventListener("input", () => { $("bfBn").value = $("bfB").value; renderBF(); });
+$("bfBn").addEventListener("input", () => { $("bfB").value = Math.min(10, +$("bfBn").value || 1); renderBF(); });
+$("bfD").addEventListener("input", renderBF);
+document.querySelectorAll("[data-bf]").forEach((btn) => btn.addEventListener("click", () => {
+  const [b, d] = btn.dataset.bf.split(",");
+  $("bfBn").value = b; $("bfB").value = Math.min(10, +b); $("bfD").value = d;
+  renderBF();
+}));
 
 /* =====================================================================
  * Rutnätet
@@ -858,6 +1217,8 @@ document.querySelectorAll(".q").forEach((qd) => {
 });
 
 /* ---------- start ---------- */
+renderT0();
+renderBF();
 drawMapBase();
 mapReset();
 renderGuess();

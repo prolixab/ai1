@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DEFCON 1 – AI 1</title>
+<meta name="description" content="Ett spel för AI 1: datorn MIMER tror att ett krigsspel är verklighet. Stoppa ett kärnvapenkrig genom att skriva algoritmer i pseudokod och bygga flödesscheman – sex uppdrag byggda på verkliga falsklarm under kalla kriget.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23050807'/><circle cx='16' cy='16' r='11' fill='none' stroke='%234dff88' stroke-width='1.6'/><circle cx='16' cy='16' r='5' fill='none' stroke='%234dff88' stroke-width='1.2' opacity='.6'/><path d='M16 16 L25 9' stroke='%234dff88' stroke-width='2'/><circle cx='21' cy='20' r='2' fill='%23ff4f4f'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<style>
+:root{
+  --bg:#050807; --bg2:#08100c; --panel:#0b1410; --panel2:#0f1c16; --line:#1c3a2c; --line2:#285a42;
+  --g:#4dff88; --g2:#2fbf66; --gdim:#1f7a45; --text:#cdeedb; --muted:#86a996;
+  --amber:#ffb627; --red:#ff4f4f; --cyan:#7fd8ff; --code:#020504;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace; --crt:"VT323","JetBrains Mono",monospace;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 var(--mono);min-height:100vh}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;
+  background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0 2px,rgba(0,0,0,.16) 2px 3px);mix-blend-mode:multiply}
+a{color:var(--g)}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+code{font-family:var(--mono);color:var(--g);background:rgba(77,255,136,.08);border-radius:4px;padding:0 4px;white-space:nowrap}
+h1,h2,h3{font-family:var(--crt);font-weight:400;line-height:1;margin:0;letter-spacing:.02em}
+p{margin:0 0 .8em}
+.wrap{max-width:1320px;margin:0 auto;padding:0 20px}
+.hide{display:none!important}
+.muted{color:var(--muted)}
+.glow{text-shadow:0 0 8px rgba(77,255,136,.55)}
+
+/* knappar */
+.btn{background:var(--panel2);border:1.5px solid var(--line2);color:var(--text);border-radius:6px;padding:8px 16px;min-height:42px;font-weight:600;letter-spacing:.02em}
+.btn:hover{border-color:var(--g);color:var(--g)}
+.btn.go{background:var(--g);border-color:var(--g);color:#03140a}
+.btn.go:hover{background:#7dffa8;color:#03140a}
+.btn.warn{border-color:var(--amber);color:var(--amber)}
+.btn.small{min-height:34px;padding:4px 12px;font-size:.86rem}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* topplist */
+.bar{position:sticky;top:0;z-index:40;background:rgba(5,8,7,.94);backdrop-filter:blur(4px);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;align-items:center;gap:14px 22px;min-height:58px;flex-wrap:wrap;padding-top:6px;padding-bottom:6px}
+.bar .back{color:var(--muted);text-decoration:none;font-size:.85rem}
+.bar .back:hover{color:var(--g)}
+.logo{font:400 1.9rem var(--crt);color:var(--g);letter-spacing:.08em}
+.defcon{display:flex;align-items:center;gap:5px;margin-left:auto}
+.defcon .lbl{font:400 1.25rem var(--crt);color:var(--muted);margin-right:4px;letter-spacing:.08em}
+.defcon i{font:400 1.3rem/1 var(--crt);font-style:normal;width:30px;height:30px;display:grid;place-items:center;border:1.5px solid var(--line2);color:var(--muted);border-radius:4px;transition:all .4s}
+.defcon i.on{color:#030806;border-color:transparent;box-shadow:0 0 14px currentColor}
+.defcon i.on[data-d="1"]{background:#fff;color:#000;box-shadow:0 0 18px var(--red),0 0 4px #fff;animation:blink 1s steps(2) infinite}
+.defcon i.on[data-d="2"]{background:var(--red)} .defcon i.on[data-d="3"]{background:var(--amber)}
+.defcon i.on[data-d="4"]{background:#4da6ff} .defcon i.on[data-d="5"]{background:var(--g)}
+@keyframes blink{50%{box-shadow:0 0 4px var(--red)}}
+.risk{font:400 1.25rem var(--crt);color:var(--amber);letter-spacing:.05em;white-space:nowrap}
+.risk b{font-weight:400;color:var(--red)}
+.fs-slot:empty{display:none}
+
+/* vyer */
+.view{padding:28px 0 60px}
+
+/* intro-terminal */
+.term{max-width:900px;margin:0 auto;background:var(--code);border:1px solid var(--line);border-radius:10px;padding:26px 28px 30px;min-height:70vh;box-shadow:inset 0 0 80px rgba(77,255,136,.05),0 0 0 1px #000}
+.term .ln{font:400 1.55rem/1.3 var(--crt);color:var(--g);text-shadow:0 0 6px rgba(77,255,136,.5);white-space:pre-wrap;min-height:1.3em}
+.term .ln.m{color:var(--amber);text-shadow:0 0 6px rgba(255,182,39,.45)}
+.term .ln.r{color:var(--red);text-shadow:0 0 8px rgba(255,79,79,.6)}
+.term .ln.s{font:15px/1.65 var(--mono);color:var(--text);text-shadow:none;border-left:3px solid var(--cyan);padding:4px 0 4px 14px;margin:6px 0}
+.term .ln.s b{color:var(--cyan)}
+.term .ln.n{font:15px/1.65 var(--mono);color:var(--muted);text-shadow:none;font-style:italic}
+.term .cur::after{content:"█";animation:cur 1s steps(2) infinite;margin-left:2px}
+@keyframes cur{50%{opacity:0}}
+.term .choices{display:flex;flex-direction:column;gap:6px;margin:8px 0 4px}
+.term .choices button{all:unset;cursor:pointer;font:400 1.55rem/1.3 var(--crt);color:var(--g);padding:2px 10px;border-radius:4px;width:fit-content}
+.term .choices button:hover,.term .choices button:focus-visible{background:var(--g);color:#03140a;outline:none}
+.term input{background:transparent;border:0;border-bottom:1px dashed var(--gdim);color:var(--g);font:400 1.55rem var(--crt);outline:none;width:14ch;text-transform:uppercase}
+.skip{display:flex;justify-content:flex-end;max-width:900px;margin:10px auto 0;gap:8px}
+
+/* karta */
+.map{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:28px;align-items:start}
+@media (max-width:900px){.map{grid-template-columns:1fr}}
+.radar-box{background:var(--code);border:1px solid var(--line);border-radius:10px;padding:18px}
+.radar-box svg{width:100%;max-width:440px;display:block;margin:0 auto}
+.sweep{transform-origin:200px 200px;animation:sweep 4s linear infinite}
+@keyframes sweep{to{transform:rotate(360deg)}}
+.blip{animation:blipf 4s linear infinite}
+@keyframes blipf{0%,100%{opacity:.15}8%{opacity:1}60%{opacity:.25}}
+.status{font:400 1.3rem/1.35 var(--crt);color:var(--g);margin-top:12px}
+.status .m{color:var(--amber)}
+.missions{display:flex;flex-direction:column;gap:10px}
+.missions h2{font-size:2.6rem;color:var(--g);margin-bottom:6px}
+.mis{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:4px 16px;align-items:center;text-align:left;width:100%;
+  background:var(--panel);border:1.5px solid var(--line);border-radius:8px;padding:12px 16px;color:var(--text)}
+.mis:not(:disabled):hover{border-color:var(--g)}
+.mis .nr{font:400 2.4rem/1 var(--crt);color:var(--g);grid-row:span 2}
+.mis .t{font:400 1.6rem/1 var(--crt);color:var(--text)}
+.mis .sub{font-size:.8rem;color:var(--muted);grid-column:2}
+.mis .st{grid-row:1/span 2;grid-column:3;font:400 1.15rem var(--crt);letter-spacing:.05em;text-align:right}
+.mis .st.c{color:var(--g)} .mis .st.s{color:var(--g2)} .mis .st.v{color:var(--amber)} .mis .st.a{color:var(--red);animation:blink2 1.4s steps(2) infinite} .mis .st.l{color:var(--muted)}
+@keyframes blink2{50%{opacity:.4}}
+.mis:disabled{opacity:.42;cursor:not-allowed}
+.mis.cur{border-color:var(--red);box-shadow:0 0 0 1px rgba(255,79,79,.25),0 0 22px rgba(255,79,79,.12)}
+.tag{display:inline-block;font:600 .68rem var(--mono);letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--line2);border-radius:3px;padding:0 6px;margin-right:6px;color:var(--cyan)}
+.tag.f{color:var(--amber)}
+details.teach{margin-top:26px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 18px}
+details.teach summary{cursor:pointer;font-weight:600;color:var(--muted)}
+details.teach[open] summary{margin-bottom:10px}
+details.teach li{margin-bottom:4px}
+.map-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+
+/* uppdrag */
+.mhead{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-bottom:18px}
+.kicker{font:600 .75rem var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.mhead h2{font-size:clamp(2.2rem,5vw,3.2rem);color:var(--g);width:100%}
+.mgrid{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:1000px){.mgrid{grid-template-columns:1fr}}
+.brief{display:flex;flex-direction:column;gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.card h3{font-size:1.45rem;color:var(--g);margin-bottom:8px;letter-spacing:.05em}
+.mimer{font:400 1.35rem/1.25 var(--crt);color:var(--red);background:var(--code);border:1px solid #3a1414;border-radius:8px;padding:10px 14px;text-shadow:0 0 6px rgba(255,79,79,.45)}
+.mimer::before{content:"MIMER> ";color:var(--amber)}
+.letter{border-left:3px solid var(--cyan);background:var(--panel)}
+.letter .from{font-size:.78rem;color:var(--cyan);letter-spacing:.06em;margin-bottom:4px}
+.letter p{margin:0}
+details.hist{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 16px}
+details.hist summary{cursor:pointer;font-weight:600;color:var(--amber)}
+details.hist p{margin:10px 0 2px;font-size:.92rem}
+.task ol{margin:0;padding-left:1.3em} .task li{margin-bottom:6px}
+.io{width:100%;border-collapse:collapse;font-size:.88rem;margin-top:4px}
+.io td{padding:4px 6px;border-top:1px solid var(--line);vertical-align:top}
+.io td:first-child{white-space:nowrap;color:var(--g);width:1%}
+.hints .hint{border-top:1px dashed var(--line2);padding-top:8px;margin-top:8px;font-size:.92rem}
+.hints .hint b.n{color:var(--amber);font-weight:600}
+.hints .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+
+.work{display:flex;flex-direction:column;gap:12px;min-width:0}
+.wtools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chip{background:var(--panel2);border:1px solid var(--line2);border-radius:4px;padding:3px 9px;font-size:.84rem;color:var(--g);min-height:32px}
+.chip:hover{border-color:var(--g)}
+.wtools .sp{flex:1}
+.editor{display:grid;grid-template-columns:auto 1fr;background:var(--code);border:1.5px solid var(--line2);border-radius:8px;overflow:hidden;min-height:380px}
+.editor:focus-within{border-color:var(--g2)}
+.gutter{padding:14px 8px 14px 12px;text-align:right;color:#3d6b54;font:14px/1.75 var(--mono);user-select:none;border-right:1px solid var(--line);overflow:hidden;white-space:pre}
+.gutter .e{color:#fff;background:var(--red);border-radius:3px;padding:0 3px}
+.editor textarea,.codeview{margin:0;border:0;outline:none;resize:vertical;background:transparent;color:#d8ffe6;font:14px/1.75 var(--mono);padding:14px 16px;min-height:380px;white-space:pre;overflow:auto;tab-size:2;caret-color:var(--g);width:100%}
+.codeview .l{display:block;border-radius:3px;padding:0 6px;margin:0 -6px;min-height:1.75em}
+.codeview .l.on{background:rgba(255,182,39,.25);box-shadow:inset 3px 0 0 var(--amber)}
+.syntax{font-size:.85rem;min-height:1.4em;margin:-4px 0 0}
+.syntax.ok{color:var(--g2)} .syntax.bad{color:var(--red)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.actions .run{font-size:1.02rem;padding:8px 22px}
+
+/* spårning */
+.tracebar{background:var(--panel2);border:1.5px solid var(--amber);border-radius:8px;padding:10px 14px}
+.tracebar .top{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tracebar .top b{color:var(--amber);font-weight:600}
+.tracebar .top .sp{flex:1}
+.vars{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.vars span{background:var(--code);border:1px solid var(--line2);border-radius:4px;padding:1px 8px;font-size:.85rem}
+.vars span.in{opacity:.6}
+.vars span.ch{border-color:var(--amber);color:var(--amber)}
+.vars em{font-style:normal;color:var(--muted)}
+.tout{font-size:.85rem;color:var(--muted);margin-top:6px}
+.tout b{color:var(--g);font-weight:600}
+
+/* resultat */
+.results{display:flex;flex-direction:column;gap:8px}
+.results .sum{font:400 1.5rem var(--crt);letter-spacing:.04em}
+.results .sum.ok{color:var(--g)} .results .sum.bad{color:var(--red)}
+.errbox{background:#1c0808;border:1.5px solid var(--red);border-radius:8px;padding:10px 14px;color:#ffd6d6}
+.errbox b{color:var(--red)}
+.res{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:2px 10px;align-items:start;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 12px}
+.res .ic{font:400 1.5rem/1 var(--crt)}
+.res.ok .ic{color:var(--g)} .res.bad .ic{color:var(--red)}
+.res .nm{font-weight:600}
+.res .det{grid-column:2;font-size:.84rem;color:var(--muted)}
+.res .det b{color:var(--text);font-weight:600}
+.res .msg{grid-column:2;font-size:.86rem;color:#ffb3b3}
+.res .btn{grid-row:1/span 3;grid-column:3}
+
+/* flödesschema */
+.fe{display:flex;flex-direction:column;gap:8px}
+.fe-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.fe-tools button{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line2);border-radius:5px;padding:4px 10px;min-height:36px;font-size:.86rem;color:var(--text)}
+.fe-tools button:hover{border-color:var(--g);color:var(--g)}
+.fe-tools svg{width:26px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6}
+.fe-sp{flex:1}
+.fe-canvas{position:relative;background:var(--code);border:1.5px solid var(--line2);border-radius:8px;overflow:hidden;
+  background-image:radial-gradient(rgba(77,255,136,.09) 1px,transparent 1px);background-size:20px 20px}
+.fe-svg{width:100%;display:block;touch-action:none;user-select:none;-webkit-user-select:none}
+.fe-hint{position:absolute;left:10px;top:8px;margin:0;font-size:.82rem;color:var(--amber)}
+.fe-edge{fill:none;stroke:#7fbf9c;stroke-width:2;color:#7fbf9c}
+.fe-temp{fill:none;stroke:var(--amber);stroke-width:2;stroke-dasharray:5 4;color:var(--amber)}
+.fe-lab{font:600 13px var(--mono)} .fe-lab.ja{fill:var(--g)} .fe-lab.nej{fill:#ff8a8a}
+.fe-node{cursor:grab}
+.fe-node>rect,.fe-node>polygon{fill:#0d1d15;stroke:var(--g2);stroke-width:2}
+.fe-node.t-decision>polygon{fill:#1a1608;stroke:var(--amber)}
+.fe-node.t-output>polygon{fill:#0a1620;stroke:var(--cyan)}
+.fe-node.t-start>rect,.fe-node.t-end>rect{fill:#13261b;stroke:var(--g)}
+.fe-node text{font:500 13.5px var(--mono);fill:#e4ffee;pointer-events:none}
+.fe-node.empty text{fill:var(--muted);font-style:italic}
+.fe-node .fe-id{font:600 11px var(--mono);fill:var(--muted);font-style:normal}
+.fe-node.sel>rect,.fe-node.sel>polygon{stroke:#fff;stroke-width:3}
+.fe-node.on>rect,.fe-node.on>polygon{fill:#4a3608;stroke:var(--amber);stroke-width:4;filter:drop-shadow(0 0 8px rgba(255,182,39,.7))}
+.fe-node.err>rect,.fe-node.err>polygon{stroke:var(--red);stroke-width:4;stroke-dasharray:7 4}
+.fe-port{cursor:crosshair}
+.fe-port .hit{fill:transparent}
+.fe-port .dot{fill:var(--g2);stroke:var(--code);stroke-width:2}
+.fe-port.missing .dot{fill:var(--amber)}
+.fe-port.armed .dot{fill:#fff;r:8}
+.fe-port:hover .dot{fill:#fff}
+.fe-panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;min-height:64px}
+.fe-help{margin:0;font-size:.88rem;color:var(--muted)}
+.dotinl{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--amber);vertical-align:-1px}
+.fe-ph{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.fe-ph b{color:var(--g);font-weight:600}
+.fe-del{margin-left:auto;background:none;border:1px solid #5a2424;color:#ff8a8a;border-radius:4px;padding:2px 10px;font-size:.82rem}
+.fe-txt{display:grid;grid-template-columns:72px 1fr;gap:8px;align-items:start}
+.fe-txt span,.fe-link span{font-size:.84rem;color:var(--muted);padding-top:6px}
+.fe-txt textarea{background:var(--code);border:1.5px solid var(--line2);border-radius:6px;padding:6px 10px;font:14px/1.6 var(--mono);color:#d8ffe6;resize:vertical;width:100%}
+.fe-txt textarea:focus{border-color:var(--g2);outline:none}
+.fe-ins{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 0 80px}
+.fe-ins button{background:var(--panel2);border:1px solid var(--line2);border-radius:4px;padding:0 8px;font-size:.8rem;color:var(--g);min-height:28px}
+.fe-links{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:10px}
+.fe-link{display:flex;gap:8px;align-items:center}
+.fe-link span{padding:0}
+.fe-link select{background:var(--code);border:1.5px solid var(--line2);border-radius:6px;padding:5px 8px;font-size:.86rem;max-width:280px}
+.fe-err{margin:6px 0 0;font-size:.84rem;min-height:1.2em}
+.fe-err.bad{color:#ff9a9a}
+
+/* dialoger */
+dialog{background:var(--bg2);color:var(--text);border:1.5px solid var(--g2);border-radius:10px;padding:0;max-width:min(680px,94vw);width:100%;box-shadow:0 0 60px rgba(77,255,136,.18)}
+dialog::backdrop{background:rgba(0,0,0,.75)}
+.dlg{padding:22px 24px}
+.dlg h2{font-size:2.6rem;color:var(--g);margin-bottom:10px}
+.dlg .row{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:16px}
+.big{font:400 1.5rem/1.3 var(--crt);margin:6px 0 12px}
+.big .from{color:var(--red)} .big .to{color:var(--g)}
+.cheat{width:100%;border-collapse:collapse;font-size:.86rem}
+.cheat td{padding:5px 8px;border-top:1px solid var(--line);vertical-align:top}
+.cheat td:first-child{white-space:pre;color:var(--g)}
+.cheat h4{margin:14px 0 4px;color:var(--amber);font-weight:600}
+
+/* slut */
+.endgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:10px;margin:18px 0}
+.endgrid .card .y{font:400 2rem/1 var(--crt);color:var(--amber)}
+.endgrid .card .s{font-size:.82rem}
+.reflect li{margin-bottom:8px}
+
+@media (prefers-reduced-motion: reduce){
+  .sweep,.blip,.defcon i.on[data-d="1"],.mis .st.a,.term .cur::after{animation:none}
+}
+@media (max-width:640px){
+  .wrap{padding:0 16px}
+  .bar{position:static}
+  .bar .wrap{gap:6px 12px}
+  .logo{font-size:1.5rem}
+  .defcon{margin-left:0}
+  .defcon .lbl,.risk{font-size:1.05rem}
+  .defcon i{width:24px;height:24px;font-size:1.05rem}
+  .term{padding:18px 16px;min-height:60vh}
+  .term .ln,.term .choices button{font-size:1.3rem}
+  .mis{grid-template-columns:44px minmax(0,1fr);}
+  .mis .st{grid-column:2;grid-row:auto;text-align:left}
+  .fe-txt{grid-template-columns:1fr}.fe-ins{margin-left:0}
+}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="back" href="../">← AI 1</a>
+    <span class="logo glow">MIMER</span>
+    <span class="fs-slot" id="fsSlot"></span>
+    <div class="defcon" aria-label="Beredskapsnivå">
+      <span class="lbl">DEFCON</span>
+      <i data-d="5">5</i><i data-d="4">4</i><i data-d="3">3</i><i data-d="2">2</i><i data-d="1">1</i>
+    </div>
+    <span class="risk" id="risk">ANFALLSRISK <b>–</b></span>
+  </div>
+</header>
+
+<main>
+  <!-- Intro -->
+  <section class="view" id="vIntro">
+    <div class="wrap">
+      <div class="term" id="term" aria-live="polite"></div>
+      <div class="skip"><button class="btn small" id="skipIntro" type="button">Hoppa över introt ›</button></div>
+    </div>
+  </section>
+
+  <!-- Uppdragskarta -->
+  <section class="view hide" id="vKarta">
+    <div class="wrap map">
+      <div>
+        <div class="radar-box">
+          <svg id="radar" viewBox="0 0 400 400" role="img" aria-label="Radarskärm"></svg>
+          <div class="status" id="status"></div>
+        </div>
+        <div class="map-actions">
+          <button class="btn small" type="button" id="replayIntro">Visa introt igen</button>
+          <button class="btn small" type="button" id="openCheat">Fusklapp</button>
+        </div>
+      </div>
+      <div>
+        <div class="missions" id="missions"><h2 class="glow">UPPDRAG</h2></div>
+        <details class="teach">
+          <summary>För läraren</summary>
+          <p>Eleven stoppar datorn MIMER genom att skriva om sex algoritmer – växelvis i <b>pseudokod</b> och som <b>flödesschema</b>. Varje algoritm körs mot testfall, så eleven ser direkt vilket fall som går fel och kan spåra körningen steg för steg. Uppdragen bygger på verkliga falsklarm under kalla kriget.</p>
+          <ol>
+            <li><b>Månen över Norge</b> (1960) – selektion, gränsfall</li>
+            <li><b>Solreflexen</b> (1983, Petrov) – nästlade val i flödesschema</li>
+            <li><b>Övningsbandet</b> (1979, NORAD) – iteration och räknare</li>
+            <li><b>Heta linjen</b> (1963) – loop med räknare i flödesschema</li>
+            <li><b>Frekvensjakten</b> (Able Archer 83) – binärsökning, O(log n)</li>
+            <li><b>Spelet som inte går att vinna</b> (MAD) – allt i ett flödesschema</li>
+          </ol>
+          <p>Räkna med 60–90 minuter. Bygger vidare på <a href="../algoritmer/">Algoritmer</a> (pseudokod, flödesschema, Ordo). Ledtrådar finns i varje uppdrag; efter tre misslyckade körningar kan eleven se ett lösningsförslag.</p>
+          <p>Framstegen sparas i webbläsaren. Är eleven kopplad till klassen syns det i lärarpanelen om uppdraget klarades direkt, efter flera försök eller med lösningen visad. Lägg till <code>?alla</code> i adressen för att låsa upp alla uppdrag.</p>
+          <p class="muted" style="margin:0">Inspirerat av filmen <i>WarGames</i> (1983). Datorn, personerna och handlingen i spelet är påhittade; de historiska händelserna är verkliga.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ett uppdrag -->
+  <section class="view hide" id="vUppdrag">
+    <div class="wrap">
+      <div class="mhead">
+        <button class="btn small" type="button" id="toMap">‹ Uppdragen</button>
+        <span class="kicker" id="mKicker"></span>
+        <h2 class="glow" id="mTitle"></h2>
+      </div>
+      <div class="mgrid">
+        <div class="brief" id="brief"></div>
+        <div class="work">
+          <div id="workArea"></div>
+          <div class="actions">
+            <button class="btn go run" type="button" id="runBtn">▶ KÖR TESTERNA</button>
+            <button class="btn small" type="button" id="resetBtn">Börja om</button>
+            <button class="btn small" type="button" id="cheatBtn">Fusklapp</button>
+          </div>
+          <div class="tracebar hide" id="tracebar"></div>
+          <div class="results" id="results" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Slut -->
+  <section class="view hide" id="vSlut">
+    <div class="wrap">
+      <div class="term" id="endTerm" aria-live="polite" style="min-height:auto"></div>
+      <div id="endBody" class="hide" style="max-width:900px;margin:22px auto 0"></div>
+    </div>
+  </section>
+</main>
+
+<dialog id="dlgKlar"><div class="dlg" id="klarBody"></div></dialog>
+
+<dialog id="dlgCheat"><div class="dlg">
+  <h2>FUSKLAPP</h2>
+  <table class="cheat">
+    <tr><td colspan="2"><h4>Pseudokod</h4></td></tr>
+    <tr><td>x ← 5</td><td>Tilldelning: x får värdet 5. Skrivs även <code>x &lt;- 5</code> eller <code>x = 5</code>.</td></tr>
+    <tr><td>SKRIV UT "LARM"</td><td>Skriver ut en text. Text står inom citattecken.</td></tr>
+    <tr><td>SKRIV UT antal</td><td>Skriver ut värdet i en variabel.</td></tr>
+    <tr><td>OM x > 5
+  …
+ANNARS OM x > 2
+  …
+ANNARS
+  …</td><td>Selektion. Det som hör till en del skrivs med <b>indrag</b> (två mellanslag).</td></tr>
+    <tr><td>SÅ LÄNGE x < 10
+  …</td><td>Upprepa så länge villkoret är SANT.</td></tr>
+    <tr><td>UPPREPA 3 GÅNGER
+  …</td><td>Upprepa ett bestämt antal gånger.</td></tr>
+    <tr><td>FÖR VARJE s I lista
+  …</td><td>Gå igenom en lista, ett element i taget.</td></tr>
+    <tr><td>FÖR i FRÅN 1 TILL 5
+  …</td><td>Räkna i = 1, 2, 3, 4, 5.</td></tr>
+    <tr><td>// kommentar</td><td>Ignoreras när algoritmen körs.</td></tr>
+    <tr><td colspan="2"><h4>Jämförelser och räkning</h4></td></tr>
+    <tr><td>=  ≠  &lt;  &gt;  ≤  ≥</td><td>Även <code>==</code> <code>!=</code> <code>&lt;=</code> <code>&gt;=</code>. Text jämförs utan hänsyn till stora/små bokstäver.</td></tr>
+    <tr><td>OCH  ELLER  INTE</td><td>Kombinera villkor: <code>radar = SANT OCH satellit &gt; 20</code></td></tr>
+    <tr><td>+ - * /</td><td>Räknesätt. <code>7 DIV 2</code> = 3 (heltalsdivision), <code>7 MOD 2</code> = 1 (rest).</td></tr>
+    <tr><td>SANT  FALSKT</td><td>Sanningsvärden.</td></tr>
+    <tr><td>LÄNGD(lista)</td><td>Hur många element listan har. <code>lista[0]</code> är det första elementet.</td></tr>
+    <tr><td colspan="2"><h4>Flödesschema</h4></td></tr>
+    <tr><td>(  Start  )</td><td>Start och Slut ritas som ovaler.</td></tr>
+    <tr><td>[ Process ]</td><td>Rektangel: något görs, t.ex. <code>x ← x + 1</code>. En rad per tilldelning.</td></tr>
+    <tr><td>&lt; Beslut &gt;</td><td>Romb: ett villkor med två pilar ut, <b>Ja</b> och <b>Nej</b>.</td></tr>
+    <tr><td>/ Utskrift /</td><td>Parallellogram: något skrivs ut, t.ex. <code>"LARM"</code>.</td></tr>
+    <tr><td>↑ pil tillbaka</td><td>En pil som går tillbaka till en tidigare ruta är en loop.</td></tr>
+  </table>
+  <div class="row"><button class="btn" type="button" onclick="this.closest('dialog').close()">Stäng</button></div>
+</div></dialog>
+
+<script src="../shared/framsteg.js"></script>
+<script src="js/tolk.js"></script>
+<script src="js/uppdrag.js"></script>
+<script src="js/flode.js"></script>
+<script src="js/spel.js"></script>
+</body>
+</html>

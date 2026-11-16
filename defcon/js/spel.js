@@ -14,6 +14,17 @@
   const DEFCON = [1, 2, 2, 3, 3, 4, 5];
   const RISK = [97, 88, 76, 61, 43, 21, 0];
   const RANK = { c: 3, s: 2, v: 1 };
+  const L = window.Ljud || { tick() {}, blip() {}, modem() { return 0; }, alarm() {}, ok() {}, fail() {}, win() {}, defcon() {}, power() {}, music() {}, duck() {}, unlock() { return Promise.resolve(); }, fx: false, mus: false, setFx() {}, setMus() {} };
+
+  /* ---------- Ljudknappar ---------- */
+  function renderSnd() {
+    $("sndMus").setAttribute("aria-pressed", String(!!L.mus));
+    $("sndFx").setAttribute("aria-pressed", String(!!L.fx));
+  }
+  $("sndMus").addEventListener("click", () => { L.setMus(!L.mus); renderSnd(); });
+  $("sndFx").addEventListener("click", () => { L.setFx(!L.fx); renderSnd(); L.blip(); });
+  if (!window.Ljud || !window.Ljud.supported) document.querySelector(".snd").classList.add("hide");
+  renderSnd();
 
   /* ---------- Lagring ---------- */
   function load() {
@@ -62,15 +73,17 @@
       this.el.appendChild(d);
       if (cls === "s" || cls === "n") {
         d.innerHTML = text;
+        L.tick();
         if (!this.fast) await sleep(250 + text.length * 9);
         return d;
       }
       d.classList.add("cur");
-      if (this.fast) d.textContent = text;
+      if (this.fast) { d.textContent = text; L.tick(); }
       else for (let i = 0; i < text.length; i++) {
         if (this.dead) throw "stop";
         if (this.fast) { d.textContent = text; break; }
         d.textContent = text.slice(0, i + 1);
+        if (text[i] !== " ") L.tick();
         await sleep(speed || 22);
       }
       d.classList.remove("cur");
@@ -78,6 +91,16 @@
       return d;
     }
     async pause(ms) { if (this.dead) throw "stop"; if (!this.fast) await sleep(ms); }
+    power() {
+      return new Promise((res) => {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "power";
+        b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 3v8"/><path d="M6.3 6.6a8 8 0 1 0 11.4 0"/></svg>SLÅ PÅ DATORN';
+        b.onclick = () => { b.remove(); res(); };
+        this.el.appendChild(b);
+        b.focus();
+      });
+    }
     choices(opts) {
       return new Promise((res) => {
         const box = document.createElement("div");
@@ -120,15 +143,22 @@
     const t = introTerm = new Term($("term"));
     t.clear();
     $("skipIntro").textContent = "Hoppa över introt ›";
+    L.music(null);
     try {
+      await t.power();
+      await L.unlock();
+      L.power();
+      await t.pause(700);
       await t.line("Jönköping, november 1983. Klockan är 23.40. Du sitter vid hemdatorn och låter modemet ringa nummer efter nummer, på jakt efter ett spelföretag som ska släppa nya spel. Ett nummer svarar med ett tjut.", "n");
-      await t.pause(500);
+      const ml = L.modem();
+      await t.pause(ml ? ml * 1000 + 200 : 500);
       await t.line("CONNECT 1200", "", 40);
       await t.pause(400);
       await t.input("LOGON:");
       await t.pause(300);
       await t.line("IDENTIFIERING GODKÄND.");
       await t.pause(300);
+      L.music("intro");
       await t.line("GOD KVÄLL. JAG ÄR MIMER.");
       await t.line("MILITÄR INTEGRERAD MÅLDATOR FÖR EXTREMA RISKER.");
       await t.pause(500);
@@ -142,10 +172,12 @@
       await t.line("LADDAR MÅLDATA ........................ KLART", "m", 30);
       await t.line("STARTAR SIMULERING.", "m");
       await t.pause(300);
-      for (const d of [4, 3, 2]) { setDefcon(d, null); await t.line("DEFCON " + d, "r", 30); await t.pause(450); }
+      for (const d of [4, 3, 2]) { setDefcon(d, null); L.alarm(); await t.line("DEFCON " + d, "r", 30); await t.pause(700); }
       await t.line("VARNING: SIMULERING KOPPLAD TILL SKARPA ROBOTSILOR.", "r");
       setDefcon(1, 97);
+      L.alarm();
       await t.line("DEFCON 1. ANFALLSRISK 97 %.", "r");
+      L.music("karta");
       await t.pause(900);
       await t.line("<b>[PRIVAT KANAL] Dr. Ingrid Sandberg:</b> Sluta! Vem du än är – du har startat något du inte förstår. MIMER kan inte skilja på spel och verklighet. Den tror att kriget har börjat, och den har tillgång till riktiga robotar.", "s");
       await t.pause(500);
@@ -188,6 +220,7 @@
 
   function showMap() {
     show("vKarta");
+    L.music("karta"); L.duck(false);
     setDefconFromProgress();
     drawRadar();
     const box = $("missions");
@@ -227,6 +260,7 @@
   function openStage(i) {
     SI = i; S = U[i];
     stopTrace();
+    L.music("karta"); L.duck(true); L.blip();
     lastRun = null;
     show("vUppdrag");
     setDefconFromProgress();
@@ -429,6 +463,7 @@
     box.querySelectorAll("[data-trace]").forEach((b) => b.addEventListener("click", () => startTrace(+b.dataset.trace)));
     if (all) solved();
     else {
+      L.fail();
       if (!P.solved[S.id] && !first.compileError) { P.fails[S.id] = (P.fails[S.id] || 0) + 1; save(); renderBrief(); }
       box.scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "nearest" });
     }
@@ -457,6 +492,8 @@
       </div>`;
     const d = $("dlgKlar");
     d.showModal();
+    L.win();
+    if (fresh) setTimeout(() => L.defcon(DEFCON[after]), 900);
     $("klarStay").onclick = () => d.close();
     $("klarNext").onclick = () => { d.close(); if (last) ending(); else openStage(SI + 1); };
     $("klarNext").focus();
@@ -539,6 +576,7 @@
   async function ending() {
     show("vSlut");
     setDefcon(1, 0);
+    L.duck(false);
     const t = new Term($("endTerm"));
     t.clear();
     $("endBody").classList.add("hide");
@@ -557,8 +595,10 @@
       await t.line("SLUTSATS: INGET SCENARIO SLUTAR MED SEGER.", "m");
       await t.line("DET HÄR SPELET GÅR INTE ATT VINNA.", "m");
       await t.pause(700);
-      for (const dd of [2, 3, 4, 5]) { setDefcon(dd, Math.round(97 - dd * 19.4)); await t.line("DEFCON " + dd, dd === 5 ? "" : "m", 30); await t.pause(300); }
+      L.music(null);
+      for (const dd of [2, 3, 4, 5]) { setDefcon(dd, Math.round(97 - dd * 19.4)); L.defcon(dd); await t.line("DEFCON " + dd, dd === 5 ? "" : "m", 30); await t.pause(450); }
       setDefcon(5, 0);
+      L.music("slut");
       await t.line("ANFALLET AVBRYTS. ROBOTARNA ÅTERGÅR TILL SILORNA.");
       await t.pause(900);
       await t.line("VILL DU SPELA ETT PARTI SCHACK?");

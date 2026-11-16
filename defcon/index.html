@@ -59,6 +59,13 @@ p{margin:0 0 .8em}
 .risk{font:400 1.25rem var(--crt);color:var(--amber);letter-spacing:.05em;white-space:nowrap}
 .risk b{font-weight:400;color:var(--red)}
 .fs-slot:empty{display:none}
+.snd{display:flex;gap:6px}
+.snd button{background:none;border:1.5px solid var(--line2);border-radius:5px;color:var(--g);font-size:.8rem;padding:3px 9px;min-height:32px}
+.snd button:hover{border-color:var(--g)}
+.snd button[aria-pressed="false"]{color:var(--muted);text-decoration:line-through;border-style:dashed}
+.power{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:12px;margin:18px 0 6px;font:400 1.7rem var(--crt);color:var(--g);border:2px solid var(--g);border-radius:8px;padding:10px 22px;box-shadow:0 0 18px rgba(77,255,136,.25)}
+.power:hover,.power:focus-visible{background:var(--g);color:#03140a}
+.power svg{width:26px;height:26px}
 
 /* vyer */
 .view{padding:28px 0 60px}
@@ -281,6 +288,10 @@ dialog::backdrop{background:rgba(0,0,0,.75)}
       <i data-d="5">5</i><i data-d="4">4</i><i data-d="3">3</i><i data-d="2">2</i><i data-d="1">1</i>
     </div>
     <span class="risk" id="risk">ANFALLSRISK <b>–</b></span>
+    <span class="snd">
+      <button type="button" id="sndMus" aria-pressed="true" title="Musik på/av">♪ Musik</button>
+      <button type="button" id="sndFx" aria-pressed="true" title="Ljudeffekter på/av">🔊 Ljud</button>
+    </span>
   </div>
 </header>
 
@@ -401,6 +412,7 @@ ANNARS
 </div></dialog>
 
 <script src="../shared/framsteg.js"></script>
+<script src="js/ljud.js"></script>
 <script src="js/tolk.js"></script>
 <script src="js/uppdrag.js"></script>
 <script src="js/flode.js"></script>

@@ -15,6 +15,9 @@ Digitalt kursmaterial för **AI 1** på Teknikprogrammet vid Erik Dahlbergsgymna
 │   └── index.html      ← Algoritmer (fem krav, byggstenar, pseudokod, Ordo)
 ├── sokning/
 │   └── index.html      ← Sökning (BFS, DFS, Dijkstra, girig sökning, A*)
+├── defcon/
+│   ├── index.html      ← Spelet DEFCON 1 (pseudokod och flödesscheman, kalla kriget)
+│   └── js/             ← tolk.js (kör pseudokod/flödesscheman), uppdrag.js, flode.js, spel.js
 └── README.md
 ```
 

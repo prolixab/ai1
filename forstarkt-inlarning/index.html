@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Förstärkt inlärning – AI 1</title>
+<meta name="description" content="Se en robot lära sig hitta till målet med förstärkt inlärning (Q-learning) i ett 3D-rum. Ändra belöningarna, träna, och se vad som händer när belöningen går att fuska med.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23e9eaee'/><rect x='3' y='19' width='26' height='10' rx='2' fill='%233a3d45'/><rect x='19' y='22' width='8' height='5' fill='%2347e05a'/><rect x='6' y='9' width='9' height='10' rx='2' fill='%2314b8a6'/><rect x='8' y='12' width='5' height='3' fill='%23111'/><rect x='17' y='4' width='12' height='7' rx='1' fill='%23151515'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+            "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}
+</script>
+<style>
+:root{
+  --paper:#f4f5f7; --surface:#ffffff; --soft:#eceef2; --ink:#16191f; --muted:#5e6672; --line:#dcdfe5;
+  --green:#22c55e; --green-ink:#15803d; --red:#e5484d; --orange:#f08a24; --teal:#14b8a6; --accent:#0f766e;
+  --hero:#16181d; --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0f1115; --surface:#181b21; --soft:#21252d; --ink:#e7e9ee; --muted:#9aa3ae; --line:#2b3039;
+    --green-ink:#4ade80; --accent:#2dd4bf; --hero:#0a0b0e;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0f1115; --surface:#181b21; --soft:#21252d; --ink:#e7e9ee; --muted:#9aa3ae; --line:#2b3039;
+  --green-ink:#4ade80; --accent:#2dd4bf; --hero:#0a0b0e;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.6 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+h1,h2,h3{line-height:1.15;margin:0;letter-spacing:-.01em}
+p{margin:0 0 .9em}
+a{color:var(--accent)}
+button,select,input{font:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)} .small{font-size:.88rem}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+
+.hero{background:var(--hero);color:#eef0f3;padding:30px 0 22px}
+.back-link{display:inline-block;color:#9fe7dc;text-decoration:none;font-size:.9rem;margin-bottom:12px}
+.back-link:hover{color:#fff}
+.kicker{font:700 .78rem var(--mono);letter-spacing:.14em;text-transform:uppercase;color:#5eead4;margin:0}
+.hero h1{font-size:clamp(2.2rem,6.5vw,3.6rem);margin:.15rem 0 .4rem;letter-spacing:-.02em}
+.hero .lede{max-width:760px;color:#c9ced6;font-size:1.08rem;margin:0}
+
+/* scenen */
+.stage{position:relative;background:#cfd2d8;border-radius:16px;overflow:hidden;margin-top:18px;height:clamp(340px,62vh,640px);box-shadow:0 10px 40px rgba(0,0,0,.18)}
+.stage canvas{display:block;width:100%;height:100%;touch-action:none}
+.cap{position:absolute;left:50%;bottom:7%;transform:translateX(-50%);max-width:min(92%,980px);background:rgba(18,18,20,.86);color:#fff;
+  font:600 clamp(1rem,2.7vw,1.9rem)/1.3 Inter,system-ui,sans-serif;padding:.25em .55em;border-radius:4px;text-align:center;transition:opacity .3s;pointer-events:none}
+.cap.hide{opacity:0}
+.cap .g{color:#4ade80} .cap .r{color:#ff6b6b} .cap .o{color:#fdba74}
+.flash{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .5s}
+.flash.on{opacity:1;transition:none}
+#fGood{background:radial-gradient(ellipse at center,transparent 45%,rgba(34,197,94,.45))}
+#fBad{background:radial-gradient(ellipse at center,transparent 45%,rgba(229,72,77,.5))}
+.badge{position:absolute;right:12px;top:12px;background:rgba(18,18,20,.75);color:#fff;font:700 .78rem var(--mono);padding:4px 10px;border-radius:99px;letter-spacing:.06em}
+
+/* kontroller */
+.controls{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;margin-top:16px;align-items:start}
+@media (max-width:900px){.controls{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.panel h3{font-size:1rem;margin-bottom:8px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:7px 14px;font-weight:700;min-height:42px}
+.btn:hover{border-color:var(--teal)}
+.btn.primary{background:var(--teal);border-color:var(--teal);color:#04201d}
+.btn.green{background:var(--green);border-color:var(--green);color:#052e14}
+select.sel{padding:7px 10px;border:1.5px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);min-height:42px}
+.rng{display:inline-flex;align-items:center;gap:8px;font-size:.92rem}
+.rng input{width:130px;accent-color:var(--teal)}
+.checks{display:grid;gap:6px;margin-top:4px}
+.checks label{display:flex;gap:8px;align-items:center;font-size:.93rem}
+.checks input{accent-color:var(--teal);width:18px;height:18px}
+.pts{font:700 .82rem var(--mono);padding:1px 7px;border-radius:6px;margin-left:auto;white-space:nowrap}
+.pts.p{background:#dcfce7;color:#14532d} .pts.n{background:#fee2e2;color:#7f1d1d}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}
+.stat{background:var(--soft);border-radius:9px;padding:6px 10px}
+.stat small{display:block;color:var(--muted);font-size:.74rem}
+.stat b{font:700 1.25rem var(--mono)}
+#chart{width:100%;height:170px;display:block}
+.memory{display:grid;grid-template-columns:70px 1fr 56px;gap:6px 10px;align-items:center;font-size:.9rem}
+.memory .bar{height:14px;background:var(--soft);border-radius:99px;position:relative;overflow:hidden}
+.memory .bar i{position:absolute;top:0;bottom:0;border-radius:99px}
+.memory .best{font-weight:800;color:var(--green-ink)}
+@media (max-width:560px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.wrap{padding:0 14px}}
+
+/* text */
+section.part{padding:34px 0;border-top:1px solid var(--line)}
+section.part h2{font-size:clamp(1.6rem,4vw,2.2rem);margin-bottom:10px}
+.lead{max-width:800px}
+.loop{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;max-width:720px;margin:16px 0}
+.loop div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;text-align:center}
+.loop .arr{border:0;background:none;font:700 .9rem var(--mono);color:var(--muted);padding:0}
+.loop b{display:block;font-size:1.1rem}
+.terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:10px;margin-top:12px}
+.terms div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:.94rem}
+.terms b{display:block;color:var(--accent);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase}
+.formula{font:700 1.05rem var(--mono);background:var(--soft);border-radius:10px;padding:10px 14px;display:inline-block;margin:6px 0 12px}
+.callout{border-left:4px solid var(--teal);background:var(--soft);border-radius:8px;padding:10px 14px;margin-top:14px;max-width:860px}
+.callout p:last-child{margin:0}
+.missions{padding-left:1.2em;max-width:860px}
+.missions li{margin-bottom:.6em}
+.q{margin:0 0 16px}
+.q p{font-weight:600;margin-bottom:6px}
+.q .opts{display:flex;flex-wrap:wrap;gap:6px}
+.q .opts button.right{background:var(--green);border-color:var(--green);color:#052e14}
+.q .opts button.wrong{background:var(--red);border-color:var(--red);color:#fff}
+.q .why{font-size:.9rem;color:var(--muted);margin-top:6px}
+.toast{font-weight:700;min-height:1.5em}
+footer{padding:20px 0 36px;font-size:.9rem;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <a class="back-link" href="../index.html">← Kurssidan AI 1</a>
+    <p class="kicker">AI 1 · Maskininlärning</p>
+    <h1>Förstärkt inlärning</h1>
+    <p class="lede">Ingen talar om för roboten Robo hur den ska gå. Den får bara <b style="color:#4ade80">belöningar</b> och <b style="color:#ff8a8a">straff</b> – och måste själv lista ut hur den når det gröna målet. Se den lära sig, avsnitt för avsnitt.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="stage" id="stage">
+    <div class="flash" id="fGood"></div>
+    <div class="flash" id="fBad"></div>
+    <div class="badge" id="badge">UTFORSKAR</div>
+    <div class="cap" id="cap"></div>
+  </div>
+
+  <div class="controls">
+    <div class="panel">
+      <div class="row">
+        <button class="btn primary" type="button" id="play">▶ Kör</button>
+        <label class="rng">Fart <input type="range" id="speed" min="0" max="4" step="1" value="1" aria-valuetext="Normal"></label>
+        <button class="btn" type="button" id="train">Träna 200 avsnitt snabbt</button>
+        <button class="btn green" type="button" id="best">Visa vad Robo lärt sig</button>
+        <button class="btn" type="button" id="forget">Glöm allt</button>
+      </div>
+      <div class="stats">
+        <div class="stat"><small>Avsnitt</small><b id="sEp">0</b></div>
+        <div class="stat"><small>Nådde målet (senaste 20)</small><b id="sWin">–</b></div>
+        <div class="stat"><small>Belöning (snitt 20)</small><b id="sAvg">–</b></div>
+        <div class="stat"><small>Utforskning ε</small><b id="sEps">1,00</b></div>
+      </div>
+      <canvas id="chart" aria-label="Belöning per avsnitt"></canvas>
+      <p class="muted small" style="margin:.4em 0 0">Belöning per avsnitt. Gröna prickar = Robo nådde målet. Linjen är snittet av de senaste tio.</p>
+    </div>
+    <div class="panel">
+      <h3>Miljön och belöningarna</h3>
+      <div class="row" style="margin-bottom:8px">
+        <label class="small">Bana <select class="sel" id="level">
+          <option value="open">Öppet rum</option>
+          <option value="wall">Väggen</option>
+          <option value="lava">Lavagången</option>
+          <option value="maze">Labyrinten</option>
+        </select></label>
+      </div>
+      <div class="checks">
+        <label><input type="checkbox" id="rGoal" checked disabled> Nå målet <span class="pts p">+10</span></label>
+        <label><input type="checkbox" id="rCloser" checked> Komma närmare målet <span class="pts p">+1</span></label>
+        <label><input type="checkbox" id="rFarther" checked> Gå längre bort från målet <span class="pts n">−1</span></label>
+        <label><input type="checkbox" id="rStep"> Varje steg kostar <span class="pts n">−0,1</span></label>
+        <label><input type="checkbox" checked disabled> Krocka med en vägg <span class="pts n">−1</span></label>
+        <label><input type="checkbox" id="rLava" checked disabled> Lava – avsnittet slutar <span class="pts n">−10</span></label>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <label class="rng">Utforskning ε <input type="range" id="eps" min="0" max="1" step="0.05" value="1"></label>
+        <label class="small" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="decay" checked style="accent-color:var(--teal)"> minska efter hand</label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label class="small" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="arrows" checked style="accent-color:var(--teal)"> Visa vad Robo har lärt sig (pilar på golvet)</label>
+      </div>
+      <h3 style="margin-top:14px">Robos minne för rutan där den står</h3>
+      <div class="memory" id="memory"></div>
+      <p class="muted small" style="margin:.5em 0 0">Hur mycket belöning Robo räknar med att få totalt om den går åt det hållet härifrån. Det största värdet är det Robo väljer när den inte utforskar.</p>
+    </div>
+  </div>
+
+  <section class="part">
+    <h2>Vad är förstärkt inlärning?</h2>
+    <p class="lead">I förstärkt inlärning (på engelska <i>reinforcement learning</i>) lär sig en <b>agent</b> genom att pröva sig fram i en <b>miljö</b>. Ingen visar facit. Agenten gör något, ser vad som händer och får en <b>belöning</b> – ett tal som är högt när det gick bra och lågt när det gick dåligt. Målet är att få så mycket belöning som möjligt totalt.</p>
+    <div class="loop">
+      <div><b>Agenten</b>Robo</div>
+      <div class="arr">handling →<br>← tillstånd, belöning</div>
+      <div><b>Miljön</b>rummet</div>
+    </div>
+    <div class="terms">
+      <div><b>Tillstånd</b>Var Robo står just nu – vilken ruta.</div>
+      <div><b>Handling</b>Vad Robo gör: gå upp, ner, åt höger eller vänster.</div>
+      <div><b>Belöning</b>Talet Robo får efter varje steg. Står på wall-displayen.</div>
+      <div><b>Avsnitt</b>Ett försök, från start tills Robo når målet, hamnar i lavan eller har gått 80 steg.</div>
+      <div><b>Policy</b>Robos strategi: vilken handling den väljer i varje ruta. Pilarna på golvet.</div>
+    </div>
+    <div class="callout">
+      <p>Jämför med <a href="../sokning/">sökning</a>: där vet algoritmen hur kartan ser ut och kan planera hela vägen innan den går. Robo vet ingenting om rummet. Den måste <b>prova</b> för att ta reda på vad som händer – precis som när du lär dig ett nytt spel.</p>
+    </div>
+  </section>
+
+  <section class="part">
+    <h2>Hur lär sig Robo? Q-learning</h2>
+    <p class="lead">Robo har en tabell – sitt minne – med ett värde för varje ruta och varje håll. Värdet kallas <b>Q</b> och är Robos gissning om hur mycket belöning den får totalt om den går åt det hållet. Från början är alla värden 0. Efter varje steg justerar Robo gissningen en liten bit:</p>
+    <p class="formula">nytt Q = gammalt Q + α · (belöning + γ · bästa Q i nästa ruta − gammalt Q)</p>
+    <p class="lead"><b>α = 0,3</b> är hur snabbt Robo ändrar sig. <b>γ = 0,97</b> betyder att belöningar längre fram är nästan lika mycket värda som belöningar nu. Så sprider sig målets +10 bakåt, ruta för ruta, tills hela golvet pekar mot målet. Följ det med pilarna på golvet och tabellen <i>Robos minne</i> ovanför.</p>
+    <h3 style="margin-top:18px">Utforska eller utnyttja?</h3>
+    <p class="lead">Om Robo alltid går dit den tror är bäst hittar den aldrig något bättre. Därför tar den ibland ett <b>slumpmässigt</b> steg. Hur ofta styrs av <b>ε</b> (epsilon): 1 = alltid slump, 0 = alltid det bästa den vet. I början utforskar Robo mycket, sedan allt mindre. Märket uppe till höger i rummet visar om Robo utforskar eller utnyttjar.</p>
+  </section>
+
+  <section class="part">
+    <h2>Belöningen styr allt</h2>
+    <p class="lead">Robo gör inte det du <i>menar</i> – den gör det som ger mest belöning. Om belöningen går att fuska med, så hittar Robo fusket. Det kallas <b>belöningsfusk</b> (reward hacking), och du kan läsa mer om det i <a href="../agenter-och-miljoer/#k6">Agenter och miljöer</a>.</p>
+    <ol class="missions">
+      <li><b>Se Robo lära sig.</b> Tryck på <i>Kör</i> och titta några avsnitt. Tryck sedan på <i>Träna 200 avsnitt snabbt</i> och <i>Visa vad Robo lärt sig</i>. Hur ser pilarna ut nu?</li>
+      <li><b>Fusket.</b> Tryck på <i>Glöm allt</i>, bocka ur <i>Gå längre bort från målet −1</i> och träna 200 avsnitt. Belöningen blir högre än förut – men når Robo målet? Vad gör den i stället, och varför lönar det sig?</li>
+      <li><b>Laga belöningen.</b> Låt straffet vara avbockat men bocka i <i>Varje steg kostar −0,1</i>. Räcker det? Testa också att ta bort belöningen för att komma närmare helt. Hur mycket längre tid tar det då att lära sig?</li>
+      <li><b>Väggen.</b> Välj banan <i>Väggen</i>, glöm allt och träna. "Närmare målet" mäts fågelvägen, rakt genom väggen. Varför fastnar Robo först mot väggen – och hur kommer den förbi? (Tips: för att ta sig runt måste Robo först gå längre bort från målet.)</li>
+      <li><b>Labyrinten.</b> Välj <i>Labyrinten</i>, glöm allt och träna 200 avsnitt – kanske ett par gånger. Klarar Robo det? Glöm allt igen, bocka ur båda belöningarna för närmare och längre bort, bocka i <i>Varje steg kostar −0,1</i> och träna igen. Varför går det bättre när Robo får <i>mindre</i> hjälp?</li>
+      <li><b>Utan utforskning.</b> Glöm allt, sätt ε till 0 och bocka ur <i>minska efter hand</i>. Lär sig Robo fortfarande? Varför behövs slumpen?</li>
+      <li><b>Flytta målet.</b> Träna på <i>Öppet rum</i> och byt sedan till <i>Lavagången</i> utan att glömma. Hjälper det Robo att ha tränat förut? Vad har den egentligen lärt sig – vägen eller målet?</li>
+    </ol>
+    <div class="callout">
+      <p><b>Så tränas riktiga AI:er.</b> AlphaGo och AlphaZero lärde sig spela go och schack genom att spela miljontals partier mot sig själva och få +1 för vinst och −1 för förlust. Robotar lär sig gå i simulerade världar innan de prövar i verkligheten, och chattbottar finjusteras med belöningar från människor som betygsätter svaren. Principen är densamma som för Robo, men med neurala nätverk i stället för en tabell.</p>
+    </div>
+  </section>
+
+  <section class="part" id="test">
+    <h2>Testa dig själv</h2>
+    <div class="panel" id="quiz"></div>
+    <p class="toast" id="quizscore" aria-live="polite"></p>
+  </section>
+</main>
+<footer class="wrap">Allt körs i din webbläsare. · <a href="../agenter-och-miljoer/">Agenter och miljöer</a> · <a href="../sokning/">Sökning</a> · <a href="../maskinogat/">Maskinögat</a></footer>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmt = (x, d = 1) => x.toFixed(d).replace(".", ",").replace("-", "−");
+
+/* =====================================================================
+ * Miljön: ett rutnät W × H. 0 golv, 1 vägg, 2 lava. Ingen grafik här.
+ * ===================================================================== */
+const W = 12, H = 7, MAX_STEPS = 80;
+const ACTIONS = [[0, -1], [1, 0], [0, 1], [-1, 0]];            // upp, höger, ner, vänster (upp = bort från kameran)
+const ACT_NAMES = ["Upp", "Höger", "Ner", "Vänster"];
+const LEVELS = {
+  open: { start: [1, 3], goal: [10, 3], cells: {} },
+  wall: { start: [1, 3], goal: [10, 3], cells: { wall: [[6, 1], [6, 2], [6, 3], [6, 4], [6, 5]] } },
+  lava: { start: [1, 5], goal: [10, 1], cells: { lava: [[3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [8, 3], [3, 4], [4, 2], [8, 2], [5, 5], [6, 5], [7, 0]] } },
+  maze: { start: [0, 6], goal: [11, 0], cells: { wall: [[2, 1], [2, 2], [2, 3], [2, 4], [2, 5], [2, 6], [5, 0], [5, 1], [5, 2], [5, 3], [5, 4], [8, 2], [8, 3], [8, 4], [8, 5], [8, 6], [9, 2], [10, 2]], lava: [[4, 6], [11, 4]] } },
+};
+const env = {
+  level: "open", grid: new Uint8Array(W * H), start: [1, 3], goal: [10, 3],
+  pos: [1, 3], steps: 0, total: 0, done: false, reached: false, died: false,
+  load(name) {
+    const L = LEVELS[name];
+    this.level = name; this.grid.fill(0);
+    for (const [x, y] of L.cells.wall || []) this.grid[y * W + x] = 1;
+    for (const [x, y] of L.cells.lava || []) this.grid[y * W + x] = 2;
+    this.start = L.start; this.goal = L.goal;
+    this.reset();
+  },
+  reset() { this.pos = [...this.start]; this.steps = 0; this.total = 0; this.done = false; this.reached = false; this.died = false; },
+  cell(x, y) { return x < 0 || y < 0 || x >= W || y >= H ? 1 : this.grid[y * W + x]; },
+  dist([x, y]) { return Math.hypot(x - this.goal[0], y - this.goal[1]); },  // fågelvägen, rakt genom väggar
+  step(a) {
+    const [x, y] = this.pos, nx = x + ACTIONS[a][0], ny = y + ACTIONS[a][1];
+    const ev = { from: [x, y], to: [x, y], bump: false, r: 0 };
+    const before = this.dist(this.pos);
+    if (this.cell(nx, ny) === 1) ev.bump = true; else this.pos = [nx, ny];
+    ev.to = [...this.pos];
+    const after = this.dist(this.pos);
+    let r = 0;
+    if (ev.bump) r -= 1;                 // krock med vägg
+    if (rw.step) r -= 0.1;
+    if (after < before - 1e-9 && rw.closer) r += 1;
+    if (after > before + 1e-9 && rw.farther) r -= 1;
+    this.steps++;
+    if (this.cell(...this.pos) === 2) { r -= 10; this.done = true; this.died = true; }
+    else if (this.pos[0] === this.goal[0] && this.pos[1] === this.goal[1]) { r += 10; this.done = true; this.reached = true; }
+    else if (this.steps >= MAX_STEPS) this.done = true;
+    this.total += r; ev.r = r;
+    return ev;
+  },
+};
+const rw = { closer: true, farther: true, step: false };
+
+/* =====================================================================
+ * Agenten: tabell-Q-learning. Tillståndet är bara rutan Robo står i.
+ * ===================================================================== */
+const ALPHA = 0.3, GAMMA = 0.97;
+const brain = {
+  Q: new Float32Array(W * H * 4), eps: 1, episode: 0, history: [],
+  forget() { this.Q.fill(0); this.episode = 0; this.history = []; },
+  q(x, y) { const i = (y * W + x) * 4; return this.Q.subarray(i, i + 4); },
+  greedy(x, y) {
+    const q = this.q(x, y); let best = 0;
+    for (let a = 1; a < 4; a++) if (q[a] > q[best] + 1e-9 || (Math.abs(q[a] - q[best]) < 1e-9 && Math.random() < 0.5)) best = a;
+    return best;
+  },
+  choose(x, y, eps) { return Math.random() < eps ? { a: Math.floor(Math.random() * 4), explore: true } : { a: this.greedy(x, y), explore: false }; },
+  learn(s, a, r, s2, done) {
+    const q = this.q(...s), next = done ? 0 : Math.max(...this.q(...s2));
+    q[a] += ALPHA * (r + GAMMA * next - q[a]);
+  },
+};
+
+// Ett avsnitt utan grafik (för "Träna snabbt").
+function headlessEpisode() {
+  env.reset();
+  while (!env.done) {
+    const s = [...env.pos], { a } = brain.choose(...s, brain.eps);
+    const ev = env.step(a);
+    brain.learn(s, a, ev.r, env.pos, env.done && !(!env.reached && !env.died));
+  }
+  endEpisode(false);
+}
+function endEpisode(visual) {
+  brain.episode++;
+  brain.history.push({ r: env.total, win: env.reached, died: env.died });
+  if (brain.history.length > 2000) brain.history.shift();
+  if ($("decay").checked) { brain.eps = Math.max(0.05, brain.eps * 0.993); $("eps").value = brain.eps; }
+  if (visual) narrateEpisodeEnd();
+}
+
+/* =====================================================================
+ * 3D-rummet
+ * ===================================================================== */
+const stage = $("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.domElement.setAttribute("role", "img");
+renderer.domElement.setAttribute("aria-label", "Ett vitt kaklat rum med ett rutigt golv, ett grönt mål och roboten Robo. Displayerna på väggen visar avsnitt och belöning.");
+stage.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xd9dbe0);
+const camera = new THREE.PerspectiveCamera(46, 1, 0.1, 100);
+const CX = W / 2, CZ = H / 2;
+camera.position.set(CX + 0.6, 4.6, H + 6.2);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(CX, 0.6, CZ - 0.6);
+controls.enablePan = false; controls.enableDamping = true;
+controls.minDistance = 6; controls.maxDistance = 22;
+controls.maxPolarAngle = Math.PI * 0.47;
+controls.minAzimuthAngle = -0.9; controls.maxAzimuthAngle = 0.9;
+controls.update();
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f99, 1.25));
+const key = new THREE.DirectionalLight(0xffffff, 1.6);
+key.position.set(CX - 3, 9, H + 3);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+Object.assign(key.shadow.camera, { left: -10, right: 10, top: 10, bottom: -10, near: 1, far: 30 });
+key.shadow.bias = -0.0004;
+key.target.position.set(CX, 0, CZ);
+scene.add(key, key.target);
+
+// Kakel: en ruta per meter, med fogar. Väggarna får ljuskäglor från spottar i taket.
+function tileTexture({ base, line, size = 256, spots = 0, repeat = [1, 1], lineW = 4 }) {
+  const c = document.createElement("canvas");
+  c.width = size * repeat[0]; c.height = size * repeat[1];
+  const g = c.getContext("2d");
+  g.fillStyle = base; g.fillRect(0, 0, c.width, c.height);
+  for (let i = 0; i < spots; i++) {
+    const x = (i + 0.5) / spots * c.width;
+    const grd = g.createRadialGradient(x, 0, 10, x, c.height * 0.15, c.height * 0.75);
+    grd.addColorStop(0, "rgba(255,255,255,.95)"); grd.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = grd; g.fillRect(0, 0, c.width, c.height);
+  }
+  g.strokeStyle = line; g.lineWidth = lineW;
+  for (let x = 0; x <= repeat[0]; x++) { g.beginPath(); g.moveTo(x * size, 0); g.lineTo(x * size, c.height); g.stroke(); }
+  for (let y = 0; y <= repeat[1]; y++) { g.beginPath(); g.moveTo(0, y * size); g.lineTo(c.width, y * size); g.stroke(); }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return t;
+}
+const room = new THREE.Group();
+scene.add(room);
+const WALL_H = 5.2, EXTRA = 3;      // golvet sträcker sig lite utanför rutnätet, åt kameran till
+// Golv
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, H + EXTRA),
+  new THREE.MeshStandardMaterial({ map: tileTexture({ base: "#3b3e46", line: "#c9ccd2", size: 128, repeat: [W, H + EXTRA], lineW: 5 }), roughness: 0.55, metalness: 0.05 }));
+floor.rotation.x = -Math.PI / 2; floor.position.set(CX, 0, (H + EXTRA) / 2); floor.receiveShadow = true;
+room.add(floor);
+// Bakvägg och sidoväggar
+const wallMat = (w, h, spots) => new THREE.MeshStandardMaterial({ map: tileTexture({ base: "#e7e8ec", line: "#c3c6cc", size: 160, spots, repeat: [w, h], lineW: 3 }), roughness: 0.85 });
+const back = new THREE.Mesh(new THREE.PlaneGeometry(W, WALL_H), wallMat(W, Math.round(WALL_H), 3));
+back.position.set(CX, WALL_H / 2, 0); back.receiveShadow = true; room.add(back);
+for (const side of [0, 1]) {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(H + EXTRA, WALL_H), wallMat(H + EXTRA, Math.round(WALL_H), 0));
+  m.rotation.y = side ? -Math.PI / 2 : Math.PI / 2;
+  m.position.set(side ? W : 0, WALL_H / 2, (H + EXTRA) / 2); m.receiveShadow = true;
+  room.add(m);
+}
+
+// Sjusegmentsdisplayer
+const SEG = { "0": "abcdef", "1": "bc", "2": "abged", "3": "abgcd", "4": "fgbc", "5": "afgcd", "6": "afgedc", "7": "abc", "8": "abcdefg", "9": "abcdfg", "-": "g", " ": "" };
+function makeDisplay(w, h, label) {
+  const c = document.createElement("canvas"); c.width = 512; c.height = Math.round(512 * h / w);
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const grp = new THREE.Group();
+  const box = new THREE.Mesh(new THREE.BoxGeometry(w + 0.12, h + 0.12, 0.16), new THREE.MeshStandardMaterial({ color: 0x0b0b0c, roughness: 0.4 }));
+  box.castShadow = true;
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex }));
+  face.position.z = 0.081;
+  grp.add(box, face);
+  function draw(text) {
+    const g = c.getContext("2d"), CW = c.width, CH = c.height;
+    g.fillStyle = "#111214"; g.fillRect(0, 0, CW, CH);
+    g.fillStyle = "#6b6f78"; g.font = `700 ${Math.round(CH * 0.11)}px "JetBrains Mono", monospace`; g.fillText(label, CH * 0.09, CH * 0.17);
+    const n = text.length, dh = CH * 0.6, dw = dh * 0.5, gap = dh * 0.16, t = dh * 0.11;
+    const totalW = n * dw + (n - 1) * gap;
+    let x0 = (CW - totalW) / 2; const y0 = CH * 0.27;
+    for (const ch of text) {
+      const on = SEG[ch] ?? "";
+      const segs = { a: [x0 + t, y0, dw - 2 * t, t], b: [x0 + dw - t, y0 + t, t, dh / 2 - 1.5 * t], c: [x0 + dw - t, y0 + dh / 2 + t / 2, t, dh / 2 - 1.5 * t],
+        d: [x0 + t, y0 + dh - t, dw - 2 * t, t], e: [x0, y0 + dh / 2 + t / 2, t, dh / 2 - 1.5 * t], f: [x0, y0 + t, t, dh / 2 - 1.5 * t], g: [x0 + t, y0 + dh / 2 - t / 2, dw - 2 * t, t] };
+      for (const [k, [x, y, ww, hh]] of Object.entries(segs)) {
+        g.fillStyle = on.includes(k) ? "#f3f4f6" : "rgba(255,255,255,.05)";
+        g.beginPath(); g.roundRect(x, y, ww, hh, t * 0.45); g.fill();
+      }
+      x0 += dw + gap;
+    }
+    tex.needsUpdate = true;
+  }
+  return { grp, draw };
+}
+const dEp = makeDisplay(2.2, 1.25, "AVSNITT");
+dEp.grp.position.set(CX - 0.3, 3.9, 0.12); room.add(dEp.grp);
+const dRw = makeDisplay(3.0, 1.0, "BELÖNING");
+dRw.grp.position.set(CX - 0.3, 2.6, 0.2); room.add(dRw.grp);
+const dSt = makeDisplay(1.6, 0.9, "STEG KVAR");
+dSt.grp.position.set(W - 0.12, 2.6, 3.0); dSt.grp.rotation.y = -Math.PI / 2; room.add(dSt.grp);
+
+// Banans föremål: väggblock, lava, målet och startrutan.
+const levelGroup = new THREE.Group(); room.add(levelGroup);
+const cellPos = (x, y) => new THREE.Vector3(x + 0.5, 0, y + 0.5);
+let goalMesh, arrowMeshes = [];
+function hatchTexture() {
+  const c = document.createElement("canvas"); c.width = c.height = 128;
+  const g = c.getContext("2d");
+  g.clearRect(0, 0, 128, 128);
+  g.strokeStyle = "rgba(240,138,36,.85)"; g.lineWidth = 14;
+  for (let k = -128; k < 256; k += 34) { g.beginPath(); g.moveTo(k, 128); g.lineTo(k + 128, 0); g.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const HATCH = hatchTexture();
+function buildLevel() {
+  levelGroup.clear();
+  const wallTex = tileTexture({ base: "#eceef1", line: "#c3c6cc", size: 128, lineW: 3 });
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const t = env.grid[y * W + x], p = cellPos(x, y);
+    if (t === 1) {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1.1, 1), new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.8 }));
+      b.position.set(p.x, 0.55, p.z); b.castShadow = true; b.receiveShadow = true; levelGroup.add(b);
+    } else if (t === 2) {
+      const l = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.04, 0.98), new THREE.MeshStandardMaterial({ color: 0xff3b1f, emissive: 0xc81e0a, emissiveIntensity: 0.9, roughness: 0.4 }));
+      l.position.set(p.x, 0.02, p.z); l.userData.lava = true; levelGroup.add(l);
+    }
+  }
+  const gp = cellPos(...env.goal);
+  goalMesh = new THREE.Mesh(new THREE.BoxGeometry(0.96, 0.08, 0.96), new THREE.MeshStandardMaterial({ color: 0x4ee35a, emissive: 0x1fbf36, emissiveIntensity: 0.55, roughness: 0.5 }));
+  goalMesh.position.set(gp.x, 0.04, gp.z); goalMesh.receiveShadow = true; levelGroup.add(goalMesh);
+  const sp = cellPos(...env.start);
+  const hatch = new THREE.Mesh(new THREE.PlaneGeometry(0.98, 0.98), new THREE.MeshBasicMaterial({ map: HATCH, transparent: true, depthWrite: false }));
+  hatch.rotation.x = -Math.PI / 2; hatch.position.set(sp.x, 0.012, sp.z); levelGroup.add(hatch);
+  // Pilar: en per golvruta, visar Robos bästa handling.
+  arrowMeshes = [];
+  const shape = new THREE.Shape(); shape.moveTo(0, 0.3); shape.lineTo(0.2, 0.02); shape.lineTo(0.07, 0.02); shape.lineTo(0.07, -0.26); shape.lineTo(-0.07, -0.26); shape.lineTo(-0.07, 0.02); shape.lineTo(-0.2, 0.02); shape.closePath();
+  const ag = new THREE.ShapeGeometry(shape);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (env.grid[y * W + x] !== 0 || (x === env.goal[0] && y === env.goal[1])) { arrowMeshes.push(null); continue; }
+    const m = new THREE.Mesh(ag, new THREE.MeshBasicMaterial({ color: 0x9ca3af, transparent: true, opacity: 0.85, depthWrite: false }));
+    const p = cellPos(x, y); m.position.set(p.x, 0.02, p.z); m.rotation.x = -Math.PI / 2;
+    levelGroup.add(m); arrowMeshes.push(m);
+  }
+  updateArrows();
+}
+function updateArrows() {
+  const show = $("arrows").checked;
+  let lo = Infinity, hi = -Infinity;
+  for (let i = 0; i < W * H; i++) if (arrowMeshes[i]) { const m = Math.max(...brain.Q.subarray(i * 4, i * 4 + 4)); lo = Math.min(lo, m); hi = Math.max(hi, m); }
+  const col = new THREE.Color(), cold = new THREE.Color(0x8b93a1), hot = new THREE.Color(0x4ade80), bad = new THREE.Color(0xff6b6b);
+  for (let i = 0; i < W * H; i++) {
+    const m = arrowMeshes[i]; if (!m) continue;
+    const q = brain.Q.subarray(i * 4, i * 4 + 4), best = q.indexOf(Math.max(...q)), max = q[best];
+    const learned = q.some((v) => v !== 0);
+    m.visible = show && learned;
+    m.rotation.z = [0, -Math.PI / 2, Math.PI, Math.PI / 2][best];
+    if (max >= 0) col.copy(cold).lerp(hot, hi > 0 ? Math.min(1, max / hi) : 0); else col.copy(cold).lerp(bad, lo < 0 ? Math.min(1, max / lo) : 0);
+    m.material.color.copy(col);
+  }
+}
+
+// Robo – en egen liten robot: turkos kropp, skärmansikte och antenn.
+function makeRobo() {
+  const g = new THREE.Group(), body = new THREE.Group();
+  const mat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.45, ...o });
+  const box = (w, h, d, m, x, y, z) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, z); b.castShadow = true; body.add(b); return b; };
+  const teal = mat(0x14b8a6), dark = mat(0x0f172a, { roughness: 0.25 }), white = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  box(0.56, 0.46, 0.5, teal, 0, 0.42, 0);                         // kropp
+  box(0.44, 0.26, 0.02, dark, 0, 0.47, 0.26);                     // skärm (framåt = +z)
+  const eyeL = box(0.08, 0.1, 0.01, white, -0.1, 0.48, 0.275), eyeR = box(0.08, 0.1, 0.01, white, 0.1, 0.48, 0.275);
+  box(0.03, 0.18, 0.03, mat(0x334155), 0, 0.74, 0);              // antenn
+  const tip = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 12), mat(0xfacc15, { emissive: 0xb45309, emissiveIntensity: 0.6 }));
+  tip.position.set(0, 0.86, 0); body.add(tip);
+  box(0.16, 0.18, 0.2, mat(0x0d9488), -0.16, 0.1, 0); box(0.16, 0.18, 0.2, mat(0x0d9488), 0.16, 0.1, 0);   // fötter
+  box(0.07, 0.22, 0.1, teal, -0.31, 0.42, 0); box(0.07, 0.22, 0.1, teal, 0.31, 0.42, 0);                  // armar
+  g.add(body);
+  g.userData = { body, eyes: [eyeL, eyeR], tip };
+  return g;
+}
+const robo = makeRobo();
+scene.add(robo);
+const YAW = [Math.PI, Math.PI / 2, 0, -Math.PI / 2];   // upp (−z), höger (+x), ner (+z), vänster (−x)
+const anim = { from: new THREE.Vector3(), to: new THREE.Vector3(), t0: 0, dur: 1, bump: null, yaw: 0, yawTo: 0, sink: 0, cheer: 0 };
+function placeRobo() {
+  const p = cellPos(...env.pos);
+  robo.position.copy(p); anim.from.copy(p); anim.to.copy(p); anim.dur = 1; anim.sink = 0; anim.cheer = 0;
+  robo.userData.body.position.y = 0; robo.userData.body.rotation.set(0, 0, 0); robo.scale.setScalar(1);
+}
+
+// Konfetti när Robo når målet.
+const confetti = [];
+function burst(p) {
+  const cols = [0x4ade80, 0xfacc15, 0x14b8a6, 0xffffff];
+  for (let i = 0; i < 26; i++) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.02), new THREE.MeshBasicMaterial({ color: cols[i % 4] }));
+    m.position.set(p.x, 0.6, p.z);
+    m.userData.v = new THREE.Vector3((Math.random() - 0.5) * 3, 3 + Math.random() * 2.5, (Math.random() - 0.5) * 3);
+    scene.add(m); confetti.push(m);
+  }
+}
+
+/* =====================================================================
+ * Undertexter och visning
+ * ===================================================================== */
+let capTimer = null, lastCap = "";
+function caption(html, ms = 3600) {
+  if (html === lastCap) return;
+  lastCap = html;
+  const c = $("cap"); c.innerHTML = html; c.classList.remove("hide");
+  clearTimeout(capTimer);
+  capTimer = setTimeout(() => { c.classList.add("hide"); lastCap = ""; }, ms);
+}
+function flash(id) { const f = $(id); f.classList.add("on"); requestAnimationFrame(() => requestAnimationFrame(() => f.classList.remove("on"))); }
+const said = new Set();
+function once(key, html, ms) { if (said.has(key)) return; said.add(key); caption(html, ms); }
+function narrateEpisodeEnd() {
+  const h = brain.history, last = h[h.length - 1], wins = h.filter((e) => e.win).length;
+  if (last.win && wins === 1) caption(`Avsnitt ${brain.episode}: Robo hittade <span class="g">målet</span> för första gången! Nu sprider sig belöningen bakåt.`, 4200);
+  else if (last.died) caption(`Aj! <span class="r">Lava</span> ger −10. Det minns Robo till nästa gång.`, 2600);
+  else if (!last.win && last.r > 12 && !rw.farther) caption(`Belöningen är hög – men Robo nådde aldrig målet. Den har hittat ett <span class="r">kryphål</span>: fram och tillbaka ger poäng hela tiden.`, 5200);
+  else if (last.win && recentWinRate() > 0.85 && brain.eps < 0.2) once("good", `Nu går Robo nästan raka vägen. Den <span class="g">utnyttjar</span> det den har lärt sig i stället för att <span class="o">utforska</span>.`, 4600);
+}
+const recentWinRate = (n = 20) => { const h = brain.history.slice(-n); return h.length ? h.filter((e) => e.win).length / h.length : 0; };
+
+function updateHud() {
+  const ep = brain.episode + (playing || bestMode ? 1 : 0);
+  dEp.draw(String(Math.max(ep, 0)).padStart(2, "0").slice(-3));
+  const t = Math.round(env.total);
+  dRw.draw(String(t).padStart(3, " "));
+  dSt.draw(String(MAX_STEPS - env.steps).padStart(2, "0"));
+  $("sEp").textContent = brain.episode;
+  const h = brain.history.slice(-20);
+  $("sWin").textContent = h.length ? `${Math.round(recentWinRate() * 100)} %` : "–";
+  $("sAvg").textContent = h.length ? fmt(h.reduce((s, e) => s + e.r, 0) / h.length) : "–";
+  $("sEps").textContent = fmt(bestMode ? 0 : brain.eps, 2);
+  renderMemory();
+}
+function renderMemory() {
+  const q = brain.q(...env.pos), best = q.indexOf(Math.max(...q));
+  const span = Math.max(1, ...[...brain.Q].map(Math.abs));
+  $("memory").innerHTML = ACT_NAMES.map((n, a) => {
+    const v = q[a], w = Math.abs(v) / span * 50;
+    const bar = v >= 0 ? `left:50%;width:${w}%;background:var(--green)` : `right:50%;width:${w}%;background:var(--red)`;
+    return `<span class="${a === best && v !== 0 ? "best" : ""}">${["↑", "→", "↓", "←"][a]} ${n}</span><div class="bar"><i style="${bar}"></i></div><span class="mono ${a === best && v !== 0 ? "best" : ""}">${fmt(v)}</span>`;
+  }).join("");
+}
+function drawChart() {
+  const c = $("chart"), r = c.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+  c.width = Math.round(r.width * dpr); c.height = Math.round(r.height * dpr);
+  const g = c.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const Wc = r.width, Hc = r.height, css = getComputedStyle(document.documentElement);
+  g.clearRect(0, 0, Wc, Hc);
+  const h = brain.history.slice(-300);
+  if (!h.length) { g.fillStyle = css.getPropertyValue("--muted"); g.font = "13px Inter"; g.fillText("Inga avsnitt än – tryck på Kör.", 10, Hc / 2); return; }
+  const lo = Math.min(-12, ...h.map((e) => e.r)), hi = Math.max(20, ...h.map((e) => e.r));
+  const X = (i) => 30 + (i / Math.max(1, h.length - 1)) * (Wc - 40), Y = (v) => 8 + (hi - v) / (hi - lo) * (Hc - 20);
+  g.strokeStyle = css.getPropertyValue("--line"); g.lineWidth = 1;
+  g.beginPath(); g.moveTo(30, Y(0)); g.lineTo(Wc - 10, Y(0)); g.stroke();
+  g.fillStyle = css.getPropertyValue("--muted"); g.font = "11px JetBrains Mono";
+  g.fillText(Math.round(hi), 2, Y(hi) + 8); g.fillText("0", 14, Y(0) + 4); g.fillText(Math.round(lo), 2, Y(lo));
+  h.forEach((e, i) => { g.fillStyle = e.win ? "#22c55e" : e.died ? "#e5484d" : "#9aa3ae"; g.beginPath(); g.arc(X(i), Y(e.r), 2.2, 0, 7); g.fill(); });
+  g.strokeStyle = "#0f766e"; g.lineWidth = 2.5; g.beginPath();
+  h.forEach((e, i) => { const s = h.slice(Math.max(0, i - 9), i + 1); const m = s.reduce((a, b) => a + b.r, 0) / s.length; i ? g.lineTo(X(i), Y(m)) : g.moveTo(X(i), Y(m)); });
+  g.stroke();
+}
+new ResizeObserver(drawChart).observe($("chart"));
+
+/* =====================================================================
+ * Spelslingan
+ * ===================================================================== */
+const SPEEDS = [520, 260, 120, 50, 0];          // ms per steg, 0 = turbo (flera steg per bildruta)
+const SPEED_NAMES = ["Långsam", "Normal", "Snabb", "Mycket snabb", "Turbo"];
+let playing = false, bestMode = false, wait = 0, lastT = 0, stepClock = 0;
+
+function doStep() {
+  const s = [...env.pos];
+  const { a, explore } = brain.choose(...s, bestMode ? 0 : brain.eps);
+  const ev = env.step(a);
+  if (!bestMode) brain.learn(s, a, ev.r, env.pos, env.done && (env.reached || env.died));
+  $("badge").textContent = bestMode ? "BÄSTA FÖRSÖK" : explore ? "UTFORSKAR" : "UTNYTTJAR";
+  // animation
+  anim.from.copy(robo.position); anim.to.copy(cellPos(...env.pos));
+  anim.t0 = performance.now(); anim.dur = Math.max(60, (SPEEDS[+$("speed").value] || 40) * 0.9);
+  anim.bump = ev.bump ? new THREE.Vector3(ACTIONS[a][0], 0, ACTIONS[a][1]) : null;
+  let y = YAW[a]; while (y - anim.yaw > Math.PI) y -= 2 * Math.PI; while (anim.yaw - y > Math.PI) y += 2 * Math.PI; anim.yawTo = y;
+  if (ev.r >= 1 && brain.episode < 6 && rw.closer) once("closer", `Robo <span class="g">belönas</span> för att komma närmare <span class="g">målet</span>${rw.farther ? ", och straffas när den går längre bort." : "."}`, 4400);
+  if (env.reached) { flash("fGood"); burst(anim.to); anim.cheer = 1; }
+  if (env.died) { flash("fBad"); anim.sink = 0.001; }
+  updateHud();
+  if (env.done) {
+    const wasBest = bestMode;
+    if (!wasBest) endEpisode(true);
+    else caption(env.reached ? `Robos bästa försök: målet på <span class="g">${env.steps} steg</span>.` : `Robos bästa försök nådde inte målet. Den behöver <span class="o">träna mer</span>.`, 3800);
+    bestMode = false;
+    wait = wasBest ? 2200 : SPEEDS[+$("speed").value] === 0 ? 120 : 900;
+    if (wasBest && !playing) wait = -1;
+    updateArrows(); drawChart();
+  } else if (!(+$("speed").value === 4) && brain.Q) {
+    if (Math.random() < 0.3) updateArrows();
+  }
+}
+function newEpisode() {
+  env.reset(); placeRobo(); updateHud();
+  if (brain.episode === 0 && !bestMode) once("start", `Det här är <span class="g">Robo</span>. Robo vet ingenting om rummet och testar helt <span class="o">slumpmässigt</span>.`, 4200);
+}
+function frame(now) {
+  const dt = Math.min(100, now - (lastT || now)); lastT = now;
+  if ((playing || bestMode) && wait >= 0) {
+    if (wait > 0) { wait -= dt; if (wait <= 0) { wait = 0; newEpisode(); } }
+    else {
+      const ms = SPEEDS[+$("speed").value];
+      if (ms === 0) { for (let k = 0; k < 6 && !env.done; k++) doStep(); updateArrows(); }
+      else { stepClock += dt; if (stepClock >= ms) { stepClock = 0; doStep(); } }
+    }
+  }
+  // Robos rörelse: ett litet hopp mellan rutorna, eller en studs mot väggen.
+  const k = Math.min(1, (now - anim.t0) / anim.dur), e = k * k * (3 - 2 * k);
+  if (anim.bump) {
+    const s = Math.sin(k * Math.PI) * 0.22;
+    robo.position.copy(anim.from).addScaledVector(anim.bump, s);
+  } else robo.position.lerpVectors(anim.from, anim.to, e);
+  const body = robo.userData.body;
+  body.position.y = anim.bump ? 0 : Math.sin(k * Math.PI) * 0.18;
+  anim.yaw += (anim.yawTo - anim.yaw) * Math.min(1, dt / 70);
+  robo.rotation.y = anim.yaw;
+  if (anim.sink > 0) { anim.sink = Math.min(1, anim.sink + dt / 600); body.position.y = -anim.sink * 0.7; body.rotation.z = anim.sink * 0.6; }
+  if (anim.cheer > 0) { anim.cheer = Math.max(0, anim.cheer - dt / 900); body.position.y = Math.abs(Math.sin(anim.cheer * 9)) * 0.35; }
+  const blink = (now % 3200) < 120;
+  robo.userData.eyes.forEach((m) => { m.scale.y = blink ? 0.15 : 1; });
+  robo.userData.tip.material.emissiveIntensity = 0.4 + 0.4 * Math.sin(now / 300);
+  for (let i = confetti.length - 1; i >= 0; i--) {
+    const c = confetti[i]; c.userData.v.y -= dt / 1000 * 9; c.position.addScaledVector(c.userData.v, dt / 1000); c.rotation.x += dt / 80;
+    if (c.position.y < 0) { scene.remove(c); confetti.splice(i, 1); }
+  }
+  levelGroup.children.forEach((m) => { if (m.userData.lava) m.material.emissiveIntensity = 0.75 + 0.25 * Math.sin(now / 260 + m.position.x); });
+  if (goalMesh) goalMesh.material.emissiveIntensity = 0.45 + 0.2 * Math.sin(now / 400);
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+function resize() {
+  const r = stage.getBoundingClientRect();
+  renderer.setSize(r.width, r.height, false);
+  camera.aspect = r.width / r.height;
+  // Smal skärm: kameran högre och längre bak, så att hela golvet syns i stående läge.
+  const narrow = r.width / r.height < 1.1;
+  if (narrow !== lastNarrow) {
+    lastNarrow = narrow;
+    camera.fov = narrow ? 58 : 46;
+    if (narrow) camera.position.set(CX, 13.5, H + 9); else camera.position.set(CX + 0.6, 4.6, H + 6.2);
+    controls.target.set(CX, 0.6, narrow ? CZ : CZ - 0.6);
+    controls.maxDistance = narrow ? 30 : 22;
+    controls.update();
+  }
+  camera.updateProjectionMatrix();
+}
+let lastNarrow = null;
+new ResizeObserver(resize).observe(stage);
+
+/* ---------- knappar ---------- */
+function setPlaying(on) { playing = on; $("play").textContent = on ? "⏸ Pausa" : "▶ Kör"; if (on && wait < 0) wait = 0; }
+$("play").addEventListener("click", () => {
+  if (!playing && env.done) { wait = 1; }
+  setPlaying(!playing);
+});
+$("speed").addEventListener("input", () => $("speed").setAttribute("aria-valuetext", SPEED_NAMES[+$("speed").value]));
+$("train").addEventListener("click", () => {
+  bestMode = false;
+  for (let i = 0; i < 200; i++) headlessEpisode();
+  env.reset(); placeRobo(); wait = playing ? 400 : -1;
+  updateArrows(); updateHud(); drawChart();
+  const rate = Math.round(recentWinRate() * 100);
+  let extra = "";
+  if (!rw.farther && rw.closer) extra = ` <span class="r">Men titta på belöningen…</span>`;
+  else if (rate < 30 && rw.closer && (env.level === "maze" || env.level === "wall")) extra = ` Belöningen för "närmare målet" pekar <span class="r">rakt genom väggarna</span> – den lurar Robo.`;
+  caption(`200 avsnitt senare: Robo når målet i <span class="g">${rate} %</span> av de senaste försöken.${extra}`, 5600);
+});
+$("best").addEventListener("click", () => {
+  bestMode = true; wait = 0; newEpisode();
+  $("badge").textContent = "BÄSTA FÖRSÖK";
+  caption(`Nu <span class="g">utnyttjar</span> Robo bara det den har lärt sig – ingen slump.`, 2600);
+});
+$("forget").addEventListener("click", () => {
+  brain.forget(); brain.eps = 1; $("eps").value = 1; said.clear();
+  bestMode = false; env.reset(); placeRobo(); wait = playing ? 400 : -1;
+  updateArrows(); updateHud(); drawChart();
+  caption(`Robo har glömt allt. Q-tabellen är <span class="o">noll</span> överallt igen.`, 3000);
+});
+$("eps").addEventListener("input", () => { brain.eps = +$("eps").value; updateHud(); });
+$("arrows").addEventListener("change", updateArrows);
+for (const [id, k] of [["rCloser", "closer"], ["rFarther", "farther"], ["rStep", "step"]]) {
+  $(id).addEventListener("change", () => { rw[k] = $(id).checked; caption(`Ny belöning – Robos gamla minne stämmer inte längre helt. Tryck på <span class="o">Glöm allt</span> för att börja om.`, 3600); });
+}
+$("level").addEventListener("change", () => {
+  env.load($("level").value); buildLevel(); placeRobo(); bestMode = false; wait = playing ? 300 : -1; updateHud();
+  caption(env.level === "maze" && rw.closer
+    ? `Labyrinten! Här mäts "närmare målet" <span class="o">fågelvägen</span> – rakt genom väggarna. Kan det lura Robo?`
+    : `Ny bana. Robo minns fortfarande sin gamla tabell – tryck på <span class="o">Glöm allt</span> för att börja från noll.`, 4400);
+});
+
+/* ---------- testa dig själv ---------- */
+const QUIZ = [
+  { q: "Vad får agenten i förstärkt inlärning i stället för facit?", o: ["Märkta exempel", "Belöningar och straff", "En karta över miljön", "Ingenting"], a: 1, why: "Den får bara veta hur bra det gick, inte vad det rätta svaret var." },
+  { q: "Vad är ett avsnitt?", o: ["Ett enda steg", "Ett försök från start tills det tar slut", "Hela träningen", "En ruta i rummet"], a: 1, why: "Ett avsnitt slutar när Robo når målet, hamnar i lavan eller har gått 80 steg." },
+  { q: "Vad betyder det att Robo utforskar?", o: ["Den väljer det den tror är bäst", "Den tar ibland ett slumpmässigt steg för att prova nytt", "Den läser kartan", "Den står still"], a: 1, why: "Utan utforskning hittar Robo aldrig något bättre än det den redan vet. Hur ofta styrs av ε." },
+  { q: "Vad visar Q-värdet för en ruta och ett håll?", o: ["Hur långt det är till målet", "Robos gissning om hur mycket belöning den får totalt om den går åt det hållet", "Hur många gånger Robo har varit där", "Antalet avsnitt"], a: 1, why: "Värdena justeras lite efter varje steg, och sprider sig bakåt från målet." },
+  { q: "Robo får +1 för att komma närmare målet men inget straff för att gå bort. Vad händer?", o: ["Robo lär sig snabbare", "Robo går fram och tillbaka för att samla poäng i stället för att gå i mål", "Ingenting", "Robo slutar röra sig"], a: 1, why: "Det är belöningsfusk: agenten gör det som ger mest belöning, inte det vi menade." },
+  { q: "Hur tränades AlphaZero att spela schack?", o: ["Den fick facit från stormästare", "Den spelade mot sig själv och belönades för vinster", "Den läste regelboken", "Den söker igenom alla drag till slutet"], a: 1, why: "Miljontals partier mot sig själv, +1 för vinst och −1 för förlust – förstärkt inlärning med neurala nätverk." },
+];
+let qRight = 0, qDone = 0;
+$("quiz").innerHTML = QUIZ.map((x, i) => `<div class="q" data-q="${i}"><p>${i + 1}. ${esc(x.q)}</p><div class="opts">${x.o.map((o, j) => `<button class="btn" type="button" data-j="${j}">${esc(o)}</button>`).join("")}</div><div class="why" hidden></div></div>`).join("");
+document.querySelectorAll(".q").forEach((qd) => {
+  const x = QUIZ[+qd.dataset.q];
+  qd.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    if (qd.dataset.done) return;
+    qd.dataset.done = "1";
+    const ok = +b.dataset.j === x.a;
+    b.classList.add(ok ? "right" : "wrong");
+    qd.querySelector(`[data-j="${x.a}"]`).classList.add("right");
+    const why = qd.querySelector(".why"); why.hidden = false; why.textContent = (ok ? "Rätt! " : "Inte riktigt. ") + x.why;
+    qDone++; if (ok) qRight++;
+    $("quizscore").textContent = `${qRight} av ${qDone} rätt` + (qDone === QUIZ.length ? (qRight === QUIZ.length ? " – alla rätt!" : " – ladda om sidan för att försöka igen.") : "");
+  }));
+});
+
+/* ---------- start ---------- */
+env.load("open");
+buildLevel();
+placeRobo();
+wait = -1;
+updateHud();
+drawChart();
+resize();
+caption(`Det här är <span class="g">Robo</span>. Tryck på <span class="g">Kör</span> och se Robo lära sig hitta till det gröna <span class="g">målet</span>.`, 6000);
+requestAnimationFrame(frame);
+window.rl = { env, brain, rw, headlessEpisode, LEVELS };
+</script>
+</body>
+</html>

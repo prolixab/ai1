@@ -1,0 +1,933 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beslutsträd – AI 1</title>
+<meta name="description" content="Lekplats för beslutsträd: bygg ett träd själv eller låt datorn göra det, se hur det delar upp data, upptäck överanpassning och låt en random forest rösta.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2314231a'/><rect x='11' y='4' width='10' height='6' rx='2' fill='%23fbbf24'/><path d='M16 10 L9 18 M16 10 L23 18' stroke='%23e5e7eb' stroke-width='2'/><rect x='4' y='18' width='10' height='6' rx='2' fill='%233b82f6'/><rect x='18' y='18' width='10' height='6' rx='2' fill='%23f97316'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+:root{
+  --paper:#f5f6f4; --surface:#ffffff; --soft:#eef0ec; --ink:#161a17; --muted:#5d665f; --line:#dde1dc;
+  --accent:#15803d; --accent-ink:#ffffff; --hero:#13201a; --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --c0:#3b82f6; --c1:#f97316; --c2:#16a34a; --ok:#15803d; --bad:#dc2626; --amber:#d97706;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0f1311; --surface:#171c19; --soft:#202722; --ink:#e6ebe7; --muted:#9aa59d; --line:#2a322d;
+    --accent:#4ade80; --accent-ink:#06210f; --hero:#0a100c; --c0:#60a5fa; --c1:#fb923c; --c2:#4ade80; --ok:#4ade80; --bad:#f87171; --amber:#fbbf24;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0f1311; --surface:#171c19; --soft:#202722; --ink:#e6ebe7; --muted:#9aa59d; --line:#2a322d;
+  --accent:#4ade80; --accent-ink:#06210f; --hero:#0a100c; --c0:#60a5fa; --c1:#fb923c; --c2:#4ade80; --ok:#4ade80; --bad:#f87171; --amber:#fbbf24;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.6 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+h1,h2,h3{line-height:1.15;margin:0;letter-spacing:-.01em}
+p{margin:0 0 .9em}
+a{color:var(--accent)}
+button,select,input{font:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)} .small{font-size:.88rem}
+.wrap{max-width:1200px;margin:0 auto;padding:0 22px}
+
+.hero{background:var(--hero);color:#e8efe9;padding:32px 0 24px;
+  background-image:radial-gradient(circle at 85% 20%,#1f4d2e 0,transparent 50%)}
+.back-link{display:inline-block;color:#a7f3c0;text-decoration:none;font-size:.9rem;margin-bottom:12px}
+.back-link:hover{color:#fff}
+.kicker{font:700 .78rem var(--mono);letter-spacing:.14em;text-transform:uppercase;color:#86efac;margin:0}
+.hero h1{font-size:clamp(2.2rem,6.5vw,3.6rem);margin:.15rem 0 .4rem;letter-spacing:-.02em}
+.hero .lede{max-width:780px;color:#c6d1c8;font-size:1.08rem;margin:0}
+.toc{display:flex;flex-wrap:wrap;gap:6px 8px;margin-top:14px}
+.toc a{color:#e8efe9;text-decoration:none;font-size:.88rem;border:1px solid #2f4637;border-radius:999px;padding:3px 12px}
+.toc a:hover{background:#1f3328}
+
+section.part{padding:32px 0;border-bottom:1px solid var(--line)}
+section.part:last-of-type{border-bottom:0}
+.part h2{font-size:clamp(1.6rem,4vw,2.2rem);margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.num{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:1rem;flex:none}
+.lead{max-width:820px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.callout{border-left:4px solid var(--accent);background:var(--soft);border-radius:8px;padding:10px 14px;margin-top:14px;max-width:880px}
+.callout p:last-child{margin:0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:6px 13px;font-weight:700;min-height:40px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+select.sel{padding:6px 10px;border:1.5px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);min-height:40px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:4px;padding:4px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.seg button{border:0;border-radius:8px;padding:6px 13px;background:transparent;color:var(--muted);font-weight:700;min-height:36px}
+.seg button[aria-checked="true"]{background:var(--accent);color:var(--accent-ink)}
+.rng{display:inline-flex;align-items:center;gap:8px;font-size:.92rem}
+.rng input{width:120px;accent-color:var(--accent)}
+.toast{font-weight:700;min-height:1.5em;margin:.5em 0 0}
+.toast.ok{color:var(--ok)} .toast.bad{color:var(--bad)}
+
+/* intro */
+.intro{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:center}
+@media (max-width:820px){.intro{grid-template-columns:minmax(0,1fr)}}
+.intro svg{width:100%;height:auto;display:block}
+.terms{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:.94rem;margin-top:8px}
+.terms dt{font-weight:800}
+.terms dd{margin:0;color:var(--muted)}
+
+/* lekplatsen */
+.play{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:16px;align-items:start;margin-top:14px}
+@media (max-width:960px){.play{grid-template-columns:minmax(0,1fr)}}
+.plotwrap{position:relative}
+#plot{width:100%;aspect-ratio:1/1;display:block;border-radius:10px;touch-action:none;cursor:crosshair;background:var(--soft)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.86rem;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.legend i.hollow{background:none!important;border:2.5px solid var(--muted)}
+.info{background:var(--soft);border-radius:10px;padding:8px 12px;font-size:.9rem;min-height:3.2em;margin-top:10px}
+.info b{font-family:var(--mono)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.stat{background:var(--soft);border-radius:9px;padding:6px 10px}
+.stat small{display:block;color:var(--muted);font-size:.74rem}
+.stat b{font:700 1.2rem var(--mono)}
+.treebox{overflow:auto;max-height:520px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.treebox svg{display:block;margin:0 auto}
+.tn rect{stroke:var(--muted);stroke-width:1.6;fill:var(--surface)}
+.tn text{font:600 12px Inter,sans-serif;fill:var(--ink)}
+.tn .sub{font:500 10px var(--mono);fill:var(--muted)}
+.tn.leaf text{font-weight:800}
+.tn.sel rect{stroke:var(--amber);stroke-width:4}
+.tn.onpath rect{stroke:var(--ink);stroke-width:3.5}
+.te{stroke:var(--muted);stroke-width:1.8;fill:none}
+.te.onpath{stroke:var(--ink);stroke-width:3.5}
+.tl{font:700 10px Inter,sans-serif;fill:var(--muted)}
+.tn{cursor:pointer}
+#acc{width:100%;height:190px;display:block}
+.cls{display:inline-flex;gap:6px}
+.cls button{border:2px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 12px;font-weight:700;color:var(--ink)}
+.cls button[aria-checked="true"]{border-color:var(--ink)}
+.cls i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+@media (max-width:560px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.wrap{padding:0 14px}}
+
+/* fotboll */
+.foot{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:16px;align-items:start;margin-top:14px}
+@media (max-width:960px){.foot{grid-template-columns:minmax(0,1fr)}}
+table.data{border-collapse:collapse;width:100%;font-size:.88rem;background:var(--surface)}
+table.data th,table.data td{border-bottom:1px solid var(--line);padding:5px 8px;text-align:left}
+table.data th{background:var(--soft);font-size:.76rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+table.data tr.off td{opacity:.28}
+.yes{color:var(--ok);font-weight:800} .no{color:var(--bad);font-weight:800}
+.gains{display:grid;gap:6px;margin-top:8px}
+.gain{display:grid;grid-template-columns:130px 1fr 66px auto;gap:8px;align-items:center;font-size:.9rem}
+.gain .bar{height:14px;background:var(--soft);border-radius:99px;overflow:hidden}
+.gain .bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.gain.best b{color:var(--accent)}
+.ftree{overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface);margin-top:12px}
+.ftree svg{display:block;margin:0 auto}
+.fn rect{stroke:var(--muted);stroke-width:1.6;fill:var(--surface)}
+.fn text{font:700 12px Inter,sans-serif;fill:var(--ink)}
+.fn .sub{font:500 10px var(--mono);fill:var(--muted)}
+.fn.sel rect{stroke:var(--amber);stroke-width:4}
+.fn.pure-yes rect{fill:color-mix(in srgb,var(--ok) 22%,var(--surface))}
+.fn.pure-no rect{fill:color-mix(in srgb,var(--bad) 20%,var(--surface))}
+.fn{cursor:pointer}
+
+.q{margin:0 0 16px}
+.q p{font-weight:600;margin-bottom:6px}
+.q .opts{display:flex;flex-wrap:wrap;gap:6px}
+.q .opts button.right{background:var(--ok);border-color:var(--ok);color:#fff}
+.q .opts button.wrong{background:var(--bad);border-color:var(--bad);color:#fff}
+.q .why{font-size:.9rem;color:var(--muted);margin-top:6px}
+.missions{padding-left:1.2em;max-width:880px}
+.missions li{margin-bottom:.55em}
+footer{padding:20px 0 36px;font-size:.9rem;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <a class="back-link" href="../index.html">← Kurssidan AI 1</a>
+    <p class="kicker">AI 1 · Maskininlärning</p>
+    <h1>Beslutsträd</h1>
+    <p class="lede">Ett beslutsträd är en modell som klassificerar genom att ställa frågor, en i taget, tills den kan ge ett svar. Här bygger du träd själv, tävlar mot datorn om att hitta de bästa frågorna och ser när ett träd lär sig för mycket.</p>
+    <nav class="toc" aria-label="Delar">
+      <a href="#vad">1. Vad är ett beslutsträd?</a><a href="#lek">2. Lekplatsen</a><a href="#over">3. Överanpassning</a>
+      <a href="#skog">4. Random forest</a><a href="#fotboll">5. Spela fotboll?</a><a href="#test">Testa dig själv</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section class="part" id="vad">
+  <h2><span class="num">1</span> Vad är ett beslutsträd?</h2>
+  <div class="intro">
+    <div>
+      <p class="lead">Tänk dig att du ska avgöra om ett djur är en katt eller en hund, och du får bara veta vikten och mankhöjden. Du kan ställa frågor som <i>"Väger djuret mindre än 8 kg?"</i>. Svaret skickar dig vidare till nästa fråga, tills du når ett svar.</p>
+      <p class="lead">Ett beslutsträd lär sig sådana frågor <b>från data</b>. I varje steg väljer det den fråga som bäst delar upp exemplen i rena grupper – helst bara katter på ena sidan och bara hundar på den andra.</p>
+      <dl class="terms">
+        <dt>Rotnod</dt><dd>Den första frågan, högst upp.</dd>
+        <dt>Inre nod</dt><dd>En fråga längre ner: "är egenskapen ≤ ett värde?"</dd>
+        <dt>Gren</dt><dd>Svaret ja eller nej leder åt vänster eller höger.</dd>
+        <dt>Löv</dt><dd>Ett svar: den klass som var vanligast bland träningsexemplen där.</dd>
+        <dt>Djup</dt><dd>Hur många frågor som ställs i rad som mest.</dd>
+      </dl>
+    </div>
+    <div class="panel">
+      <svg viewBox="0 0 440 300" role="img" aria-label="Ett litet beslutsträd för katt eller hund">
+        <g font-family="Inter,sans-serif" font-size="14" font-weight="700">
+          <line x1="220" y1="62" x2="110" y2="128" stroke="currentColor" opacity=".45" stroke-width="2"/>
+          <line x1="220" y1="62" x2="330" y2="128" stroke="currentColor" opacity=".45" stroke-width="2"/>
+          <line x1="330" y1="168" x2="270" y2="228" stroke="currentColor" opacity=".45" stroke-width="2"/>
+          <line x1="330" y1="168" x2="390" y2="228" stroke="currentColor" opacity=".45" stroke-width="2"/>
+          <text x="152" y="92" font-size="12" fill="currentColor" opacity=".7">ja</text><text x="278" y="92" font-size="12" fill="currentColor" opacity=".7">nej</text>
+          <text x="283" y="200" font-size="12" fill="currentColor" opacity=".7">ja</text><text x="368" y="200" font-size="12" fill="currentColor" opacity=".7">nej</text>
+          <rect x="140" y="22" width="160" height="40" rx="10" fill="none" stroke="#d97706" stroke-width="2.5"/><text x="220" y="47" text-anchor="middle" fill="currentColor">Vikt ≤ 8 kg?</text>
+          <rect x="50" y="128" width="120" height="40" rx="10" fill="#3b82f6"/><text x="110" y="153" text-anchor="middle" fill="#fff">Katt</text>
+          <rect x="250" y="128" width="160" height="40" rx="10" fill="none" stroke="#d97706" stroke-width="2.5"/><text x="330" y="153" text-anchor="middle" fill="currentColor">Höjd ≤ 30 cm?</text>
+          <rect x="215" y="228" width="110" height="40" rx="10" fill="#3b82f6"/><text x="270" y="253" text-anchor="middle" fill="#fff">Katt</text>
+          <rect x="340" y="228" width="96" height="40" rx="10" fill="#f97316"/><text x="388" y="253" text-anchor="middle" fill="#fff">Hund</text>
+          <text x="6" y="47" font-size="11" fill="currentColor" opacity=".55" font-family="JetBrains Mono,monospace">rotnod</text>
+          <text x="6" y="153" font-size="11" fill="currentColor" opacity=".55" font-family="JetBrains Mono,monospace">löv</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+  <div class="callout">
+    <p><b>Varför är beslutsträd populära?</b> De går att läsa och förklara: man kan följa exakt vilka frågor som ledde till ett svar. Det är viktigt när AI används för beslut om människor, till exempel inom vård och bank. Många andra modeller, som neurala nätverk, är mycket svårare att förklara.</p>
+  </div>
+</section>
+
+<section class="part" id="lek">
+  <h2><span class="num">2</span> Lekplatsen</h2>
+  <p class="lead">Varje prick är ett exempel med två egenskaper. Färgen är rätt svar. Ett beslutsträd ställer bara frågor av typen "är egenskapen ≤ ett värde?", så varje fråga blir ett <b>rakt snitt</b> genom bilden. Rutorna färgas efter vad trädet skulle svara där.</p>
+  <div class="row" style="margin-top:6px">
+    <div class="seg" role="radiogroup" aria-label="Läge" id="mode">
+      <button type="button" role="radio" data-m="manual" aria-checked="true">✋ Bygg själv</button>
+      <button type="button" role="radio" data-m="auto" aria-checked="false">🤖 Automatiskt</button>
+      <button type="button" role="radio" data-m="draw" aria-checked="false">✏️ Rita data</button>
+    </div>
+    <label class="small">Data <select class="sel" id="preset">
+      <option value="pets">Katter och hundar</option>
+      <option value="xor">Schackbrädet</option>
+      <option value="circle">Cirkeln</option>
+      <option value="diag">Diagonalen</option>
+      <option value="three">Tre klasser</option>
+      <option value="noise">Bara brus</option>
+      <option value="empty">Tomt – rita själv</option>
+    </select></label>
+    <button class="btn" type="button" id="reroll">Nya slumpdata</button>
+  </div>
+
+  <div class="play">
+    <div class="panel">
+      <div class="plotwrap"><canvas id="plot" aria-label="Datapunkterna och trädets områden"></canvas></div>
+      <div class="legend" id="legend"></div>
+      <div class="info" id="info" aria-live="polite"></div>
+    </div>
+    <div class="panel">
+      <div id="ctlManual">
+        <div class="row">
+          <span class="small">Snittet går:</span>
+          <div class="seg" role="radiogroup" aria-label="Snittets riktning" id="orient">
+            <button type="button" role="radio" data-o="0" aria-checked="true">│ lodrätt</button>
+            <button type="button" role="radio" data-o="1" aria-checked="false">─ vågrätt</button>
+          </div>
+          <button class="btn" type="button" id="bestSplit">Datorn tar nästa fråga</button>
+          <button class="btn" type="button" id="undo">Ångra</button>
+          <button class="btn" type="button" id="clearTree">Börja om</button>
+        </div>
+        <p class="muted small" style="margin:.6em 0 0">Klicka i bilden för att dela rutan där du klickar. Tryck <b>R</b> eller högerklicka för att byta riktning.</p>
+      </div>
+      <div id="ctlAuto" hidden>
+        <div class="row">
+          <label class="rng">Max djup <input type="range" id="depth" min="1" max="12" value="3"><b class="mono" id="depthV">3</b></label>
+          <label class="rng">Minsta löv <input type="range" id="minLeaf" min="1" max="20" value="1"><b class="mono" id="minLeafV">1</b></label>
+          <label class="small">Mått <select class="sel" id="crit"><option value="gini">Gini</option><option value="entropy">Entropi</option></select></label>
+        </div>
+      </div>
+      <div id="ctlDraw" hidden>
+        <div class="row">
+          <span class="small">Klass:</span><div class="cls" role="radiogroup" aria-label="Klass att rita" id="drawCls"></div>
+          <button class="btn" type="button" id="clearPts">Ta bort alla punkter</button>
+        </div>
+        <p class="muted small" style="margin:.6em 0 0">Klicka för att lägga till en punkt. Klicka på en punkt för att ta bort den. Var tredje ny punkt blir testdata.</p>
+      </div>
+      <div class="stats" style="margin-top:12px">
+        <div class="stat"><small>Rätt på träning</small><b id="sTrain">–</b></div>
+        <div class="stat"><small>Rätt på test</small><b id="sTest">–</b></div>
+        <div class="stat"><small>Djup</small><b id="sDepth">0</b></div>
+        <div class="stat"><small>Löv</small><b id="sLeaves">1</b></div>
+      </div>
+      <div class="treebox" id="treeBox"><svg id="treeSvg" role="img" aria-label="Beslutsträdet"></svg></div>
+      <p class="muted small" style="margin:.5em 0 0">Varje löv visar sitt svar och hur exemplen fördelar sig. Klicka på en nod för att se dess område. Peka i bilden för att se vilka frågor trädet ställer.</p>
+    </div>
+  </div>
+  <div class="callout">
+    <p><b>Gini-orenhet</b> mäter hur blandad en grupp är: 0 betyder att alla exempel har samma klass, och 0,5 att två klasser är helt blandade. När trädet väljer en fråga provar det alla möjliga snitt och tar det som gör grupperna renast – den lägsta <i>viktade</i> orenheten, där stora grupper väger mer. <b>Entropi</b> är ett annat mått på samma sak och ger oftast nästan samma träd.</p>
+  </div>
+  <ol class="missions" style="margin-top:14px">
+    <li>Välj <i>Katter och hundar</i> och <b>bygg själv</b>. Hur få frågor behöver du för att få minst 90 % rätt på testdatan? Tryck sedan på <i>Datorn tar nästa fråga</i> och jämför med datorns val.</li>
+    <li>Välj <i>Schackbrädet</i> och låt datorn ta första frågan. Varför blir den första frågan nästan meningslös – och varför behövs ändå två nivåer? (Trädet är <i>girigt</i>: det tittar bara ett steg framåt.)</li>
+    <li>Välj <i>Diagonalen</i> eller <i>Cirkeln</i> i automatiskt läge. Varför blir gränsen en trappa? Hur djupt måste trädet vara för att följa kurvan?</li>
+  </ol>
+</section>
+
+<section class="part" id="over">
+  <h2><span class="num">3</span> Överanpassning</h2>
+  <p class="lead">De ihåliga prickarna är <b>testdata</b>: exempel som trädet aldrig får se när det tränas. Det är på dem vi ser om trädet har lärt sig något allmänt. Ett djupt träd kan få 100 % rätt på träningsdatan genom att rita en egen liten ruta runt varje prick – men då har det lärt sig bruset utantill. Det kallas <b>överanpassning</b>.</p>
+  <div class="panel">
+    <canvas id="acc" aria-label="Andel rätt mot djup"></canvas>
+    <p class="muted small" style="margin:.4em 0 0">Andel rätt för träd med djup 1–12 på den data som är vald ovan. <b style="color:var(--c0)">Hel linje</b> = träningsdata, <b style="color:var(--c1)">streckad</b> = testdata. Den lodräta linjen är djupet du har valt. Byt till automatiskt läge och dra i <i>Max djup</i>.</p>
+  </div>
+  <ol class="missions" style="margin-top:14px">
+    <li>Välj <i>Bara brus</i>. Klasserna är helt slumpade, så det finns inget att lära. Ändå kan ett djupt träd få 100 % rätt på träningen. Hur går det på testet?</li>
+    <li>Välj <i>Katter och hundar</i>. Vid vilket djup är testresultatet bäst? Vad händer med träningsresultatet efter det?</li>
+    <li>Öka <i>Minsta löv</i> till 8. Då får varje löv minst åtta exempel. Hur påverkar det överanpassningen?</li>
+  </ol>
+</section>
+
+<section class="part" id="skog">
+  <h2><span class="num">4</span> Random forest – många träd röstar</h2>
+  <p class="lead">Ett enda djupt träd är känsligt: flyttar man några prickar kan hela trädet bli annorlunda. En <b>random forest</b> tränar i stället många träd, vart och ett på ett slumpat urval av exemplen och med en slumpad egenskap att välja mellan i varje fråga. Sedan får träden <b>rösta</b>. Felen tar ut varandra, och gränserna blir mjukare.</p>
+  <div class="panel">
+    <div class="row">
+      <label class="rng">Antal träd <input type="range" id="nTrees" min="1" max="60" value="25"><b class="mono" id="nTreesV">25</b></label>
+      <label class="rng">Djup per träd <input type="range" id="fDepth" min="1" max="12" value="8"><b class="mono" id="fDepthV">8</b></label>
+      <button class="btn primary" type="button" id="growForest">Odla skogen</button>
+    </div>
+    <div class="play" style="margin-top:12px">
+      <div><canvas id="forestPlot" style="width:100%;aspect-ratio:1/1;display:block;border-radius:10px;background:var(--soft)" aria-label="Skogens röster"></canvas>
+        <p class="muted small" style="margin:.4em 0 0">Färgen visar hur stor del av träden som röstar på varje klass. Blekt = träden är oense.</p></div>
+      <div>
+        <div class="stats">
+          <div class="stat"><small>Ett träd, test</small><b id="fOne">–</b></div>
+          <div class="stat"><small>Skogen, test</small><b id="fAll">–</b></div>
+          <div class="stat"><small>Skogen, träning</small><b id="fTrain">–</b></div>
+          <div class="stat"><small>Träd</small><b id="fN">–</b></div>
+        </div>
+        <p class="small">Skogen använder samma data som lekplatsen ovan. Jämför ett enda träd med samma djup mot hela skogen – särskilt på <i>Katter och hundar</i>, <i>Cirkeln</i> och <i>Diagonalen</i>.</p>
+        <p class="muted small">Priset är förklarbarheten: ett träd går att läsa, men 25 träd som röstar är mycket svårare att förklara.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="part" id="fotboll">
+  <h2><span class="num">5</span> Spela fotboll?</h2>
+  <p class="lead">Beslutsträd fungerar också på egenskaper som inte är tal. Här är 14 dagar då några kompisar har bestämt om de ska spela fotboll. Bygg ett träd som förutsäger svaret. Välj en <b>ruta i trädet</b> som inte är ren och en fråga att ställa. Staplarna visar <b>informationsvinsten</b> – hur mycket osäkerheten (entropin) minskar med varje fråga.</p>
+  <div class="foot">
+    <div class="panel">
+      <div style="overflow-x:auto"><table class="data" id="fTable"></table></div>
+      <p class="muted small" style="margin:.5em 0 0">De rader som hamnar i den valda rutan i trädet är markerade.</p>
+    </div>
+    <div class="panel">
+      <div class="row">
+        <button class="btn primary" type="button" id="fAuto">Datorn bygger resten</button>
+        <button class="btn" type="button" id="fReset">Börja om</button>
+      </div>
+      <p class="toast" id="fMsg" aria-live="polite"></p>
+      <div id="fGains"></div>
+      <div class="ftree"><svg id="fSvg" role="img" aria-label="Trädet för fotbollsdatan"></svg></div>
+    </div>
+  </div>
+  <div class="callout">
+    <p>Datorn väljer alltid frågan med störst informationsvinst. Det är algoritmen <b>ID3</b>, en av de första algoritmerna för beslutsträd (Ross Quinlan, 1986). I Python gör man samma sak med <span class="mono">DecisionTreeClassifier</span> i biblioteket scikit-learn – se <a href="../python-for-ai/">Python för AI</a>.</p>
+  </div>
+</section>
+
+<section class="part" id="test">
+  <h2><span class="num">?</span> Testa dig själv</h2>
+  <div class="panel" id="quiz"></div>
+  <p class="toast" id="quizscore" aria-live="polite"></p>
+</section>
+
+</main>
+<footer class="wrap">Allt körs i din webbläsare. · <a href="../maskinogat/">Maskinögat</a> · <a href="../forstarkt-inlarning/">Förstärkt inlärning</a> · <a href="../sokning/">Sökning</a></footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const sv = (x, d = 2) => x.toFixed(d).replace(".", ",");
+const pct = (x) => (x == null ? "–" : `${Math.round(x * 100)} %`);
+const cssv = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+/* =====================================================================
+ * Data. Punkterna ligger i rutan 0–10 × 0–10. c = klass, test = hålls utanför träningen.
+ * ===================================================================== */
+const PRESETS = {
+  pets: { axes: ["Vikt", "Mankhöjd"], names: ["Katt", "Hund"] },
+  xor: { axes: ["Egenskap 1", "Egenskap 2"], names: ["Blå", "Orange"] },
+  circle: { axes: ["Egenskap 1", "Egenskap 2"], names: ["Utanför", "Innanför"] },
+  diag: { axes: ["Egenskap 1", "Egenskap 2"], names: ["Under", "Över"] },
+  three: { axes: ["Egenskap 1", "Egenskap 2"], names: ["A", "B", "C"] },
+  noise: { axes: ["Egenskap 1", "Egenskap 2"], names: ["Blå", "Orange"] },
+  empty: { axes: ["Egenskap 1", "Egenskap 2"], names: ["Blå", "Orange", "Grön"] },
+};
+let preset = "pets", seed = 7, pts = [];
+function gauss(r) { return Math.sqrt(-2 * Math.log(r() + 1e-12)) * Math.cos(2 * Math.PI * r()); }
+const clamp = (v) => Math.max(0.15, Math.min(9.85, v));
+function makeData(kind, s) {
+  const r = rng(s * 9973 + 17), out = [];
+  const add = (x, y, c) => out.push({ x: clamp(x), y: clamp(y), c, test: false });
+  if (kind === "pets") {
+    for (let i = 0; i < 60; i++) add(2.8 + gauss(r) * 1.2, 3 + gauss(r) * 1.1, 0);
+    for (let i = 0; i < 60; i++) add(6.3 + gauss(r) * 1.7, 6.1 + gauss(r) * 1.5, 1);
+  } else if (kind === "xor") {
+    for (let i = 0; i < 130; i++) { const x = r() * 10, y = r() * 10; let c = (x < 5) !== (y < 5) ? 1 : 0; if (r() < 0.05) c = 1 - c; add(x, y, c); }
+  } else if (kind === "circle") {
+    for (let i = 0; i < 150; i++) { const x = r() * 10, y = r() * 10; let c = Math.hypot(x - 5, y - 5) < 2.9 ? 1 : 0; if (r() < 0.04) c = 1 - c; add(x, y, c); }
+  } else if (kind === "diag") {
+    for (let i = 0; i < 130; i++) { const x = r() * 10, y = r() * 10; let c = y > x + gauss(r) * 0.7 ? 1 : 0; add(x, y, c); }
+  } else if (kind === "three") {
+    const cs = [[2.6, 7.2], [7.4, 7], [5, 2.6]];
+    cs.forEach(([mx, my], c) => { for (let i = 0; i < 45; i++) add(mx + gauss(r) * 1.3, my + gauss(r) * 1.3, c); });
+  } else if (kind === "noise") {
+    for (let i = 0; i < 110; i++) add(r() * 10, r() * 10, r() < 0.5 ? 0 : 1);
+  }
+  // Var tredje punkt (slumpat) blir testdata.
+  const order = out.map((_, i) => i).sort(() => r() - 0.5);
+  order.slice(0, Math.round(out.length * 0.3)).forEach((i) => { out[i].test = true; });
+  return out;
+}
+const names = () => PRESETS[preset].names;
+const nCls = () => (preset === "empty" ? Math.max(2, 1 + Math.max(-1, ...pts.map((p) => p.c))) : names().length);
+const train = () => pts.filter((p) => !p.test);
+const test = () => pts.filter((p) => p.test);
+
+/* =====================================================================
+ * Trädet (CART). Noder: { leaf, pts, bounds:[x0,x1,y0,y1], depth, counts, pred, feat, thr, left, right }
+ * ===================================================================== */
+let criterion = "gini";
+function impurity(counts, n) {
+  if (!n) return 0;
+  let s = 0;
+  if (criterion === "gini") { for (const c of counts) s += (c / n) ** 2; return 1 - s; }
+  for (const c of counts) if (c) s -= (c / n) * Math.log2(c / n);
+  return s;
+}
+function countsOf(list, k = nCls()) { const c = new Array(k).fill(0); for (const p of list) c[p.c]++; return c; }
+function makeLeaf(list, bounds, depth, parentPred = 0) {
+  const counts = countsOf(list), n = list.length;
+  let pred = parentPred, best = -1;
+  counts.forEach((c, i) => { if (c > best) { best = c; pred = n ? i : parentPred; } });
+  return { leaf: true, pts: list, bounds, depth, counts, n, pred, imp: impurity(counts, n), id: ++nodeId };
+}
+let nodeId = 0;
+// Bästa raka snitt för en grupp punkter. feats = vilka egenskaper som får användas.
+function bestSplit(list, minLeaf = 1, feats = [0, 1]) {
+  const k = nCls(), n = list.length;
+  if (n < 2 * minLeaf) return null;
+  const parent = impurity(countsOf(list, k), n);
+  let best = null;
+  for (const f of feats) {
+    const key = f ? "y" : "x";
+    const s = list.slice().sort((a, b) => a[key] - b[key]);
+    const L = new Array(k).fill(0), R = countsOf(s, k);
+    for (let i = 0; i < n - 1; i++) {
+      L[s[i].c]++; R[s[i].c]--;
+      const nl = i + 1, nr = n - nl;
+      if (s[i][key] === s[i + 1][key] || nl < minLeaf || nr < minLeaf) continue;
+      const score = (nl * impurity(L, nl) + nr * impurity(R, nr)) / n;
+      if (!best || score < best.score - 1e-12) best = { feat: f, thr: (s[i][key] + s[i + 1][key]) / 2, score, gain: parent - score };
+    }
+  }
+  return best && best.gain > 1e-12 ? best : null;
+}
+function splitLeaf(leaf, feat, thr) {
+  const key = feat ? "y" : "x", [x0, x1, y0, y1] = leaf.bounds;
+  const L = leaf.pts.filter((p) => p[key] <= thr), R = leaf.pts.filter((p) => p[key] > thr);
+  const bl = feat ? [x0, x1, y0, thr] : [x0, thr, y0, y1], br = feat ? [x0, x1, thr, y1] : [thr, x1, y0, y1];
+  Object.assign(leaf, { leaf: false, feat, thr, left: makeLeaf(L, bl, leaf.depth + 1, leaf.pred), right: makeLeaf(R, br, leaf.depth + 1, leaf.pred) });
+  return leaf;
+}
+function grow(node, maxDepth, minLeaf, featPicker = null) {
+  if (node.depth >= maxDepth || node.imp === 0) return node;
+  const sp = bestSplit(node.pts, minLeaf, featPicker ? featPicker() : [0, 1]);
+  if (!sp) return node;
+  splitLeaf(node, sp.feat, sp.thr);
+  grow(node.left, maxDepth, minLeaf, featPicker); grow(node.right, maxDepth, minLeaf, featPicker);
+  return node;
+}
+function buildTree(list, maxDepth, minLeaf, featPicker) { return grow(makeLeaf(list, [0, 10, 0, 10], 0), maxDepth, minLeaf, featPicker); }
+function leafAt(node, x, y) { while (!node.leaf) node = (node.feat ? y : x) <= node.thr ? node.left : node.right; return node; }
+function pathTo(node, x, y) { const p = [node]; while (!node.leaf) { node = (node.feat ? y : x) <= node.thr ? node.left : node.right; p.push(node); } return p; }
+function leaves(node, out = []) { if (node.leaf) out.push(node); else { leaves(node.left, out); leaves(node.right, out); } return out; }
+function depthOf(node) { return node.leaf ? 0 : 1 + Math.max(depthOf(node.left), depthOf(node.right)); }
+function accuracy(tree, list) { if (!list.length) return null; return list.filter((p) => leafAt(tree, p.x, p.y).pred === p.c).length / list.length; }
+
+/* =====================================================================
+ * Lekplatsens tillstånd
+ * ===================================================================== */
+let mode = "manual", tree = null, history = [], orient = 0, hover = null, selNode = null, drawClass = 0;
+function rebuild() {
+  if (mode === "auto") tree = buildTree(train(), +$("depth").value, +$("minLeaf").value);
+  else if (!tree) tree = makeLeaf(train(), [0, 10, 0, 10], 0);
+  selNode = null;
+  renderAll();
+}
+// I "Bygg själv" spelas användarens snitt upp igen på ny data (t.ex. när punkter ritas).
+function replayManual() {
+  const cuts = history.slice();
+  tree = makeLeaf(train(), [0, 10, 0, 10], 0);
+  for (const c of cuts) { const lf = leafAt(tree, c.px, c.py); if (lf.n) splitLeaf(lf, c.feat, c.thr); }
+}
+function colorOf(c) { return cssv(["--c0", "--c1", "--c2"][c] || "--c2"); }
+function hexA(hex, a) {
+  const h = hex.replace("#", ""), n = parseInt(h.length === 3 ? h.replace(/./g, "$&$&") : h, 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+
+/* ---------- ritning av bilden ---------- */
+const plot = $("plot");
+let P = { S: 400, pad: 34 };
+function toPx(x, y) { const s = P.S - P.pad - 8; return [P.pad + (x / 10) * s, 8 + (1 - y / 10) * s]; }
+function fromPx(px, py) { const s = P.S - P.pad - 8; return [((px - P.pad) / s) * 10, (1 - (py - 8) / s) * 10]; }
+function setupCanvas(c) {
+  const r = c.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+  c.width = Math.round(r.width * dpr); c.height = Math.round(r.width * dpr);
+  const g = c.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { g, S: r.width };
+}
+function drawAxes(g, S, axes) {
+  g.fillStyle = cssv("--muted"); g.font = "11px JetBrains Mono"; g.textAlign = "center";
+  for (let v = 0; v <= 10; v += 2) {
+    const [x] = toPx(v, 0), [, y] = toPx(0, v);
+    g.fillText(v, x, S - 14); g.textAlign = "right"; g.fillText(v, P.pad - 6, y + 4); g.textAlign = "center";
+  }
+  g.font = "600 12px Inter"; g.fillText(axes[0], (P.pad + S) / 2, S - 1);
+  g.save(); g.translate(11, (S - P.pad) / 2); g.rotate(-Math.PI / 2); g.fillText(axes[1], 0, 0); g.restore();
+}
+function drawPoints(g, list, hl) {
+  for (const p of list) {
+    const [x, y] = toPx(p.x, p.y), col = colorOf(p.c);
+    g.beginPath(); g.arc(x, y, p.test ? 5 : 5.5, 0, 7);
+    if (p.test) { g.lineWidth = 2.6; g.strokeStyle = col; g.fillStyle = cssv("--surface"); g.fill(); g.stroke(); }
+    else { g.fillStyle = col; g.fill(); g.lineWidth = 1.2; g.strokeStyle = "rgba(0,0,0,.35)"; g.stroke(); }
+  }
+  if (hl) { const [x, y] = toPx(hl.x, hl.y); g.beginPath(); g.arc(x, y, 10, 0, 7); g.strokeStyle = cssv("--ink"); g.lineWidth = 2; g.stroke(); }
+}
+function drawPlot() {
+  const { g, S } = setupCanvas(plot); P.S = S;
+  g.clearRect(0, 0, S, S);
+  // Löven som färgade rutor
+  for (const lf of leaves(tree)) {
+    const [x0, x1, y0, y1] = lf.bounds, [ax, ay] = toPx(x0, y1), [bx, by] = toPx(x1, y0);
+    const purity = lf.n ? Math.max(...lf.counts) / lf.n : 0.4;
+    g.fillStyle = hexA(colorOf(lf.pred), lf.n ? 0.12 + 0.2 * purity : 0.06);
+    g.fillRect(ax, ay, bx - ax, by - ay);
+  }
+  if (selNode) {
+    const [x0, x1, y0, y1] = selNode.bounds, [ax, ay] = toPx(x0, y1), [bx, by] = toPx(x1, y0);
+    g.strokeStyle = cssv("--amber"); g.lineWidth = 4; g.strokeRect(ax + 2, ay + 2, bx - ax - 4, by - ay - 4);
+  }
+  // Snitten
+  (function lines(n) {
+    if (n.leaf) return;
+    const [x0, x1, y0, y1] = n.bounds;
+    const [a, b] = n.feat ? [toPx(x0, n.thr), toPx(x1, n.thr)] : [toPx(n.thr, y0), toPx(n.thr, y1)];
+    g.strokeStyle = cssv("--ink"); g.globalAlpha = 0.75; g.lineWidth = Math.max(1.2, 3 - n.depth * 0.4);
+    g.beginPath(); g.moveTo(...a); g.lineTo(...b); g.stroke(); g.globalAlpha = 1;
+    lines(n.left); lines(n.right);
+  })(tree);
+  // Förhandsvisning av ett snitt i "Bygg själv"
+  if (mode === "manual" && hover && hover.leaf) {
+    const lf = hover.leaf, [x0, x1, y0, y1] = lf.bounds, v = orient ? hover.y : hover.x;
+    const [a, b] = orient ? [toPx(x0, v), toPx(x1, v)] : [toPx(v, y0), toPx(v, y1)];
+    g.setLineDash([7, 5]); g.strokeStyle = cssv("--amber"); g.lineWidth = 3;
+    g.beginPath(); g.moveTo(...a); g.lineTo(...b); g.stroke(); g.setLineDash([]);
+    if (hover.best) {
+      const bs = hover.best, [c, d] = bs.feat ? [toPx(x0, bs.thr), toPx(x1, bs.thr)] : [toPx(bs.thr, y0), toPx(bs.thr, y1)];
+      g.setLineDash([2, 5]); g.strokeStyle = cssv("--ok"); g.lineWidth = 2;
+      g.beginPath(); g.moveTo(...c); g.lineTo(...d); g.stroke(); g.setLineDash([]);
+    }
+  }
+  g.strokeStyle = cssv("--line"); g.lineWidth = 1;
+  const [o0x, o0y] = toPx(0, 10), [o1x, o1y] = toPx(10, 0); g.strokeRect(o0x, o0y, o1x - o0x, o1y - o0y);
+  drawAxes(g, S, PRESETS[preset].axes);
+  drawPoints(g, pts, hover && hover.pt);
+}
+
+/* ---------- trädet som bild ---------- */
+function drawTree() {
+  let leaf = 0, maxD = 0;
+  const pos = new Map();
+  (function place(n) {
+    maxD = Math.max(maxD, n.depth);
+    if (n.leaf) pos.set(n, leaf++);
+    else { place(n.left); place(n.right); pos.set(n, (pos.get(n.left) + pos.get(n.right)) / 2); }
+  })(tree);
+  const SX = 124, SY = 74, NW = 116, NH = 40, PAD = 10;
+  const X = (n) => PAD + NW / 2 + pos.get(n) * SX, Y = (n) => PAD + n.depth * SY;
+  const width = PAD * 2 + NW + Math.max(0, leaf - 1) * SX, height = PAD * 2 + NH + maxD * SY;
+  const onPath = new Set(hover && hover.path ? hover.path : []);
+  const ax = PRESETS[preset].axes, nm = names();
+  let s = "";
+  (function edges(n) {
+    if (n.leaf) return;
+    for (const [ch, lbl] of [[n.left, "ja"], [n.right, "nej"]]) {
+      const on = onPath.has(n) && onPath.has(ch);
+      s += `<path class="te${on ? " onpath" : ""}" d="M${X(n)} ${Y(n) + NH} L${X(ch)} ${Y(ch)}"/>`;
+      s += `<text class="tl" x="${(X(n) + X(ch)) / 2 + (lbl === "ja" ? -14 : 6)}" y="${(Y(n) + NH + Y(ch)) / 2}">${lbl}</text>`;
+      edges(ch);
+    }
+  })(tree);
+  const nodes = [];
+  (function walk(n) { nodes.push(n); if (!n.leaf) { walk(n.left); walk(n.right); } })(tree);
+  for (const n of nodes) {
+    const x = X(n) - NW / 2, y = Y(n), cls = ["tn", n.leaf ? "leaf" : "", n === selNode ? "sel" : "", onPath.has(n) ? "onpath" : ""].join(" ");
+    let inner;
+    if (n.leaf) {
+      const col = colorOf(n.pred);
+      // Fördelningen av klasser som en liten stapel
+      let bx = x + 6, bar = "";
+      if (n.n) n.counts.forEach((c, i) => { const w = (NW - 12) * c / n.n; if (w > 0) bar += `<rect x="${bx}" y="${y + 27}" width="${w}" height="7" style="fill:${colorOf(i)};stroke:none"/>`; bx += w; });
+      inner = `<rect x="${x}" y="${y}" width="${NW}" height="${NH}" rx="8" style="fill:${hexA(col, 0.22)};stroke:${col}"/>
+        <text x="${X(n)}" y="${y + 18}" text-anchor="middle">${esc(n.n ? nm[n.pred] || "Klass " + (n.pred + 1) : "tomt")}</text>${bar}
+        <text class="sub" x="${x + NW - 4}" y="${y + 18}" text-anchor="end">${n.n}</text>`;
+    } else {
+      inner = `<rect x="${x}" y="${y}" width="${NW}" height="${NH}" rx="8"/>
+        <text x="${X(n)}" y="${y + 17}" text-anchor="middle">${esc(ax[n.feat])} ≤ ${sv(n.thr, 1)}?</text>
+        <text class="sub" x="${X(n)}" y="${y + 32}" text-anchor="middle">n=${n.n} · ${criterion === "gini" ? "gini" : "ent"} ${sv(n.imp)}</text>`;
+    }
+    s += `<g class="${cls}" data-id="${n.id}">${inner}</g>`;
+  }
+  const svg = $("treeSvg");
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.setAttribute("width", Math.max(width, 200)); svg.setAttribute("height", height);
+  svg.innerHTML = s;
+  svg.querySelectorAll(".tn").forEach((el) => el.addEventListener("click", () => {
+    const n = nodes.find((m) => m.id === +el.dataset.id);
+    selNode = selNode === n ? null : n;
+    describeNode(selNode); drawPlot(); drawTree();
+  }));
+}
+function describeNode(n) {
+  if (!n) { $("info").innerHTML = defaultInfo(); return; }
+  const nm = names(), dist = n.counts.map((c, i) => `${c} ${esc(nm[i] || "klass " + (i + 1))}`).join(", ");
+  $("info").innerHTML = n.leaf
+    ? `<b>Löv</b> med ${n.n} träningsexempel (${dist}). Svar: <b>${esc(nm[n.pred] || "")}</b>. Orenhet ${sv(n.imp)}.`
+    : `<b>Fråga:</b> ${esc(PRESETS[preset].axes[n.feat])} ≤ ${sv(n.thr, 1)}? · ${n.n} exempel (${dist}) · orenhet ${sv(n.imp)}.`;
+}
+function defaultInfo() {
+  if (mode === "manual") return tree.leaf ? "Klicka i bilden för att ställa trädets första fråga. Den gula linjen visar var snittet hamnar, den gröna prickade det bästa möjliga snittet i den rutan." : "Peka i bilden för att se var nästa snitt hamnar.";
+  if (mode === "draw") return "Klicka för att lägga till punkter i vald klass.";
+  return "Peka i bilden för att se vilka frågor trädet ställer.";
+}
+
+/* ---------- statistik och diagram ---------- */
+function renderStats() {
+  $("sTrain").textContent = pct(accuracy(tree, train()));
+  $("sTest").textContent = pct(accuracy(tree, test()));
+  $("sDepth").textContent = depthOf(tree);
+  $("sLeaves").textContent = leaves(tree).length;
+}
+function drawAccChart() {
+  const c = $("acc"), r = c.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+  c.width = Math.round(r.width * dpr); c.height = Math.round(r.height * dpr);
+  const g = c.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const Wc = r.width, Hc = r.height; g.clearRect(0, 0, Wc, Hc);
+  const tr = train(), te = test();
+  if (tr.length < 2) { g.fillStyle = cssv("--muted"); g.font = "13px Inter"; g.fillText("För lite data.", 10, Hc / 2); return; }
+  const rows = [];
+  for (let d = 1; d <= 12; d++) { const t = buildTree(tr, d, +$("minLeaf").value); rows.push([accuracy(t, tr), accuracy(t, te)]); }
+  const X = (d) => 44 + (d - 1) / 11 * (Wc - 60), Y = (a) => 10 + (1 - a) * (Hc - 34);
+  g.strokeStyle = cssv("--line"); g.fillStyle = cssv("--muted"); g.font = "11px JetBrains Mono"; g.lineWidth = 1;
+  for (const a of [0.5, 0.75, 1]) { g.beginPath(); g.moveTo(40, Y(a)); g.lineTo(Wc - 10, Y(a)); g.stroke(); g.fillText(`${a * 100}%`, 2, Y(a) + 4); }
+  for (let d = 1; d <= 12; d++) g.fillText(d, X(d) - 4, Hc - 6);
+  const yclip = (a) => Y(Math.max(0.4, a ?? 0.4));
+  for (const [k, col, dash] of [[0, cssv("--c0"), []], [1, cssv("--c1"), [6, 5]]]) {
+    if (k === 1 && !te.length) continue;
+    g.strokeStyle = col; g.lineWidth = 3; g.setLineDash(dash); g.beginPath();
+    rows.forEach((rw, i) => (i ? g.lineTo(X(i + 1), yclip(rw[k])) : g.moveTo(X(1), yclip(rw[k]))));
+    g.stroke(); g.setLineDash([]);
+    rows.forEach((rw, i) => { g.fillStyle = col; g.beginPath(); g.arc(X(i + 1), yclip(rw[k]), 3.5, 0, 7); g.fill(); });
+  }
+  const d = mode === "auto" ? +$("depth").value : depthOf(tree);
+  if (d >= 1) { g.strokeStyle = cssv("--ink"); g.globalAlpha = 0.5; g.lineWidth = 2; g.beginPath(); g.moveTo(X(Math.min(12, d)), 6); g.lineTo(X(Math.min(12, d)), Hc - 22); g.stroke(); g.globalAlpha = 1; }
+  if (te.length) {
+    const bestD = rows.reduce((b, r, i) => (r[1] > rows[b][1] ? i : b), 0);
+    g.fillStyle = cssv("--c1"); g.font = "700 11px Inter"; g.textAlign = "left";
+    g.fillText("bäst på test", X(bestD + 1) + 6, yclip(rows[bestD][1]) + 16);
+  }
+}
+function renderLegend() {
+  const nm = names(), k = preset === "empty" ? 3 : nm.length;
+  $("legend").innerHTML = nm.slice(0, k).map((n, i) => `<span><i style="background:${colorOf(i)}"></i>${esc(n)}</span>`).join("") +
+    `<span><i class="hollow"></i>ihålig = testdata</span>`;
+  $("drawCls").innerHTML = nm.slice(0, 3).map((n, i) => `<button type="button" role="radio" data-c="${i}" aria-checked="${i === drawClass}"><i style="background:${colorOf(i)}"></i>${esc(n)}</button>`).join("");
+  $("drawCls").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { drawClass = +b.dataset.c; renderLegend(); }));
+}
+function renderAll() { drawPlot(); drawTree(); renderStats(); drawAccChart(); describeNode(selNode); }
+
+/* ---------- interaktion i bilden ---------- */
+function evtXY(e) { const r = plot.getBoundingClientRect(); return fromPx(e.clientX - r.left, e.clientY - r.top); }
+plot.addEventListener("mousemove", (e) => {
+  const [x, y] = evtXY(e);
+  if (x < 0 || x > 10 || y < 0 || y > 10) { hover = null; drawPlot(); drawTree(); return; }
+  const lf = leafAt(tree, x, y);
+  hover = { x, y, path: pathTo(tree, x, y), leaf: mode === "manual" ? lf : null };
+  // närmaste punkt
+  let best = null, bd = 0.35;
+  for (const p of pts) { const d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; best = p; } }
+  hover.pt = best;
+  if (mode === "manual") {
+    const key = orient ? "y" : "x", thr = orient ? y : x;
+    const L = lf.pts.filter((p) => p[key] <= thr), R = lf.pts.filter((p) => p[key] > thr);
+    const k = nCls(), il = impurity(countsOf(L, k), L.length), ir = impurity(countsOf(R, k), R.length);
+    const w = lf.n ? (L.length * il + R.length * ir) / lf.n : 0;
+    hover.best = bestSplit(lf.pts);
+    $("info").innerHTML = lf.n < 2 ? "Den här rutan har för få exempel för att delas."
+      : `Snitt vid <b>${PRESETS[preset].axes[orient]} = ${sv(thr, 1)}</b>: ${orient ? "under" : "vänster"} ${L.length} st (orenhet <b>${sv(il)}</b>), ${orient ? "över" : "höger"} ${R.length} st (<b>${sv(ir)}</b>). Viktad orenhet <b>${sv(w)}</b> – före snittet <b>${sv(lf.imp)}</b>.` +
+        (hover.best ? ` <span style="color:var(--ok)">Bästa möjliga i rutan: <b>${sv(hover.best.score)}</b> (${PRESETS[preset].axes[hover.best.feat]} ≤ ${sv(hover.best.thr, 1)}).</span>` : " Rutan är redan ren.");
+  } else if (mode === "auto") {
+    const p = hover.path, ax = PRESETS[preset].axes, nm = names();
+    $("info").innerHTML = "Trädet frågar: " + p.slice(0, -1).map((n, i) => `${esc(ax[n.feat])} ≤ ${sv(n.thr, 1)}? <b>${p[i + 1] === n.left ? "ja" : "nej"}</b>`).join(" → ") +
+      `${p.length > 1 ? " → " : ""}svar <b style="color:${colorOf(lf.pred)}">${esc(nm[lf.pred] || "")}</b>`;
+  }
+  drawPlot(); drawTree();
+});
+plot.addEventListener("mouseleave", () => { hover = null; describeNode(selNode); drawPlot(); drawTree(); });
+plot.addEventListener("contextmenu", (e) => { e.preventDefault(); setOrient(1 - orient); });
+plot.addEventListener("click", (e) => {
+  const [x, y] = evtXY(e);
+  if (x < 0 || x > 10 || y < 0 || y > 10) return;
+  if (mode === "draw") {
+    const hit = pts.findIndex((p) => Math.hypot(p.x - x, p.y - y) < 0.3);
+    if (hit >= 0) pts.splice(hit, 1);
+    else pts.push({ x, y, c: drawClass, test: pts.length % 3 === 2 });
+    tree = buildTree(train(), +$("depth").value, +$("minLeaf").value);
+    renderAll(); return;
+  }
+  if (mode !== "manual") return;
+  const lf = leafAt(tree, x, y);
+  if (lf.n < 2) return;
+  const feat = orient, thr = orient ? y : x;
+  history.push({ feat, thr, px: x, py: y });
+  splitLeaf(lf, feat, thr);
+  hover = null; renderAll();
+});
+window.addEventListener("keydown", (e) => { if (mode === "manual" && (e.key === "r" || e.key === "R") && !e.target.closest("input,select")) setOrient(1 - orient); });
+function setOrient(o) {
+  orient = o;
+  $("orient").querySelectorAll("button").forEach((b) => b.setAttribute("aria-checked", String(+b.dataset.o === o)));
+  drawPlot();
+}
+$("orient").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => setOrient(+b.dataset.o)));
+$("bestSplit").addEventListener("click", () => {
+  // Dela det löv där en fråga gör störst nytta (mest minskad orenhet totalt).
+  let best = null;
+  for (const lf of leaves(tree)) { const sp = bestSplit(lf.pts); if (sp && (!best || sp.gain * lf.n > best.sp.gain * best.lf.n)) best = { lf, sp }; }
+  if (!best) { $("info").innerHTML = "Alla rutor är redan rena – det finns ingen fråga som hjälper."; return; }
+  const [x0, x1, y0, y1] = best.lf.bounds;
+  history.push({ feat: best.sp.feat, thr: best.sp.thr, px: (x0 + x1) / 2, py: (y0 + y1) / 2 });
+  splitLeaf(best.lf, best.sp.feat, best.sp.thr);
+  renderAll();
+  $("info").innerHTML = `Datorn valde <b>${PRESETS[preset].axes[best.sp.feat]} ≤ ${sv(best.sp.thr, 1)}</b> – den fråga som minskar orenheten mest.`;
+});
+$("undo").addEventListener("click", () => { history.pop(); replayManual(); renderAll(); });
+$("clearTree").addEventListener("click", () => { history = []; replayManual(); renderAll(); });
+
+/* ---------- lägen och data ---------- */
+function setMode(m) {
+  mode = m;
+  $("mode").querySelectorAll("button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.m === m)));
+  $("ctlManual").hidden = m !== "manual"; $("ctlAuto").hidden = m !== "auto"; $("ctlDraw").hidden = m !== "draw";
+  plot.style.cursor = m === "auto" ? "default" : "crosshair";
+  if (m === "manual") replayManual();
+  else tree = buildTree(train(), +$("depth").value, +$("minLeaf").value);
+  selNode = null; renderAll();
+}
+$("mode").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.m)));
+function loadData() {
+  pts = makeData(preset, seed);
+  history = [];
+  renderLegend();
+  if (mode === "manual") replayManual(); else tree = buildTree(train(), +$("depth").value, +$("minLeaf").value);
+  if (preset === "empty" && mode !== "draw") setMode("draw"); else renderAll();
+  renderForest();
+  $("info").innerHTML = defaultInfo();
+}
+$("preset").addEventListener("change", () => { preset = $("preset").value; drawClass = 0; loadData(); });
+$("reroll").addEventListener("click", () => { seed = 1 + Math.floor(Math.random() * 1e6); loadData(); });
+for (const id of ["depth", "minLeaf"]) $(id).addEventListener("input", () => { $(id + "V").textContent = $(id).value; if (mode !== "manual") tree = buildTree(train(), +$("depth").value, +$("minLeaf").value); renderAll(); });
+$("crit").addEventListener("change", () => { criterion = $("crit").value; if (mode === "manual") replayManual(); else tree = buildTree(train(), +$("depth").value, +$("minLeaf").value); renderAll(); });
+$("clearPts").addEventListener("click", () => { pts = []; history = []; tree = makeLeaf([], [0, 10, 0, 10], 0); renderAll(); renderForest(); });
+new ResizeObserver(() => { drawPlot(); drawAccChart(); drawForest(); }).observe(document.body);
+
+/* =====================================================================
+ * Random forest
+ * ===================================================================== */
+let forest = [], forestSeed = 1;
+function growForest() {
+  const tr = train(), n = +$("nTrees").value, d = +$("fDepth").value, r = rng(forestSeed++);
+  forest = [];
+  if (tr.length < 2) return;
+  for (let t = 0; t < n; t++) {
+    const sample = Array.from({ length: tr.length }, () => tr[Math.floor(r() * tr.length)]);    // dragning med återläggning
+    forest.push(buildTree(sample, d, 1, () => [r() < 0.5 ? 0 : 1]));                          // en slumpad egenskap per fråga
+  }
+}
+function votes(x, y) { const v = new Array(nCls()).fill(0); for (const t of forest) v[leafAt(t, x, y).pred]++; return v; }
+function forestAcc(list) {
+  if (!list.length || !forest.length) return null;
+  return list.filter((p) => { const v = votes(p.x, p.y); return v.indexOf(Math.max(...v)) === p.c; }).length / list.length;
+}
+function drawForest() {
+  const c = $("forestPlot"), { g, S } = setupCanvas(c);
+  const saved = P.S; P.S = S;
+  g.clearRect(0, 0, S, S);
+  if (forest.length) {
+    const N = 60, step = 10 / N;
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+      const x = (i + 0.5) * step, y = (j + 0.5) * step, v = votes(x, y), top = v.indexOf(Math.max(...v)), share = v[top] / forest.length;
+      const [ax, ay] = toPx(i * step, (j + 1) * step), [bx, by] = toPx((i + 1) * step, j * step);
+      g.fillStyle = hexA(colorOf(top), 0.08 + 0.45 * (share - 1 / nCls()) / (1 - 1 / nCls()));
+      g.fillRect(ax, ay, bx - ax + 0.6, by - ay + 0.6);
+    }
+  }
+  drawAxes(g, S, PRESETS[preset].axes);
+  drawPoints(g, pts, null);
+  P.S = saved;
+}
+function renderForest() {
+  growForest();
+  const one = buildTree(train(), +$("fDepth").value, 1);
+  $("fOne").textContent = pct(accuracy(one, test()));
+  $("fAll").textContent = pct(forestAcc(test()));
+  $("fTrain").textContent = pct(forestAcc(train()));
+  $("fN").textContent = forest.length;
+  drawForest();
+}
+for (const id of ["nTrees", "fDepth"]) $(id).addEventListener("input", () => { $(id + "V").textContent = $(id).value; });
+for (const id of ["nTrees", "fDepth"]) $(id).addEventListener("change", renderForest);
+$("growForest").addEventListener("click", renderForest);
+
+/* =====================================================================
+ * Spela fotboll? – ID3 med informationsvinst
+ * ===================================================================== */
+const FATTR = ["Väder", "Temperatur", "Luftfuktighet", "Blåsigt"];
+const FROWS = [
+  ["Sol", "Varmt", "Hög", "Nej", "Nej"], ["Sol", "Varmt", "Hög", "Ja", "Nej"], ["Mulet", "Varmt", "Hög", "Nej", "Ja"],
+  ["Regn", "Lagom", "Hög", "Nej", "Ja"], ["Regn", "Kallt", "Normal", "Nej", "Ja"], ["Regn", "Kallt", "Normal", "Ja", "Nej"],
+  ["Mulet", "Kallt", "Normal", "Ja", "Ja"], ["Sol", "Lagom", "Hög", "Nej", "Nej"], ["Sol", "Kallt", "Normal", "Nej", "Ja"],
+  ["Regn", "Lagom", "Normal", "Nej", "Ja"], ["Sol", "Lagom", "Normal", "Ja", "Ja"], ["Mulet", "Lagom", "Hög", "Ja", "Ja"],
+  ["Mulet", "Varmt", "Normal", "Nej", "Ja"], ["Regn", "Lagom", "Hög", "Ja", "Nej"],
+];
+const ent = (rows) => { const n = rows.length, y = rows.filter((r) => r[4] === "Ja").length; return [y, n - y].reduce((s, c) => (c ? s - (c / n) * Math.log2(c / n) : s), 0); };
+function fGain(rows, a) {
+  const vals = [...new Set(rows.map((r) => r[a]))];
+  return ent(rows) - vals.reduce((s, v) => { const sub = rows.filter((r) => r[a] === v); return s + (sub.length / rows.length) * ent(sub); }, 0);
+}
+let fRoot, fSel, fid = 0;
+const fNode = (rows, used, label, depth) => ({ rows, used, label, depth, attr: null, kids: [], id: ++fid });
+function fReset() { fid = 0; fRoot = fNode(FROWS.map((_, i) => i).map((i) => FROWS[i]), [], null, 0); fSel = fRoot; fRender(); $("fMsg").textContent = "Roten innehåller alla 14 dagar. Vilken fråga ska trädet börja med?"; $("fMsg").className = "toast"; }
+function fSplit(node, a) {
+  node.attr = a;
+  const vals = [...new Set(node.rows.map((r) => r[a]))].sort((x, y) => x.localeCompare(y, "sv"));
+  node.kids = vals.map((v) => fNode(node.rows.filter((r) => r[a] === v), [...node.used, a], v, node.depth + 1));
+}
+const fPure = (n) => ent(n.rows) === 0 || n.used.length === FATTR.length;
+function fLeaves(n, out = []) { if (n.attr === null) out.push(n); else n.kids.forEach((k) => fLeaves(k, out)); return out; }
+function fRender() {
+  // tabellen
+  const inSel = new Set(fSel ? fSel.rows : []);
+  $("fTable").innerHTML = `<tr><th>#</th>${FATTR.map((a) => `<th>${a}</th>`).join("")}<th>Spela?</th></tr>` +
+    FROWS.map((r, i) => `<tr class="${inSel.has(r) ? "" : "off"}"><td class="mono">${i + 1}</td>${r.slice(0, 4).map((v) => `<td>${v}</td>`).join("")}<td class="${r[4] === "Ja" ? "yes" : "no"}">${r[4]}</td></tr>`).join("");
+  // vinster för vald ruta
+  const box = $("fGains");
+  if (fSel && fSel.attr === null && !fPure(fSel)) {
+    const cand = FATTR.map((_, a) => a).filter((a) => !fSel.used.includes(a)).map((a) => [a, fGain(fSel.rows, a)]);
+    const max = Math.max(...cand.map((c) => c[1]), 1e-9);
+    box.innerHTML = `<p class="small" style="margin:0">Vald ruta: ${fSel.rows.length} dagar, entropi <b class="mono">${sv(ent(fSel.rows))}</b>. Välj en fråga:</p><div class="gains">` +
+      cand.map(([a, g]) => `<div class="gain${g === max ? " best" : ""}"><b>${FATTR[a]}</b><div class="bar"><i style="width:${(g / Math.max(max, 0.0001)) * 100}%"></i></div><span class="mono">${sv(g, 3)}</span><button class="btn" type="button" data-a="${a}" style="min-height:32px;padding:2px 10px">Fråga</button></div>`).join("") + `</div>`;
+    box.querySelectorAll("[data-a]").forEach((b) => b.addEventListener("click", () => {
+      const a = +b.dataset.a, g = fGain(fSel.rows, a), best = Math.max(...cand.map((c) => c[1]));
+      fSplit(fSel, a);
+      $("fMsg").textContent = g >= best - 1e-9 ? `Bra val! "${FATTR[a]}" ger störst informationsvinst här (${sv(g, 3)}).` : `"${FATTR[a]}" fungerar, men ger mindre informationsvinst (${sv(g, 3)}) än det bästa valet (${sv(best, 3)}). Trädet blir större.`;
+      $("fMsg").className = "toast " + (g >= best - 1e-9 ? "ok" : "bad");
+      fSel = fLeaves(fRoot).find((n) => !fPure(n)) || null;
+      if (!fSel) { $("fMsg").textContent += " Nu är alla löv rena – trädet är klart!"; }
+      fRender();
+    }));
+  } else box.innerHTML = fSel ? `<p class="small muted" style="margin:0">Den valda rutan är ren – alla dagar har samma svar. Välj en annan ruta i trädet.</p>` : `<p class="small muted" style="margin:0">Alla löv är rena. Följ trädet: vad säger det om en solig dag med normal luftfuktighet?</p>`;
+  // trädet
+  let leaf = 0, maxD = 0; const pos = new Map();
+  (function place(n) { maxD = Math.max(maxD, n.depth); if (n.attr === null) pos.set(n, leaf++); else { n.kids.forEach(place); pos.set(n, (pos.get(n.kids[0]) + pos.get(n.kids[n.kids.length - 1])) / 2); } })(fRoot);
+  const SX = 112, SY = 96, NW = 104, NH = 42, PAD = 10;
+  const X = (n) => PAD + NW / 2 + pos.get(n) * SX, Y = (n) => PAD + n.depth * SY;
+  const width = PAD * 2 + NW + Math.max(0, leaf - 1) * SX, height = PAD * 2 + NH + maxD * SY;
+  let s = "";
+  const all = [];
+  (function walk(n) {
+    all.push(n);
+    n.kids.forEach((k) => {
+      s += `<path class="te" d="M${X(n)} ${Y(n) + NH} L${X(k)} ${Y(k)}"/><text class="tl" x="${(X(n) + X(k)) / 2 + 4}" y="${(Y(n) + NH + Y(k)) / 2 + 6}" style="font-size:11px">${k.label}</text>`;
+      walk(k);
+    });
+  })(fRoot);
+  for (const n of all) {
+    const y = n.rows.filter((r) => r[4] === "Ja").length, no = n.rows.length - y, x = X(n) - NW / 2;
+    const pure = n.attr === null && (y === 0 || no === 0);
+    const cls = ["fn", n === fSel ? "sel" : "", pure ? (y ? "pure-yes" : "pure-no") : ""].join(" ");
+    const title = n.attr !== null ? `${FATTR[n.attr]}?` : pure ? (y ? "Spela: Ja" : "Spela: Nej") : "Blandat";
+    s += `<g class="${cls}" data-id="${n.id}"><rect x="${x}" y="${Y(n)}" width="${NW}" height="${NH}" rx="9"/>
+      <text x="${X(n)}" y="${Y(n) + 18}" text-anchor="middle">${title}</text>
+      <text class="sub" x="${X(n)}" y="${Y(n) + 33}" text-anchor="middle">${y} ja · ${no} nej</text></g>`;
+  }
+  const svg = $("fSvg");
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`); svg.setAttribute("width", Math.max(width, 200)); svg.setAttribute("height", height);
+  svg.innerHTML = s;
+  svg.querySelectorAll(".fn").forEach((g) => g.addEventListener("click", () => { fSel = all.find((n) => n.id === +g.dataset.id); fRender(); }));
+}
+$("fReset").addEventListener("click", fReset);
+$("fAuto").addEventListener("click", () => {
+  (function id3(n) {
+    if (n.attr === null && !fPure(n)) {
+      const cand = FATTR.map((_, a) => a).filter((a) => !n.used.includes(a));
+      const a = cand.reduce((b, c) => (fGain(n.rows, c) > fGain(n.rows, b) + 1e-12 ? c : b), cand[0]);
+      fSplit(n, a);
+    }
+    n.kids.forEach(id3);
+  })(fRoot);
+  fSel = null;
+  $("fMsg").textContent = "Datorn valde den fråga med störst informationsvinst i varje ruta. Klart – alla löv är rena.";
+  $("fMsg").className = "toast ok";
+  fRender();
+});
+
+/* ---------- testa dig själv ---------- */
+const QUIZ = [
+  { q: "Vad finns i ett beslutsträds löv?", o: ["En fråga", "Ett svar – en klass", "En ny datamängd", "Ett neuralt nätverk"], a: 1, why: "Löven är svaren: den klass som var vanligast bland träningsexemplen som hamnade där." },
+  { q: "Hur väljer trädet sin fråga i varje steg?", o: ["Slumpmässigt", "Det tar den fråga som gör grupperna renast", "Det tar alltid den första egenskapen", "En människa bestämmer"], a: 1, why: "Det provar alla snitt och väljer det som minskar orenheten (Gini eller entropi) mest." },
+  { q: "Varför blir gränsen i Diagonalen en trappa?", o: ["Det är ett fel i programmet", "Varje fråga gäller bara en egenskap i taget, så varje snitt är lodrätt eller vågrätt", "Datan är brusig", "Trädet är för grunt"], a: 1, why: "Frågor av typen \"x ≤ 4?\" ger raka snitt. En sned linje måste därför byggas av många små trappsteg." },
+  { q: "Ett träd får 100 % rätt på träningsdatan men 60 % på testdatan. Vad har hänt?", o: ["Det är ett perfekt träd", "Överanpassning – det har lärt sig träningsexemplen utantill", "Testdatan är fel", "Trädet är för grunt"], a: 1, why: "Ett djupt träd kan rita en egen ruta runt varje exempel, även brus. Det generaliserar dåligt." },
+  { q: "Vad kan man göra mot överanpassning i ett beslutsträd?", o: ["Göra trädet djupare", "Begränsa djupet eller kräva fler exempel per löv", "Ta bort testdatan", "Använda färre egenskaper i testdatan"], a: 1, why: "Ett grundare träd, eller större löv, kan inte lära sig varje enskilt exempel utantill." },
+  { q: "Hur fungerar en random forest?", o: ["Ett enda mycket djupt träd", "Många träd, tränade på slumpade urval av datan, som röstar", "Ett träd som tränas många gånger på samma data", "Ett träd per klass"], a: 1, why: "Varje träd gör olika fel, och när de röstar tar felen till stor del ut varandra." },
+];
+let qRight = 0, qDone = 0;
+$("quiz").innerHTML = QUIZ.map((x, i) => `<div class="q" data-q="${i}"><p>${i + 1}. ${esc(x.q)}</p><div class="opts">${x.o.map((o, j) => `<button class="btn" type="button" data-j="${j}">${esc(o)}</button>`).join("")}</div><div class="why" hidden></div></div>`).join("");
+document.querySelectorAll(".q").forEach((qd) => {
+  const x = QUIZ[+qd.dataset.q];
+  qd.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    if (qd.dataset.done) return;
+    qd.dataset.done = "1";
+    const ok = +b.dataset.j === x.a;
+    b.classList.add(ok ? "right" : "wrong");
+    qd.querySelector(`[data-j="${x.a}"]`).classList.add("right");
+    const why = qd.querySelector(".why"); why.hidden = false; why.textContent = (ok ? "Rätt! " : "Inte riktigt. ") + x.why;
+    qDone++; if (ok) qRight++;
+    $("quizscore").textContent = `${qRight} av ${qDone} rätt` + (qDone === QUIZ.length ? (qRight === QUIZ.length ? " – alla rätt!" : " – ladda om sidan för att försöka igen.") : "");
+    $("quizscore").className = "toast" + (qDone === QUIZ.length && qRight === QUIZ.length ? " ok" : "");
+  }));
+});
+
+/* ---------- start ---------- */
+loadData();
+fReset();
+window.dt = { buildTree, bestSplit, accuracy, makeData, get pts() { return pts; }, get tree() { return tree; }, fGain, FROWS, train, test, forestAcc, depthOf, leaves };
+</script>
+</body>
+</html>

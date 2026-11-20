@@ -17,6 +17,8 @@ Digitalt kursmaterial för **AI 1** på Teknikprogrammet vid Erik Dahlbergsgymna
 │   └── index.html      ← Sökning (BFS, DFS, Dijkstra, girig sökning, A*)
 ├── forstarkt-inlarning/
 │   └── index.html      ← Förstärkt inlärning (Q-learning i ett 3D-rum)
+├── beslutstrad/
+│   └── index.html      ← Beslutsträd (lekplats, överanpassning, random forest, ID3)
 ├── defcon/
 │   ├── index.html      ← Spelet DEFCON 1 (pseudokod och flödesscheman, kalla kriget)
 │   └── js/             ← tolk.js (kör pseudokod/flödesscheman), uppdrag.js, flode.js, spel.js

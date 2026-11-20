@@ -15,6 +15,9 @@ Digitalt kursmaterial för **AI 1** på Teknikprogrammet vid Erik Dahlbergsgymna
 │   └── index.html      ← Algoritmer (fem krav, byggstenar, pseudokod, Ordo)
 ├── grafer/
 │   └── index.html      ← Grafer och träd (bygg grafer, BFS, DFS, Dijkstra, trädgenomgångar)
+├── bias/
+│   ├── index.html      ← Bias i AI (skev data, proxyer, rättvisemått, återkopplingsloopar)
+│   └── larare.html     ← Lärarhandledning till Bias i AI
 ├── sokning/
 │   └── index.html      ← Sökning (BFS, DFS, Dijkstra, girig sökning, A*)
 ├── forstarkt-inlarning/

@@ -13,6 +13,8 @@ Digitalt kursmaterial för **AI 1** på Teknikprogrammet vid Erik Dahlbergsgymna
 │   └── index.html      ← Så lagras data (bitar, byte, text, bilder, minne)
 ├── algoritmer/
 │   └── index.html      ← Algoritmer (fem krav, byggstenar, pseudokod, Ordo)
+├── grafer/
+│   └── index.html      ← Grafer och träd (bygg grafer, BFS, DFS, Dijkstra, trädgenomgångar)
 ├── sokning/
 │   └── index.html      ← Sökning (BFS, DFS, Dijkstra, girig sökning, A*)
 ├── forstarkt-inlarning/

@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grafer och träd – AI 1</title>
+<meta name="description" content="Lekplats för grafer och träd: bygg egna grafer, se om de är sammanhängande, har cykler eller är träd, och kör bredden först, djupet först, Dijkstra och trädgenomgångar steg för steg.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23161433'/><path d='M8 9 L22 8 L24 22 L9 23 Z M8 9 L24 22' fill='none' stroke='%239aa4ff' stroke-width='2'/><circle cx='8' cy='9' r='3.5' fill='%23f59e0b'/><circle cx='22' cy='8' r='3.5' fill='%23e5e7eb'/><circle cx='24' cy='22' r='3.5' fill='%23e5e7eb'/><circle cx='9' cy='23' r='3.5' fill='%23e5e7eb'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+:root{
+  --paper:#f5f5f9; --surface:#ffffff; --soft:#eeeef5; --ink:#17172a; --muted:#5e6077; --line:#dcdce8;
+  --accent:#4f46e5; --accent-ink:#ffffff; --hero:#161433; --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --node:#ffffff; --edge:#8b8fa8; --frontier:#fde68a; --visited:#c7d2fe; --current:#f97316; --path:#e11d48; --ok:#15803d; --bad:#dc2626; --amber:#d97706;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0f0f18; --surface:#181826; --soft:#212133; --ink:#e8e8f3; --muted:#a0a2bb; --line:#2c2c42;
+    --accent:#a5b4fc; --accent-ink:#141433; --hero:#0a0a14; --node:#1d1d2d; --edge:#7d80a0;
+    --frontier:#8a6d12; --visited:#3b3f78; --path:#fb7185; --ok:#4ade80; --bad:#f87171; --amber:#fbbf24;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0f0f18; --surface:#181826; --soft:#212133; --ink:#e8e8f3; --muted:#a0a2bb; --line:#2c2c42;
+  --accent:#a5b4fc; --accent-ink:#141433; --hero:#0a0a14; --node:#1d1d2d; --edge:#7d80a0;
+  --frontier:#8a6d12; --visited:#3b3f78; --path:#fb7185; --ok:#4ade80; --bad:#f87171; --amber:#fbbf24;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.6 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+h1,h2,h3{line-height:1.15;margin:0;letter-spacing:-.01em}
+p{margin:0 0 .9em}
+a{color:var(--accent)}
+button,select,input{font:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)} .small{font-size:.88rem}
+.wrap{max-width:1200px;margin:0 auto;padding:0 22px}
+
+.hero{background:var(--hero);color:#ecebff;padding:32px 0 24px;background-image:radial-gradient(circle at 85% 20%,#3a2f8f 0,transparent 50%)}
+.back-link{display:inline-block;color:#c7c9ff;text-decoration:none;font-size:.9rem;margin-bottom:12px}
+.back-link:hover{color:#fff}
+.kicker{font:700 .78rem var(--mono);letter-spacing:.14em;text-transform:uppercase;color:#a5b4fc;margin:0}
+.hero h1{font-size:clamp(2.2rem,6.5vw,3.6rem);margin:.15rem 0 .4rem;letter-spacing:-.02em}
+.hero .lede{max-width:800px;color:#cfd0ee;font-size:1.08rem;margin:0}
+
+section.part{padding:30px 0;border-bottom:1px solid var(--line)}
+section.part:last-of-type{border-bottom:0}
+.part h2{font-size:clamp(1.6rem,4vw,2.2rem);margin-bottom:10px}
+.lead{max-width:840px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+.callout{border-left:4px solid var(--accent);background:var(--soft);border-radius:8px;padding:10px 14px;margin-top:14px;max-width:900px}
+.callout p:last-child{margin:0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:6px 13px;font-weight:700;min-height:40px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+select.sel,input.txt{padding:6px 10px;border:1.5px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);min-height:40px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:4px;padding:4px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.seg button{border:0;border-radius:8px;padding:6px 12px;background:transparent;color:var(--muted);font-weight:700;min-height:36px}
+.seg button[aria-checked="true"]{background:var(--accent);color:var(--accent-ink)}
+.chk{display:inline-flex;gap:6px;align-items:center;font-size:.92rem}
+.chk input{accent-color:var(--accent);width:17px;height:17px}
+.toast{font-weight:700;min-height:1.5em;margin:.5em 0 0}
+.toast.ok{color:var(--ok)} .toast.bad{color:var(--bad)}
+
+/* arbetsytan */
+.work{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start;margin-top:12px}
+@media (max-width:960px){.work{grid-template-columns:minmax(0,1fr)}}
+@media (min-width:961px){.boardp{position:sticky;top:10px}}
+#board{width:100%;height:auto;display:block;background:var(--soft);border-radius:10px;touch-action:none;user-select:none;-webkit-user-select:none}
+#board .edge line{stroke:var(--edge);stroke-width:3}
+#board .edge .hit{stroke:transparent;stroke-width:16}
+#board .edge.sel line.vis{stroke:var(--amber);stroke-width:5}
+#board .edge.cyc line.vis{stroke:var(--bad);stroke-width:5}
+#board .edge.tree line.vis{stroke:var(--accent);stroke-width:4}
+#board .edge.path line.vis{stroke:var(--path);stroke-width:6}
+#board .edge .w{font:700 13px var(--mono);fill:var(--ink);paint-order:stroke;stroke:var(--soft);stroke-width:5px}
+#board .node .shape{fill:var(--node);stroke:var(--ink);stroke-width:2.5}
+#board .node text.lb{font:800 15px Inter,sans-serif;fill:var(--ink);pointer-events:none}
+#board .node text.info{font:700 11px var(--mono);fill:var(--muted);pointer-events:none;paint-order:stroke;stroke:var(--soft);stroke-width:4px}
+#board .node text.ord{font:800 11px var(--mono);fill:#fff;pointer-events:none}
+#board g.node circle.ordbg{fill:var(--accent);stroke:none}
+#board .node.sel .shape{stroke:var(--amber);stroke-width:5}
+#board .node.frontier .shape{fill:var(--frontier)}
+#board .node.visited .shape{fill:var(--visited)}
+#board .node.current .shape{fill:var(--current);stroke:var(--current)}
+#board .node.start .shape{stroke:#2563eb;stroke-width:5}
+#board .node.goal .shape{stroke:var(--ok);stroke-width:5}
+#board .node.cyc .shape{stroke:var(--bad);stroke-width:4}
+#board .ghost{stroke:var(--amber);stroke-width:3;stroke-dasharray:6 5}
+.tools button{min-width:44px}
+.badge{display:inline-block;font-weight:800;padding:4px 12px;border-radius:999px;font-size:.95rem}
+.badge.tree{background:#dcfce7;color:#14532d}
+.badge.no{background:#fee2e2;color:#7f1d1d}
+.badge.forest{background:#fef3c7;color:#78350f}
+.props{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+.prop{background:var(--soft);border-radius:9px;padding:6px 10px}
+.prop small{display:block;color:var(--muted);font-size:.76rem}
+.prop b{font:700 1.15rem var(--mono)}
+.why{font-size:.92rem;margin:6px 0 0}
+.selbox{background:var(--soft);border-radius:10px;padding:8px 10px;margin-top:10px;font-size:.9rem}
+.selbox[hidden]{display:none}
+.selbox input{width:6em}
+/* algoritmer */
+.chip{display:inline-block;border:1.5px solid var(--line);background:var(--frontier);color:var(--ink);border-radius:8px;padding:2px 9px;font-size:.88rem;font-weight:700}
+.chip small{font:500 .72rem var(--mono);color:var(--muted);margin-left:4px}
+.ds{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px;min-height:34px}
+.ds .end{font:700 .72rem var(--mono);color:var(--muted)}
+.order{font:700 1rem var(--mono);margin-top:8px;overflow-wrap:anywhere}
+.log{list-style:none;margin:8px 0 0;padding:0;font-size:.88rem;max-height:11em;overflow:auto;border-top:1px solid var(--line)}
+.log li{padding:4px 0;border-bottom:1px solid var(--line)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.84rem;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:13px;height:13px;border-radius:50%;margin-right:5px;vertical-align:-2px;border:1.5px solid var(--ink)}
+.terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px;margin-top:10px}
+.terms div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:.93rem}
+.terms b{display:block;color:var(--accent);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase}
+.missions{padding-left:1.2em;max-width:900px}
+.missions li{margin-bottom:.55em}
+.q{margin:0 0 16px}
+.q p{font-weight:600;margin-bottom:6px}
+.q .opts{display:flex;flex-wrap:wrap;gap:6px}
+.q .opts button.right{background:var(--ok);border-color:var(--ok);color:#fff}
+.q .opts button.wrong{background:var(--bad);border-color:var(--bad);color:#fff}
+.q .whyq{font-size:.9rem;color:var(--muted);margin-top:6px}
+footer{padding:20px 0 36px;font-size:.9rem;color:var(--muted)}
+@media (max-width:560px){.wrap{padding:0 14px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <a class="back-link" href="../index.html">← Kurssidan AI 1</a>
+    <p class="kicker">AI 1 · Introduktion till AI</p>
+    <h1>Grafer och träd</h1>
+    <p class="lede">En <b>graf</b> är prickar (noder) förbundna med linjer (kanter). Vägnät, vänskaper på sociala medier, släktträd och neurala nätverk är alla grafer. Bygg egna grafer, se när de blir <b>träd</b>, och kör algoritmer på dem steg för steg.</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section class="part" id="bygg">
+  <h2>Bygg en graf</h2>
+  <p class="lead">Välj ett verktyg och rita. Till höger ser du direkt vilka egenskaper grafen har – och om den är ett träd. Under det kan du köra algoritmer på grafen.</p>
+  <div class="row">
+    <div class="seg tools" role="radiogroup" aria-label="Verktyg" id="tools">
+      <button type="button" role="radio" data-t="node" aria-checked="true" title="Klicka på en tom plats">➕ Nod</button>
+      <button type="button" role="radio" data-t="edge" aria-checked="false" title="Dra eller klicka från en nod till en annan">🔗 Kant</button>
+      <button type="button" role="radio" data-t="move" aria-checked="false" title="Dra noder, klicka för att välja">✋ Flytta</button>
+      <button type="button" role="radio" data-t="del" aria-checked="false" title="Klicka på en nod eller kant">🗑 Ta bort</button>
+    </div>
+    <label class="small">Färdiga grafer <select class="sel" id="preset">
+      <option value="">Välj …</option>
+      <option value="map">Kartan från Sökning</option>
+      <option value="family">Släktträd</option>
+      <option value="friends">Vänner</option>
+      <option value="cup">Turnering</option>
+      <option value="bst">Binärt sökträd</option>
+      <option value="empty">Tom graf</option>
+    </select></label>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <label class="chk"><input type="checkbox" id="directed"> Riktad (kanter med pilar)</label>
+    <label class="chk"><input type="checkbox" id="weighted"> Viktad (kanter har kostnad)</label>
+    <label class="chk"><input type="checkbox" id="showDeg" checked> Visa grad</label>
+  </div>
+
+  <div class="work">
+    <div class="panel boardp">
+      <svg id="board" viewBox="0 0 800 520" role="img" aria-label="Arbetsyta för grafen">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--edge)"/></marker>
+        </defs>
+        <g id="gEdges"></g><line id="ghost" class="ghost" visibility="hidden"/><g id="gNodes"></g>
+      </svg>
+      <p class="muted small" id="hint" style="margin:.5em 0 0"></p>
+    </div>
+    <div>
+    <div class="panel">
+      <div id="verdict"></div>
+      <div class="props">
+        <div class="prop"><small>Noder</small><b id="pN">0</b></div>
+        <div class="prop"><small>Kanter</small><b id="pM">0</b></div>
+        <div class="prop"><small id="pCompL">Sammanhängande delar</small><b id="pComp">0</b></div>
+        <div class="prop"><small>Cykel</small><b id="pCyc">–</b></div>
+      </div>
+      <p class="why" id="why"></p>
+      <div class="selbox" id="selNode" hidden>
+        <b>Vald nod.</b> Namn <input class="txt" id="nodeName" maxlength="10" aria-label="Nodens namn">
+        <div id="nodeInfo" class="small muted" style="margin-top:4px"></div>
+      </div>
+      <div class="selbox" id="selEdge" hidden>
+        <b>Vald kant</b> <span id="edgeTxt" class="mono"></span>
+        <div class="row" style="margin-top:6px">
+          <label class="small">Vikt <input class="txt" type="number" id="edgeW" min="0" max="999"></label>
+          <button class="btn" type="button" id="edgeFlip">Vänd riktning</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel" id="kor" style="margin-top:14px">
+      <h3 style="font-size:1.05rem;margin-bottom:6px">Kör en algoritm på grafen</h3>
+      <div class="row">
+        <label class="small">Algoritm <select class="sel" id="algo">
+          <option value="bfs">Bredden först (BFS)</option>
+          <option value="dfs">Djupet först (DFS)</option>
+          <option value="dij">Dijkstra – kortaste vägar</option>
+          <option value="pre">Preorder (träd)</option>
+          <option value="in">Inorder (binärt träd)</option>
+          <option value="post">Postorder (träd)</option>
+        </select></label>
+        <label class="small">Start <select class="sel" id="start"></select></label>
+        <label class="small" id="goalWrap">Mål <select class="sel" id="goal"></select></label>
+        <button class="btn primary" type="button" id="aStep">Ett steg</button>
+        <button class="btn" type="button" id="aRun">▶ Kör</button>
+        <button class="btn" type="button" id="aReset">Börja om</button>
+  </div>
+      <p class="toast" id="aMsg" aria-live="polite" style="margin-top:0"></p>
+      <div class="small muted" id="dsLabel"></div>
+      <div class="ds" id="ds"></div>
+      <div class="order" id="order"></div>
+      <div class="legend">
+        <span><i style="background:var(--frontier)"></i>väntar</span>
+        <span><i style="background:var(--visited)"></i>besökt</span>
+        <span><i style="background:var(--current)"></i>nu</span>
+        <span><i style="background:var(--path)"></i>väg</span>
+      </div>
+      <div class="small muted" style="margin-top:8px">Vad som har hänt</div>
+      <ol class="log" id="log"></ol>
+    </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="part" id="algoritmer">
+  <h2>Algoritmerna</h2>
+  <p class="lead">I panelen <i>Kör en algoritm</i> bredvid grafen kan du köra bredden först, djupet först och Dijkstra på din egen graf, och gå igenom träd på tre sätt. Algoritmerna tar grannarna i bokstavsordning. Hur sökalgoritmerna fungerar på djupet kan du läsa på sidan <a href="../sokning/">Sökning</a>.</p>
+
+
+  <div class="callout">
+    <p><b>Trädgenomgångar.</b> I ett träd kan man besöka alla noder i olika ordning. <b>Preorder</b>: först noden, sedan barnen. <b>Postorder</b>: först barnen, sist noden – som när man räknar ihop storleken på alla mappar i en dator. <b>Inorder</b> (binära träd): vänster barn, noden, höger barn. I ett <i>binärt sökträd</i> ger inorder talen i storleksordning – prova med den färdiga grafen.</p>
+  </div>
+</section>
+
+<section class="part" id="ord">
+  <h2>Ord att kunna</h2>
+  <div class="terms">
+    <div><b>Nod och kant</b>Noderna är sakerna, kanterna är kopplingarna mellan dem.</div>
+    <div><b>Grad</b>Hur många kanter en nod har. I en riktad graf finns ingrad och utgrad.</div>
+    <div><b>Riktad graf</b>Kanterna går åt ett håll, som "följer" på sociala medier.</div>
+    <div><b>Viktad graf</b>Kanterna har en kostnad, som kilometer på en karta.</div>
+    <div><b>Sammanhängande</b>Det går att ta sig från varje nod till varje annan.</div>
+    <div><b>Cykel</b>En väg som kommer tillbaka till där den började utan att gå samma kant två gånger.</div>
+    <div><b>Träd</b>En sammanhängande graf utan cykler. Då är kanterna alltid en färre än noderna.</div>
+    <div><b>Skog</b>Flera träd bredvid varandra: inga cykler, men inte sammanhängande.</div>
+  </div>
+  <h3 style="margin:22px 0 8px">Uppdrag</h3>
+  <ol class="missions">
+    <li>Bygg ett träd med 6 noder. Hur många kanter har det? Lägg till en kant till. Vad händer?</li>
+    <li>Öppna <i>Kartan från Sökning</i>. Hitta en cykel. Ta bort kanter tills grafen blir ett träd men fortfarande är sammanhängande. Hur många kanter tog du bort?</li>
+    <li>Öppna <i>Vänner</i> och kör bredden först från dig själv. Noderna du besöker i ordning är dina vänner, vänners vänner och så vidare. Hur många "steg bort" är den som ligger längst bort?</li>
+    <li>Öppna <i>Binärt sökträd</i> och kör inorder, preorder och postorder. Vilken ordning ger talen sorterade? Varför?</li>
+    <li>Bygg en graf där bredden först och Dijkstra hittar <i>olika</i> vägar till samma mål. (Tips: slå på <i>Viktad</i>.)</li>
+  </ol>
+</section>
+
+<section class="part" id="test">
+  <h2>Testa dig själv</h2>
+  <div class="panel" id="quiz"></div>
+  <p class="toast" id="quizscore" aria-live="polite"></p>
+</section>
+
+</main>
+<footer class="wrap">Allt körs i din webbläsare. · <a href="../sokning/">Sökning</a> · <a href="../beslutstrad/">Beslutsträd</a> · <a href="../agenter-och-miljoer/">Agenter och miljöer</a></footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const SVGNS = "http://www.w3.org/2000/svg";
+const R = 22;
+
+/* =====================================================================
+ * Grafen: noder { id, name, x, y } och kanter { a, b, w } (a → b om riktad).
+ * ===================================================================== */
+let nodes = [], edges = [], directed = false, weighted = false, nextId = 1;
+let tool = "node", sel = null;   // sel = { kind: "node" | "edge", ref }
+const byId = (id) => nodes.find((n) => n.id === id);
+const nameOf = (id) => byId(id)?.name ?? "?";
+function freeName() {
+  for (let i = 0; i < 200; i++) { const s = i < 26 ? String.fromCharCode(65 + i) : String.fromCharCode(65 + Math.floor(i / 26) - 1) + String.fromCharCode(65 + (i % 26)); if (!nodes.some((n) => n.name === s)) return s; }
+  return "N" + nextId;
+}
+const halfW = (n) => Math.max(R, n.name.length * 4.6 + 11);
+function addNode(x, y, name) { const n = { id: nextId++, name: name ?? freeName(), x, y }; nodes.push(n); return n; }
+function hasEdge(a, b) { return edges.find((e) => (e.a === a && e.b === b) || (!directed && e.a === b && e.b === a)); }
+function addEdge(a, b, w = 1) { if (a === b || hasEdge(a, b)) return null; const e = { a, b, w }; edges.push(e); return e; }
+// Grannar i bokstavsordning. Riktad graf: bara kanter som går ut från noden.
+function neighbors(id) {
+  const out = [];
+  for (const e of edges) {
+    if (e.a === id) out.push([e.b, e.w, e]);
+    else if (!directed && e.b === id) out.push([e.a, e.w, e]);
+  }
+  return out.sort((p, q) => nameOf(p[0]).localeCompare(nameOf(q[0]), "sv", { numeric: true }));
+}
+
+/* ---------- egenskaper ---------- */
+function components() {
+  // Riktad graf: svagt sammanhängande delar (riktningen struntas i).
+  const seen = new Set(), comps = [];
+  for (const n of nodes) {
+    if (seen.has(n.id)) continue;
+    const comp = [], st = [n.id]; seen.add(n.id);
+    while (st.length) {
+      const v = st.pop(); comp.push(v);
+      for (const e of edges) { const w = e.a === v ? e.b : e.b === v ? e.a : null; if (w !== null && !seen.has(w)) { seen.add(w); st.push(w); } }
+    }
+    comps.push(comp);
+  }
+  return comps;
+}
+// Hittar en cykel och returnerar dess kanter (eller null).
+function findCycle() {
+  if (directed) {
+    const color = new Map(), par = new Map();
+    for (const s of nodes) {
+      if (color.get(s.id)) continue;
+      const st = [[s.id, 0]]; color.set(s.id, 1);
+      while (st.length) {
+        const top = st[st.length - 1], [v] = top, nb = edges.filter((e) => e.a === v);
+        if (top[1] < nb.length) {
+          const e = nb[top[1]++], w = e.b;
+          if (color.get(w) === 1) {   // bakåtkant: cykel w → … → v → w
+            const cyc = [e]; let x = v;
+            while (x !== w) { const pe = par.get(x); cyc.push(pe); x = pe.a; }
+            return cyc;
+          }
+          if (!color.get(w)) { color.set(w, 1); par.set(w, e); st.push([w, 0]); }
+        } else { color.set(v, 2); st.pop(); }
+      }
+    }
+    return null;
+  }
+  const seen = new Set(), par = new Map();
+  for (const s of nodes) {
+    if (seen.has(s.id)) continue;
+    const st = [s.id]; seen.add(s.id); par.set(s.id, null);
+    while (st.length) {
+      const v = st.pop();
+      for (const e of edges) {
+        const w = e.a === v ? e.b : e.b === v ? e.a : null;
+        if (w === null || (par.get(v) && par.get(v) === e)) continue;
+        if (seen.has(w)) {
+          // två vägar till w: gå upp från v och w till gemensam förfader
+          const up = (x) => { const p = []; while (x !== null) { p.push(x); const pe = par.get(x); x = pe ? (pe.a === x ? pe.b : pe.a) : null; } return p; };
+          const pv = up(v), pw = up(w), common = pv.find((x) => pw.includes(x));
+          const cyc = [e];
+          for (const path of [pv, pw]) for (const x of path) { if (x === common) break; cyc.push(par.get(x)); }
+          return cyc;
+        }
+        seen.add(w); par.set(w, e); st.push(w);
+      }
+    }
+  }
+  return null;
+}
+// Riktat träd (med rot): en nod utan inkommande kant, alla andra har exakt en, och allt nås från roten.
+function rootedTree() {
+  const indeg = new Map(nodes.map((n) => [n.id, 0]));
+  for (const e of edges) indeg.set(e.b, indeg.get(e.b) + 1);
+  const roots = nodes.filter((n) => indeg.get(n.id) === 0);
+  if (roots.length !== 1 || nodes.some((n) => indeg.get(n.id) > 1)) return null;
+  return edges.length === nodes.length - 1 && !findCycle() ? roots[0] : null;
+}
+let cycleEdges = new Set();
+function renderProps() {
+  const n = nodes.length, m = edges.length, comps = components(), cyc = findCycle();
+  cycleEdges = new Set(cyc || []);
+  $("pN").textContent = n; $("pM").textContent = m;
+  $("pComp").textContent = comps.length;
+  $("pCompL").textContent = directed ? "Sammanhängande delar (utan pilar)" : "Sammanhängande delar";
+  $("pCyc").textContent = n ? (cyc ? "Ja" : "Nej") : "–";
+  let badge = "", why = "";
+  const cycTxt = cyc ? cycleNames(cyc) : "";
+  if (!n) { badge = ""; why = "Klicka på arbetsytan för att lägga till noder."; }
+  else if (directed) {
+    const root = rootedTree();
+    if (root) { badge = `<span class="badge tree">🌳 Ett träd med roten ${esc(root.name)}</span>`; why = `Alla pilar pekar bort från roten, och varje annan nod har exakt en förälder. ${n} noder och ${m} kanter.`; }
+    else if (cyc) { badge = `<span class="badge no">Inte ett träd</span>`; why = `Det finns en riktad cykel: ${cycTxt}. Följer man pilarna kommer man tillbaka.`; }
+    else { badge = `<span class="badge no">Inte ett träd</span>`; why = "I ett riktat träd har alla noder utom roten exakt en inkommande pil, och allt går att nå från roten."; }
+  } else if (comps.length === 1 && !cyc) {
+    badge = `<span class="badge tree">🌳 Det här är ett träd</span>`;
+    why = `Sammanhängande och utan cykler. Som i alla träd är kanterna en färre än noderna: ${m} = ${n} − 1.`;
+  } else if (!cyc) {
+    badge = `<span class="badge forest">🌲🌲 En skog</span>`;
+    why = `Inga cykler, men grafen består av ${comps.length} delar som inte hänger ihop. Lägg till ${comps.length - 1} ${comps.length - 1 === 1 ? "kant" : "kanter"} mellan delarna så blir det ett träd.`;
+  } else {
+    badge = `<span class="badge no">Inte ett träd</span>`;
+    why = `Det finns en cykel: ${cycTxt} (röd). Ta bort en av de röda kanterna${comps.length > 1 ? ", och koppla ihop delarna," : ""} så kommer du närmare ett träd.` + (m > n - 1 ? ` Ett träd med ${n} noder har ${n - 1} kanter – den här har ${m}.` : "");
+  }
+  $("verdict").innerHTML = badge;
+  $("why").textContent = why;
+}
+function cycleNames(cyc) {
+  // Ordna kanterna till en sluten väg: A–B–C–A
+  const left = cyc.slice(); const first = left.shift();
+  const seq = [first.a, first.b];
+  while (left.length) {
+    const last = seq[seq.length - 1], i = left.findIndex((e) => e.a === last || (!directed && e.b === last));
+    if (i < 0) break;
+    const e = left.splice(i, 1)[0]; seq.push(e.a === last ? e.b : e.a);
+  }
+  return seq.map(nameOf).join(directed ? " → " : "–");
+}
+
+/* =====================================================================
+ * Ritning
+ * ===================================================================== */
+const board = $("board");
+function svgPoint(evt) { const pt = board.createSVGPoint(); pt.x = evt.clientX; pt.y = evt.clientY; return pt.matrixTransform(board.getScreenCTM().inverse()); }
+let algoState = null;   // senaste steget från en algoritm
+function draw() {
+  const st = algoState || {};
+  const pathEdges = new Set(st.pathEdges || []), treeEdges = new Set(st.treeEdges || []);
+  let es = "";
+  for (const e of edges) {
+    const A = byId(e.a), B = byId(e.b), dx = B.x - A.x, dy = B.y - A.y, L = Math.hypot(dx, dy) || 1;
+    const edgeAt = (n) => { const c = Math.abs(dx / L), s = Math.abs(dy / L); return Math.min(c ? halfW(n) / c : 1e9, s ? R / s : 1e9); };
+    const ta = edgeAt(A), tb = edgeAt(B) + (directed ? 3 : 0);
+    const x1 = A.x + dx / L * ta, y1 = A.y + dy / L * ta, x2 = B.x - dx / L * tb, y2 = B.y - dy / L * tb;
+    const cls = ["edge", sel && sel.ref === e ? "sel" : "", pathEdges.has(e) ? "path" : treeEdges.has(e) ? "tree" : !algoState && cycleEdges.has(e) ? "cyc" : ""].join(" ");
+    es += `<g class="${cls}" data-e="${edges.indexOf(e)}"><line class="hit" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/><line class="vis" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" ${directed ? 'marker-end="url(#arr)"' : ""}/>` +
+      (weighted ? `<text class="w" x="${(A.x + B.x) / 2}" y="${(A.y + B.y) / 2 - 6}" text-anchor="middle">${e.w}</text>` : "") + `</g>`;
+  }
+  $("gEdges").innerHTML = es;
+  const cycNodes = new Set(); if (!algoState) for (const e of cycleEdges) { cycNodes.add(e.a); cycNodes.add(e.b); }
+  let ns = "";
+  const showDeg = $("showDeg").checked;
+  for (const n of nodes) {
+    const cls = ["node", sel && sel.ref === n ? "sel" : "", st.current === n.id ? "current" : st.visited?.has(n.id) ? "visited" : st.frontier?.has(n.id) ? "frontier" : "",
+      st.start === n.id ? "start" : "", st.goal === n.id ? "goal" : "", cycNodes.has(n.id) ? "cyc" : ""].join(" ");
+    let info = "";
+    if (st.dist && st.dist.has(n.id)) info = `d=${st.dist.get(n.id)}`;
+    else if (showDeg) {
+      if (directed) { const i = edges.filter((e) => e.b === n.id).length, o = edges.filter((e) => e.a === n.id).length; info = `in ${i} · ut ${o}`; }
+      else info = `grad ${edges.filter((e) => e.a === n.id || e.b === n.id).length}`;
+    }
+    const ord = st.orderIdx?.get(n.id);
+    const hw = halfW(n);
+    ns += `<g class="${cls}" data-n="${n.id}"><rect class="shape" x="${n.x - hw}" y="${n.y - R}" width="${hw * 2}" height="${R * 2}" rx="${R}"/><text class="lb" x="${n.x}" y="${n.y + 5}" text-anchor="middle">${esc(n.name)}</text>` +
+      (info ? `<text class="info" x="${n.x}" y="${n.y + R + 15}" text-anchor="middle">${info}</text>` : "") +
+      (ord ? `<circle class="ordbg" cx="${n.x + hw - 6}" cy="${n.y - R + 2}" r="10"/><text class="ord" x="${n.x + hw - 6}" y="${n.y - R + 6}" text-anchor="middle">${ord}</text>` : "") + `</g>`;
+  }
+  $("gNodes").innerHTML = ns;
+}
+function refresh(keepAlgo = false) {
+  if (!keepAlgo) { algoState = null; algoGen = null; }
+  renderProps(); draw(); renderSel(); fillSelects();
+  $("hint").textContent = {
+    node: "Klicka på en tom plats för att lägga till en nod.",
+    edge: "Dra från en nod till en annan, eller klicka på dem efter varandra, för att lägga till en kant.",
+    move: "Dra noderna dit du vill. Klicka på en nod eller kant för att välja den.",
+    del: "Klicka på en nod eller kant för att ta bort den.",
+  }[tool];
+}
+function renderSel() {
+  $("selNode").hidden = !(sel && sel.kind === "node");
+  $("selEdge").hidden = !(sel && sel.kind === "edge");
+  if (sel && sel.kind === "node") {
+    const n = sel.ref, nb = neighbors(n.id).map((x) => nameOf(x[0]));
+    if (document.activeElement !== $("nodeName")) $("nodeName").value = n.name;
+    $("nodeInfo").textContent = nb.length ? `${directed ? "Pilar till" : "Grannar"}: ${nb.join(", ")}` : "Inga grannar än.";
+  }
+  if (sel && sel.kind === "edge") {
+    const e = sel.ref;
+    $("edgeTxt").textContent = `${nameOf(e.a)} ${directed ? "→" : "–"} ${nameOf(e.b)}`;
+    if (document.activeElement !== $("edgeW")) $("edgeW").value = e.w;
+    $("edgeFlip").hidden = !directed;
+  }
+}
+
+/* ---------- interaktion ---------- */
+let drag = null;   // { kind: "move" | "edge", node, moved }
+function targetOf(evt) {
+  const g = evt.target.closest("[data-n], [data-e]");
+  if (!g) return null;
+  if (g.dataset.n) return { kind: "node", ref: byId(+g.dataset.n) };
+  return { kind: "edge", ref: edges[+g.dataset.e] };
+}
+board.addEventListener("pointerdown", (evt) => {
+  const p = svgPoint(evt), t = targetOf(evt);
+  if (tool === "del") {
+    if (t?.kind === "node") { nodes = nodes.filter((n) => n !== t.ref); edges = edges.filter((e) => e.a !== t.ref.id && e.b !== t.ref.id); }
+    else if (t?.kind === "edge") edges = edges.filter((e) => e !== t.ref);
+    sel = null; refresh(); return;
+  }
+  if (t?.kind === "edge") { sel = t; refresh(true); return; }
+  if (tool === "node") {
+    if (t?.kind === "node") { sel = t; refresh(true); return; }
+    if (nodes.length >= 40) { $("hint").textContent = "Max 40 noder."; return; }
+    sel = { kind: "node", ref: addNode(Math.round(p.x), Math.round(p.y)) }; refresh(); return;
+  }
+  if (t?.kind === "node") {
+    board.setPointerCapture(evt.pointerId);
+    if (tool === "move") drag = { kind: "move", node: t.ref, dx: p.x - t.ref.x, dy: p.y - t.ref.y, moved: false };
+    else if (tool === "edge") {
+      if (pendingEdge && pendingEdge !== t.ref) { tryEdge(pendingEdge, t.ref); pendingEdge = null; return; }
+      drag = { kind: "edge", node: t.ref };
+      const gh = $("ghost"); gh.setAttribute("x1", t.ref.x); gh.setAttribute("y1", t.ref.y); gh.setAttribute("x2", p.x); gh.setAttribute("y2", p.y); gh.setAttribute("visibility", "visible");
+    }
+  } else { sel = null; pendingEdge = null; refresh(true); }
+});
+let pendingEdge = null;
+function tryEdge(a, b) {
+  if (a === b) return;
+  if (hasEdge(a.id, b.id)) { $("hint").textContent = `Det finns redan en kant mellan ${a.name} och ${b.name}.`; return; }
+  const e = addEdge(a.id, b.id, weighted ? Math.max(1, Math.round(Math.hypot(a.x - b.x, a.y - b.y) / 40)) : 1);
+  sel = { kind: "edge", ref: e }; refresh();
+}
+board.addEventListener("pointermove", (evt) => {
+  if (!drag) return;
+  const p = svgPoint(evt);
+  if (drag.kind === "move") {
+    drag.node.x = Math.max(halfW(drag.node), Math.min(800 - halfW(drag.node), Math.round(p.x - drag.dx))); drag.node.y = Math.max(R, Math.min(520 - R, Math.round(p.y - drag.dy)));
+    drag.moved = true; draw();
+  } else { const gh = $("ghost"); gh.setAttribute("x2", p.x); gh.setAttribute("y2", p.y); }
+});
+board.addEventListener("pointerup", (evt) => {
+  if (!drag) return;
+  const d = drag; drag = null;
+  $("ghost").setAttribute("visibility", "hidden");
+  if (d.kind === "move") { if (!d.moved) sel = { kind: "node", ref: d.node }; refresh(true); return; }
+  const p = svgPoint(evt), over = nodes.find((n) => Math.abs(n.x - p.x) <= halfW(n) + 4 && Math.abs(n.y - p.y) <= R + 4);
+  if (over && over !== d.node) tryEdge(d.node, over);
+  else if (!over || over === d.node) { pendingEdge = d.node; sel = { kind: "node", ref: d.node }; refresh(true); $("hint").textContent = `Klicka på noden som ${d.node.name} ska kopplas till.`; }
+});
+$("tools").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+  tool = b.dataset.t; pendingEdge = null;
+  $("tools").querySelectorAll("button").forEach((x) => x.setAttribute("aria-checked", String(x === b)));
+  refresh(true);
+}));
+$("nodeName").addEventListener("input", () => {
+  const v = $("nodeName").value.trim();
+  if (sel?.kind === "node" && v && !nodes.some((n) => n !== sel.ref && n.name === v)) { sel.ref.name = v; draw(); fillSelects(); renderProps(); }
+});
+$("edgeW").addEventListener("input", () => { if (sel?.kind === "edge") { sel.ref.w = Math.max(0, Math.min(999, Math.round(+$("edgeW").value || 0))); draw(); } });
+$("edgeFlip").addEventListener("click", () => { if (sel?.kind === "edge") { const e = sel.ref; [e.a, e.b] = [e.b, e.a]; refresh(); } });
+$("directed").addEventListener("change", () => {
+  directed = $("directed").checked;
+  if (!directed) { const seen = new Set(); edges = edges.filter((e) => { const k = [Math.min(e.a, e.b), Math.max(e.a, e.b)].join(); if (seen.has(k)) return false; seen.add(k); return true; }); }
+  refresh();
+});
+$("weighted").addEventListener("change", () => { weighted = $("weighted").checked; refresh(); });
+$("showDeg").addEventListener("change", () => draw());
+window.addEventListener("keydown", (e) => {
+  if (e.target.closest("input,select,textarea")) return;
+  if ((e.key === "Delete" || e.key === "Backspace") && sel) {
+    if (sel.kind === "node") { const id = sel.ref.id; nodes = nodes.filter((n) => n.id !== id); edges = edges.filter((x) => x.a !== id && x.b !== id); }
+    else edges = edges.filter((x) => x !== sel.ref);
+    sel = null; refresh(); e.preventDefault();
+  }
+});
+
+/* ---------- färdiga grafer ---------- */
+const TOWNS = { "Jönköping": [57.7826, 14.1618], "Huskvarna": [57.786, 14.29], "Habo": [57.907, 14.074], "Mullsjö": [57.917, 13.88], "Gränna": [58.025, 14.462], "Tranås": [58.037, 14.975],
+  "Nässjö": [57.653, 14.696], "Eksjö": [57.667, 14.971], "Vetlanda": [57.428, 15.078], "Vaggeryd": [57.497, 14.146], "Värnamo": [57.186, 14.04] };
+const ROADS = [["Jönköping", "Huskvarna"], ["Jönköping", "Habo"], ["Habo", "Mullsjö"], ["Mullsjö", "Jönköping"], ["Jönköping", "Vaggeryd"], ["Vaggeryd", "Värnamo"], ["Huskvarna", "Gränna"],
+  ["Gränna", "Tranås"], ["Huskvarna", "Nässjö"], ["Nässjö", "Tranås"], ["Nässjö", "Eksjö"], ["Eksjö", "Tranås"], ["Eksjö", "Vetlanda"], ["Nässjö", "Vetlanda"], ["Värnamo", "Vetlanda"]];
+function load(kind) {
+  nodes = []; edges = []; nextId = 1; sel = null; pendingEdge = null;
+  const L = (list) => { const m = {}; for (const [name, x, y] of list) m[name] = addNode(x, y, name); return m; };
+  const E = (m, pairs) => { for (const [a, b, w] of pairs) addEdge(m[a].id, m[b].id, w ?? 1); };
+  let dir = false, wt = false;
+  if (kind === "map") {
+    const PLACE = { "Mullsjö": [80, 120], "Habo": [210, 60], "Jönköping": [170, 210], "Huskvarna": [320, 240], "Gränna": [360, 80], "Tranås": [640, 70],
+      "Nässjö": [490, 320], "Eksjö": [680, 250], "Vetlanda": [700, 440], "Vaggeryd": [190, 360], "Värnamo": [170, 470] };
+    const m = L(Object.keys(TOWNS).map((n) => [n, ...PLACE[n]]));
+    const crow = (a, b) => { const [p, q] = [TOWNS[a], TOWNS[b]]; return Math.hypot((q[1] - p[1]) * Math.cos((p[0] + q[0]) / 2 * Math.PI / 180) * 111.3, (q[0] - p[0]) * 111.3); };
+    E(m, ROADS.map(([a, b]) => [a, b, Math.round(crow(a, b) * 1.2)])); wt = true;
+  } else if (kind === "family") {
+    const m = L([["Mormor", 400, 50], ["Mamma", 230, 170], ["Morbror", 570, 170], ["Du", 120, 300], ["Syster", 330, 300], ["Kusin", 500, 300], ["Kusin 2", 650, 300], ["Systerson", 330, 430]]);
+    E(m, [["Mormor", "Mamma"], ["Mormor", "Morbror"], ["Mamma", "Du"], ["Mamma", "Syster"], ["Morbror", "Kusin"], ["Morbror", "Kusin 2"], ["Syster", "Systerson"]]); dir = true;
+  } else if (kind === "friends") {
+    const m = L([["Du", 120, 260], ["Alva", 270, 130], ["Ben", 280, 380], ["Cleo", 430, 250], ["Dani", 560, 110], ["Eli", 590, 390], ["Femi", 720, 250], ["Gus", 420, 460]]);
+    E(m, [["Du", "Alva"], ["Du", "Ben"], ["Alva", "Ben"], ["Alva", "Cleo"], ["Ben", "Cleo"], ["Ben", "Gus"], ["Cleo", "Dani"], ["Cleo", "Eli"], ["Dani", "Femi"], ["Eli", "Femi"]]);
+  } else if (kind === "cup") {
+    const teams = ["Lag 1", "Lag 2", "Lag 3", "Lag 4", "Lag 5", "Lag 6", "Lag 7", "Lag 8"];
+    const m = L([["Final", 400, 50], ["Semi 1", 210, 160], ["Semi 2", 590, 160], ["Kvart 1", 110, 290], ["Kvart 2", 310, 290], ["Kvart 3", 490, 290], ["Kvart 4", 690, 290],
+      ...teams.map((t, i) => [t, 60 + i * 97, 440])]);
+    E(m, [["Final", "Semi 1"], ["Final", "Semi 2"], ["Semi 1", "Kvart 1"], ["Semi 1", "Kvart 2"], ["Semi 2", "Kvart 3"], ["Semi 2", "Kvart 4"],
+      ...teams.map((t, i) => [`Kvart ${Math.floor(i / 2) + 1}`, t])]);
+  } else if (kind === "bst") {
+    const m = L([["50", 400, 50], ["30", 220, 170], ["70", 580, 170], ["20", 120, 300], ["40", 320, 300], ["60", 480, 300], ["80", 680, 300], ["35", 270, 430], ["45", 370, 430], ["90", 740, 430]]);
+    E(m, [["50", "30"], ["50", "70"], ["30", "20"], ["30", "40"], ["70", "60"], ["70", "80"], ["40", "35"], ["40", "45"], ["80", "90"]]);
+  }
+  directed = dir; weighted = wt;
+  $("directed").checked = dir; $("weighted").checked = wt;
+  refresh();
+  if (nodes.length) $("start").value = String(nodes[0].id);
+  algoReset();
+}
+$("preset").addEventListener("change", () => { if ($("preset").value) load($("preset").value); $("preset").value = ""; });
+
+/* =====================================================================
+ * Algoritmer – varje steg lämnar en ögonblicksbild till ritningen.
+ * ===================================================================== */
+let algoGen = null, timer = null;
+function fillSelects() {
+  for (const id of ["start", "goal"]) {
+    const s = $(id), old = s.value;
+    s.innerHTML = (id === "goal" ? `<option value="">(inget – alla)</option>` : "") +
+      nodes.slice().sort((a, b) => a.name.localeCompare(b.name, "sv", { numeric: true })).map((n) => `<option value="${n.id}">${esc(n.name)}</option>`).join("");
+    if ([...s.options].some((o) => o.value === old)) s.value = old;
+  }
+  $("goalWrap").hidden = !["bfs", "dfs", "dij"].includes($("algo").value);
+}
+const snap = (o) => ({ ...o, visited: new Set(o.visited), frontier: new Set(o.frontier), orderIdx: new Map(o.order.map((id, i) => [id, i + 1])) });
+function* bfsdfs(kind, s, goal) {
+  const order = [], visited = new Set(), parent = new Map();
+  let list = [{ id: s, from: null }];
+  const inList = () => list.map((x) => x.id);
+  yield snap({ start: s, goal, order, visited, frontier: inList(), list: list.slice(), msg: `${nameOf(s)} läggs i ${kind === "bfs" ? "kön" : "stacken"}.` });
+  while (list.length) {
+    const it = kind === "bfs" ? list.shift() : list.pop();
+    if (visited.has(it.id)) continue;
+    visited.add(it.id); order.push(it.id); parent.set(it.id, it.from);
+    const added = [];
+    if (it.id !== goal) {
+      const nb = neighbors(it.id).filter(([w]) => !visited.has(w));
+      const toAdd = kind === "bfs" ? nb.filter(([w]) => !list.some((x) => x.id === w)) : nb.slice().reverse();
+      for (const [w, , e] of toAdd) { list.push({ id: w, from: e }); added.push(nameOf(w)); }
+    }
+    const treeEdges = [...parent.values()].filter(Boolean);
+    let pathEdges = [];
+    if (it.id === goal) { for (let x = goal; parent.get(x); ) { const e = parent.get(x); pathEdges.push(e); x = e.a === x ? e.b : e.a; } }
+    yield snap({ start: s, goal, order, visited, current: it.id, frontier: inList(), list: list.slice(), treeEdges, pathEdges,
+      msg: it.id === goal ? `Besöker ${nameOf(it.id)} – det är målet! Vägen har ${pathEdges.length} kanter.` : `Besöker ${nameOf(it.id)}.` + (added.length ? ` Lägger ${added.join(", ")} i ${kind === "bfs" ? "kön" : "stacken"}.` : "") });
+    if (it.id === goal) return;
+  }
+  yield snap({ start: s, goal, order, visited, frontier: [], list: [], treeEdges: [...parent.values()].filter(Boolean),
+    msg: goal ? `Klart – ${nameOf(goal)} gick inte att nå från ${nameOf(s)}.` : `Klart – ${order.length} av ${nodes.length} noder gick att nå från ${nameOf(s)}.`, done: true });
+}
+function* dijkstra(s, goal) {
+  if (edges.some((e) => e.w < 0)) { yield snap({ order: [], visited: [], frontier: [], msg: "Dijkstra fungerar inte med negativa vikter." }); return; }
+  const dist = new Map([[s, 0]]), parent = new Map(), visited = new Set(), order = [];
+  const pq = () => [...dist.keys()].filter((id) => !visited.has(id)).sort((a, b) => dist.get(a) - dist.get(b) || nameOf(a).localeCompare(nameOf(b), "sv"));
+  yield snap({ start: s, goal, order, visited, frontier: [s], dist: new Map(dist), list: pq().map((id) => ({ id })), msg: `Avståndet till ${nameOf(s)} är 0. Alla andra är okända (∞).` });
+  for (;;) {
+    const q = pq(); if (!q.length) break;
+    const v = q[0]; visited.add(v); order.push(v);
+    const upd = [];
+    for (const [w, c, e] of neighbors(v)) {
+      if (visited.has(w)) continue;
+      const nd = dist.get(v) + (weighted ? c : 1);
+      if (!dist.has(w) || nd < dist.get(w)) { const before = dist.get(w); dist.set(w, nd); parent.set(w, e); upd.push(`${nameOf(w)} ${before === undefined ? "∞" : before} → ${nd}`); }
+    }
+    let pathEdges = [];
+    if (v === goal) for (let x = goal; parent.get(x); ) { const e = parent.get(x); pathEdges.push(e); x = e.a === x ? e.b : e.a; }
+    yield snap({ start: s, goal, order, visited, current: v, frontier: pq(), dist: new Map(dist), list: pq().map((id) => ({ id })), treeEdges: [...parent.values()], pathEdges,
+      msg: v === goal ? `${nameOf(v)} har kortaste avståndet ${dist.get(v)}. Målet är nått!` : `Tar ${nameOf(v)} (avstånd ${dist.get(v)}).` + (upd.length ? ` Uppdaterar: ${upd.join(", ")}.` : "") });
+    if (v === goal) return;
+  }
+  yield snap({ start: s, goal, order, visited, frontier: [], dist: new Map(dist), list: [], treeEdges: [...parent.values()],
+    msg: goal && !dist.has(goal) ? `${nameOf(goal)} går inte att nå.` : "Klart – siffrorna vid noderna är de kortaste avstånden från start.", done: true });
+}
+// Trädgenomgångar. Barnen = grannarna utom föräldern (oriktad) eller pilarna ut (riktad), sorterade från vänster till höger.
+function children(v, parent) { return neighbors(v).map(([w, , e]) => [w, e]).filter(([w]) => w !== parent).sort((p, q) => byId(p[0]).x - byId(q[0]).x); }
+function* traverse(kind, s) {
+  const isTree = directed ? rootedTree() : (components().length === 1 && !findCycle());
+  if (!isTree) { yield snap({ order: [], visited: [], frontier: [], msg: `${kind === "in" ? "Inorder" : kind === "pre" ? "Preorder" : "Postorder"} kräver att grafen är ett träd. Den här grafen är inte det – se rutan ovan.`, bad: true }); return; }
+  if (directed && rootedTree().id !== s) { yield snap({ order: [], visited: [], frontier: [], msg: `I ett riktat träd måste genomgången börja i roten, ${rootedTree().name}.`, bad: true }); return; }
+  const order = [], visited = new Set(), stack = [];
+  const treeEdges = [];
+  function* go(v, par) {
+    stack.push(v);
+    const kids = children(v, par);
+    if (kind === "in" && kids.length > 2) { throw new Error(`${nameOf(v)} har ${kids.length} barn – inorder fungerar bara i binära träd (högst två barn).`); }
+    const view = (msg) => snap({ start: s, order, visited, current: v, frontier: stack.filter((x) => !visited.has(x)), list: stack.map((id) => ({ id })), treeEdges, msg });
+    const visit = function* () { visited.add(v); order.push(v); yield view(`Besöker ${nameOf(v)}.`); };
+    if (kind === "pre") yield* visit();
+    else yield view(`Går ner till ${nameOf(v)}.`);
+    // inorder: vänster barn är det som ligger till vänster om noden
+    let left = [], right = kids;
+    if (kind === "in") { left = kids.filter(([w]) => byId(w).x < byId(v).x); right = kids.filter(([w]) => byId(w).x >= byId(v).x); }
+    for (const [w, e] of (kind === "in" ? left : kids)) { treeEdges.push(e); yield* go(w, v); }
+    if (kind === "in") { yield* visit(); for (const [w, e] of right) { treeEdges.push(e); yield* go(w, v); } }
+    if (kind === "post") yield* visit();
+    stack.pop();
+  }
+  try { yield* go(s, null); } catch (err) { yield snap({ order, visited, frontier: [], msg: err.message, bad: true }); return; }
+  yield snap({ start: s, order, visited, frontier: [], list: [], treeEdges, msg: `Klart! Ordningen blev ${order.map(nameOf).join(", ")}.`, done: true });
+}
+function algoReset() {
+  clearInterval(timer); timer = null; $("aRun").textContent = "▶ Kör";
+  algoGen = null; algoState = null;
+  $("log").innerHTML = ""; $("aMsg").textContent = ""; $("aMsg").className = "toast";
+  $("ds").innerHTML = ""; $("order").textContent = ""; $("dsLabel").textContent = "";
+  fillSelects(); draw();
+}
+function algoStep() {
+  if (!nodes.length) { $("aMsg").textContent = "Bygg en graf först."; $("aMsg").className = "toast bad"; return false; }
+  if (!algoGen) {
+    const a = $("algo").value, s = +$("start").value, g = $("goal").value ? +$("goal").value : null;
+    if (!byId(s)) { $("aMsg").textContent = "Välj en startnod."; return false; }
+    algoGen = a === "bfs" || a === "dfs" ? bfsdfs(a, s, g) : a === "dij" ? dijkstra(s, g) : traverse(a, s);
+    $("log").innerHTML = "";
+  }
+  const r = algoGen.next();
+  if (r.done) return false;
+  algoState = r.value;
+  const st = algoState, a = $("algo").value;
+  $("aMsg").textContent = st.msg; $("aMsg").className = "toast" + (st.bad ? " bad" : st.done || st.pathEdges?.length ? " ok" : "");
+  const li = document.createElement("li"); li.textContent = st.msg; $("log").prepend(li);
+  $("dsLabel").textContent = a === "bfs" ? "Kön (först in, först ut):" : a === "dfs" ? "Stacken (sist in, först ut – toppen till höger):" : a === "dij" ? "Prioritetskön (lägst avstånd först):" : "Rekursionen – vägen från roten ner till där vi är:";
+  const list = st.list || [];
+  $("ds").innerHTML = list.length
+    ? (a === "bfs" ? `<span class="end">UT ←</span>` : "") + list.map((x) => `<span class="chip">${esc(nameOf(x.id))}${st.dist && st.dist.has(x.id) ? `<small>${st.dist.get(x.id)}</small>` : ""}</span>`).join(a === "pre" || a === "in" || a === "post" ? " → " : "") + (a === "bfs" ? `<span class="end">← IN</span>` : a === "dfs" ? `<span class="end">← TOPP</span>` : "")
+    : `<span class="muted small">tom</span>`;
+  $("order").textContent = st.order.length ? `${a === "dij" ? "Färdiga i ordning" : "Besöksordning"}: ${st.order.map(nameOf).join(", ")}` : "";
+  draw();
+  return !st.done && !st.bad;
+}
+$("aStep").addEventListener("click", () => { clearInterval(timer); timer = null; $("aRun").textContent = "▶ Kör"; if (!algoStep()) algoGen = algoGen; });
+$("aRun").addEventListener("click", () => {
+  if (timer) { clearInterval(timer); timer = null; $("aRun").textContent = "▶ Kör"; return; }
+  if (algoState && (algoState.done || algoState.bad || algoState.pathEdges?.length)) algoReset();
+  $("aRun").textContent = "⏸ Pausa";
+  timer = setInterval(() => { if (!algoStep()) { clearInterval(timer); timer = null; $("aRun").textContent = "▶ Kör"; } }, 800);
+});
+$("aReset").addEventListener("click", algoReset);
+for (const id of ["algo", "start", "goal"]) $(id).addEventListener("change", algoReset);
+
+/* ---------- testa dig själv ---------- */
+const QUIZ = [
+  { q: "Ett träd har 9 noder. Hur många kanter har det?", o: ["7", "8", "9", "10"], a: 1, why: "Ett träd har alltid en kant färre än noder: 9 − 1 = 8." },
+  { q: "Vad gör en kant till ett träd med?", o: ["Det blir en skog", "Det blir en cykel", "Ingenting", "Det blir riktat"], a: 1, why: "Trädet är redan sammanhängande, så en extra kant skapar en andra väg mellan två noder – en cykel." },
+  { q: "Vilken graf passar bäst för \"följer\" på sociala medier?", o: ["Oriktad", "Riktad", "Ett binärt träd", "En skog"], a: 1, why: "Att du följer någon betyder inte att den följer dig – kanten har en riktning." },
+  { q: "Vilken genomgång ger talen i storleksordning i ett binärt sökträd?", o: ["Preorder", "Inorder", "Postorder", "Bredden först"], a: 1, why: "Vänster delträd (mindre tal), noden, höger delträd (större tal)." },
+  { q: "Vilken algoritm hittar kortaste vägen i en viktad graf?", o: ["Bredden först", "Djupet först", "Dijkstra", "Postorder"], a: 2, why: "Bredden först räknar kanter, inte vikter. Dijkstra tar hänsyn till kostnaden." },
+  { q: "Vad är graden för en nod?", o: ["Hur långt den är från starten", "Hur många kanter den har", "Dess nummer", "Hur många cykler den ingår i"], a: 1, why: "Graden är antalet kanter som går till noden." },
+];
+let qRight = 0, qDone = 0;
+$("quiz").innerHTML = QUIZ.map((x, i) => `<div class="q" data-q="${i}"><p>${i + 1}. ${esc(x.q)}</p><div class="opts">${x.o.map((o, j) => `<button class="btn" type="button" data-j="${j}">${esc(o)}</button>`).join("")}</div><div class="whyq" hidden></div></div>`).join("");
+document.querySelectorAll(".q").forEach((qd) => {
+  const x = QUIZ[+qd.dataset.q];
+  qd.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    if (qd.dataset.done) return;
+    qd.dataset.done = "1";
+    const ok = +b.dataset.j === x.a;
+    b.classList.add(ok ? "right" : "wrong");
+    qd.querySelector(`[data-j="${x.a}"]`).classList.add("right");
+    const why = qd.querySelector(".whyq"); why.hidden = false; why.textContent = (ok ? "Rätt! " : "Inte riktigt. ") + x.why;
+    qDone++; if (ok) qRight++;
+    $("quizscore").textContent = `${qRight} av ${qDone} rätt` + (qDone === QUIZ.length ? (qRight === QUIZ.length ? " – alla rätt!" : " – ladda om sidan för att försöka igen.") : "");
+    $("quizscore").className = "toast" + (qDone === QUIZ.length && qRight === QUIZ.length ? " ok" : "");
+  }));
+});
+
+/* ---------- start ---------- */
+load("friends");
+window.g = { get nodes() { return nodes; }, get edges() { return edges; }, load, findCycle, components, rootedTree, neighbors, nameOf, algoStep, algoReset };
+</script>
+</body>
+</html>

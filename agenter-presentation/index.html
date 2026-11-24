@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agenter och miljöer – AI 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Inter+Tight:wght@600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--sans:"Inter","Helvetica Neue",Arial,system-ui,sans-serif;--display:"Inter Tight","Inter","Helvetica Neue",Arial,sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace}
+.pal-light{--bg:#ffffff;--surface:#f5f5f5;--raised:#ffffff;--ink:#0a0a0a;--muted:#5c5c5c;--subtle:#8a8a8a;--line:#e5e5e5;--ctrl:#8a8a8a;--accent:#2f4bff;--accent-h:#1f36d6;--on-accent:#ffffff;--tint:#eef0ff;--hl:#ff5a1f;--on-hl:#0a0a0a;--shadow:0 1px 2px rgba(10,10,10,.06)}
+.pal-dark{--bg:#0a0a0a;--surface:#171717;--raised:#1f1f1f;--ink:#fafafa;--muted:#a3a3a3;--subtle:#6b6b6b;--line:#262626;--ctrl:#6b6b6b;--accent:#7b8cff;--accent-h:#9aa7ff;--on-accent:#0a0a0a;--tint:#161b3d;--hl:#ff6a33;--on-hl:#0a0a0a;--shadow:0 1px 2px rgba(0,0,0,.5)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:24px;transition:background-color .25s;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;transform:translate(-50%,-50%) scale(var(--k,1));transform-origin:center;overflow:hidden;user-select:none}
+#slide{position:absolute;inset:0}
+.slide{position:absolute;inset:0;padding:52px 72px 84px}
+#wipe{position:absolute;left:0;top:0;width:1280px;height:720px;pointer-events:none;z-index:9}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.abs{position:absolute}
+canvas{display:block}
+
+/* type */
+.ov{font:600 12px/16px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:10px}
+.ov::before{content:"";width:8px;height:8px;border-radius:9999px;background:var(--accent);flex:none}
+.t{font-family:var(--display);font-weight:600;font-size:44px;line-height:52px;letter-spacing:-.02em;margin:14px 0 0;max-width:1100px;text-wrap:balance}
+.t.big{font-size:60px;line-height:64px}
+.t.huge{font-size:56px;line-height:62px}
+.lead{font-size:22px;line-height:32px;color:var(--muted);margin:18px 0 0;max-width:720px;text-wrap:pretty}
+.k{font:600 12px/16px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.h3{font-size:20px;line-height:28px;font-weight:600;margin:6px 0 0}
+.p{font-size:17px;line-height:26px;color:var(--muted);margin:6px 0 0}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.acc{color:var(--accent)}
+.strong{font-weight:600}
+b{font-weight:600}
+.hint{font:600 12px/16px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+kbd{font:600 12px var(--mono);border:1px solid var(--ctrl);border-radius:4px;padding:1px 6px;margin:0 2px;color:var(--ink)}
+
+/* entry animation */
+.rise{animation:rise .7s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--d,0s)}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+.fade{animation:fade .8s ease both;animation-delay:var(--d,0s)}
+@keyframes fade{from{opacity:0}}
+@keyframes pop{from{transform:scale(0)}}
+
+/* svg dots */
+svg{overflow:visible;display:block}
+.d{fill:var(--ctrl);transform-box:fill-box;transform-origin:center;animation:pop .45s cubic-bezier(.3,1.7,.5,1) both;animation-delay:var(--d,0s);transition:fill .35s,r .35s,opacity .35s}
+.edge.tree .d{fill:var(--ink)}
+.edge.faint .d{opacity:.3}
+.edge.path .d{fill:var(--accent);r:3.7px}
+.edge.p1 .d{fill:var(--ink);r:3.7px}
+.crow .d{fill:var(--accent);opacity:.55}
+.pop{transform-box:fill-box;transform-origin:center;animation:pop .55s cubic-bezier(.3,1.6,.5,1) both;animation-delay:var(--d,0s)}
+.node{transition:opacity .35s}
+.node .core{fill:var(--bg);stroke:var(--ink);stroke-width:2.5;transition:fill .3s,stroke .3s}
+.node .halo{fill:none;stroke:transparent;stroke-width:2;transition:stroke .3s}
+.node.dash .core{stroke-dasharray:0 5.4;stroke-linecap:round;stroke-width:3.2}
+.node.exp .core{fill:var(--ink);stroke:var(--ink)}
+.node.front .core{fill:var(--tint);stroke:var(--accent)}
+.node.front .halo{stroke:var(--accent);animation:ring 1.6s ease-in-out infinite}
+.node.cur .halo{stroke:var(--hl);stroke-width:3.5;animation:none}
+.node.path .core{fill:var(--accent);stroke:var(--accent)}
+.node.faint{opacity:.28}
+.node .lbl{font:600 15px var(--sans);fill:var(--ink);text-anchor:middle;paint-order:stroke;stroke:var(--bg);stroke-width:6px;stroke-linejoin:round}
+.node .in{font:600 19px var(--sans);text-anchor:middle;dominant-baseline:central;fill:var(--ink);transition:fill .3s}
+.node.exp .in,.node.path .in{fill:var(--bg)}
+.node .tag{font:600 12px var(--mono);fill:var(--muted);text-anchor:middle;paint-order:stroke;stroke:var(--bg);stroke-width:5px;stroke-linejoin:round}
+.node .tag.on{fill:var(--accent)}
+.badge{opacity:0;transition:opacity .3s}
+.node.num .badge{opacity:1}
+.badge circle{fill:var(--bg);stroke:var(--ink);stroke-width:1.5}
+.badge text{font:600 11px var(--mono);fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+@keyframes ring{50%{stroke-opacity:.2}}
+.w{font:400 13px var(--mono);fill:var(--muted);text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:var(--bg);stroke-width:6px;stroke-linejoin:round}
+.pulse{fill:var(--accent)}
+.pulse2{fill:none;stroke:var(--accent);stroke-width:2;opacity:.4}
+.ann{font:400 14px var(--sans);fill:var(--muted)}
+.ann.s{font-weight:600;fill:var(--ink)}
+.dp{fill:none;stroke:var(--ctrl);stroke-width:3.4;stroke-linecap:round;stroke-dasharray:0 9}
+.dp.a{stroke:var(--accent)}
+.dp.i{stroke:var(--ink)}
+.nd{fill:var(--ink)}
+.nd.a{fill:var(--accent)}
+.reveal .d{animation:none;transform:scale(0)}
+.reveal.show .d{transform:none;animation:pop .45s cubic-bezier(.3,1.7,.5,1) both;animation-delay:var(--d,0s)}
+.ln{stroke:var(--line);stroke-width:1.4}
+.lvl{stroke:var(--line);stroke-width:1.5;stroke-dasharray:0 8;stroke-linecap:round}
+
+/* legend */
+.legend{display:flex;gap:20px;flex-wrap:wrap;font-size:14px;line-height:20px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:8px}
+.lg{width:14px;height:14px;border-radius:9999px;border:2.5px solid var(--ink);background:var(--bg);display:inline-block}
+.lg.exp{background:var(--ink)}
+.lg.front{border-color:var(--accent);background:var(--tint)}
+.lg.cur{border-color:var(--hl);border-width:3px}
+.lg.path{border-color:var(--accent);background:var(--accent)}
+.lg.dash{border-style:dotted}
+.lg.sub{border:0;background:var(--subtle)}
+.lg.line{border:0;background:var(--line)}
+
+/* table */
+.tb{border-collapse:collapse;width:100%;font-size:15px;line-height:21px}
+.tb th{font:600 12px/16px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 12px;background:var(--surface)}
+.tb td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tb td.n{font-family:var(--mono);color:var(--muted);width:34px}
+.tb .m{font-family:var(--mono);font-size:14px}
+.tb tr.hi td{background:var(--tint)}
+.wk tr[data-r]{opacity:0;transition:opacity .35s,background-color .3s}
+.wk tr[data-r] td{transition:background-color .3s}
+.wk tr.on{opacity:1}
+.wk tr.now td{background:var(--tint)}
+.q{font-family:var(--mono);font-size:14px;letter-spacing:.06em;color:var(--muted)}
+.q b{color:var(--accent)}
+.goal{color:var(--accent);font-weight:600}
+.dim{color:var(--muted);font-size:13px}
+.onfin{opacity:0;transition:opacity .4s,transform .4s;transform:translateY(8px)}
+.onfin.on{opacity:1;transform:none}
+.stepl{font:600 12px/16px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:14px;display:flex;gap:6px;align-items:center}
+.sdots{display:inline-flex;gap:5px;margin-left:8px}
+.sdots i{width:7px;height:7px;border-radius:9999px;background:var(--line);transition:background .3s}
+.sdots i.on{background:var(--ink)}
+
+/* blocks */
+.card{background:var(--raised);border:1px solid var(--line);border-radius:8px;padding:24px}
+.band{background:var(--ink);color:var(--bg);border-radius:8px;padding:28px 32px}
+.band .k{color:var(--bg);opacity:.75}
+.band .p{color:var(--bg);opacity:.8}
+.row{display:flex;gap:24px}
+.col{display:flex;flex-direction:column}
+.chip{display:inline-flex;align-items:center;gap:10px;font-size:16px}
+.num{width:36px;height:36px;border-radius:9999px;background:var(--ink);color:var(--bg);display:inline-flex;align-items:center;justify-content:center;font:600 15px var(--mono);flex:none}
+.num.a{background:var(--accent);color:var(--on-accent)}
+.cell-empty{color:var(--subtle);letter-spacing:.3em}
+
+/* queue/stack */
+.lane{position:relative;height:210px;border-radius:8px;background:var(--surface);overflow:hidden}
+.qd{position:absolute;left:0;top:0;width:40px;height:40px;border-radius:9999px;background:var(--ink);color:var(--bg);font:600 14px var(--mono);display:flex;align-items:center;justify-content:center;transition:transform .55s cubic-bezier(.3,1.25,.5,1),opacity .45s,background-color .3s}
+.qd.next{background:var(--accent);color:var(--on-accent)}
+.qd.out{opacity:0;background:var(--accent);color:var(--on-accent)}
+.lane .mk{position:absolute;font:600 11px/14px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* agent-specific */
+.lead b{color:var(--ink);font-weight:600}
+.klab{font:600 12px var(--sans);letter-spacing:.08em;fill:var(--muted)}
+.agdot{width:7px;height:7px;border-radius:9999px;background:var(--line);display:inline-block;margin-left:5px;flex:none}
+.strip{display:flex;align-items:center;gap:12px;font-size:21px;line-height:28px}
+.strip .sw{color:var(--muted);transition:color .3s}
+.strip .sw.on{color:var(--accent);font-weight:600}
+.strip .ar{color:var(--subtle)}
+.dirt circle{fill:var(--muted);transform-box:fill-box;transform-origin:center;transition:transform .35s,opacity .35s}
+.dirt.gone circle{transform:scale(0);opacity:0}
+.robot{transition:transform .8s cubic-bezier(.5,0,.3,1)}
+.qdot{width:14px;height:14px;border-radius:9999px;background:var(--ink);display:inline-block;animation:pop .45s cubic-bezier(.3,1.7,.5,1) both}
+.qdot:nth-child(12){background:var(--accent)}
+.cta{display:inline-flex;align-items:center;background:var(--accent);color:var(--on-accent);font-weight:600;font-size:18px;padding:12px 22px;border-radius:4px;text-decoration:none}
+.cta:hover{background:var(--accent-h)}
+.cta:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* progress bar */
+#bar{position:absolute;left:72px;right:72px;bottom:26px;height:24px;display:flex;align-items:center;z-index:5}
+#sec{flex:1;font:600 12px/16px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+#dots{display:flex;align-items:center;gap:7px}
+#dots button{position:relative;width:8px;height:8px;border-radius:9999px;border:0;padding:0;background:var(--subtle);opacity:.4;cursor:pointer;transition:width .35s cubic-bezier(.3,1.3,.5,1),background-color .35s,opacity .35s}
+#dots button::after{content:"";position:absolute;inset:-8px -4px}
+#dots button.gap{margin-left:12px}
+#dots button.past{background:var(--ink);opacity:1}
+#dots button.now{width:26px;background:var(--accent);opacity:1}
+#dots button:hover{opacity:1}
+#right{flex:1;display:flex;justify-content:flex-end;align-items:center;gap:6px}
+#count{font:400 13px var(--mono);color:var(--muted);min-width:64px;text-align:center}
+.nb{width:28px;height:28px;border-radius:4px;border:1px solid var(--ctrl);background:transparent;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
+.nb:hover{background:var(--surface)}
+.nb svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body class="pal-light">
+<div id="stage" aria-live="polite">
+  <div id="slide"></div>
+  <nav id="bar" aria-label="Bildnavigering">
+    <div id="sec"></div>
+    <div id="dots"></div>
+    <div id="right">
+      <a class="nb" href="../" title="Till kurssidan AI 1" aria-label="Till kurssidan AI 1"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7M6 9.5V20h12V9.5"/></svg></a>
+      <button class="nb" id="theme" title="Byt ljust/mörkt tema (T)" aria-label="Byt tema"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg></button>
+      <button class="nb" id="prev" aria-label="Föregående"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <span id="count">01 / 19</span>
+      <button class="nb" id="next" aria-label="Nästa"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+  </nav>
+  <canvas id="wipe"></canvas>
+</div>
+<script>
+(()=>{
+"use strict";
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let K=1;
+const cssv=n=>getComputedStyle(document.body).getPropertyValue(n).trim();
+const fmt=n=>n.toLocaleString('sv-SE');
+
+/* ---------- helpers ---------- */
+function setup(cv,w,h){const R=(window.devicePixelRatio||1)*Math.max(K,.5);cv.width=Math.round(w*R);cv.height=Math.round(h*R);cv.style.width=w+'px';cv.style.height=h+'px';const x=cv.getContext('2d');x.setTransform(R,0,0,R,0,0);return x;}
+function loop(el,fn){let id,t0=performance.now();const f=t=>{if(!el.isConnected)return;fn(t-t0,t);id=requestAnimationFrame(f)};id=requestAnimationFrame(f);return()=>cancelAnimationFrame(id);}
+function dots(x1,y1,x2,y2,o={}){const gap=o.gap||12,r=o.r||2.4,dl=o.delay||0,st=o.step??.016;const L=Math.hypot(x2-x1,y2-y1);const n=Math.max(1,Math.round(L/gap));let s='';for(let i=0;i<=n;i++){const t=i/n;s+=`<circle class="d" cx="${(x1+(x2-x1)*t).toFixed(1)}" cy="${(y1+(y2-y1)*t).toFixed(1)}" r="${r}" style="--d:${(dl+i*st).toFixed(3)}s"/>`;}return s;}
+function qdots(x1,y1,cx,cy,x2,y2,o={}){const gap=o.gap||12,r=o.r||2.4,dl=o.delay||0,st=o.step??.016;let L=0,px=x1,py=y1;for(let i=1;i<=50;i++){const t=i/50,x=(1-t)*(1-t)*x1+2*(1-t)*t*cx+t*t*x2,y=(1-t)*(1-t)*y1+2*(1-t)*t*cy+t*t*y2;L+=Math.hypot(x-px,y-py);px=x;py=y;}const n=Math.round(L/gap);let s='';for(let i=0;i<=n;i++){const t=i/n,x=(1-t)*(1-t)*x1+2*(1-t)*t*cx+t*t*x2,y=(1-t)*(1-t)*y1+2*(1-t)*t*cy+t*t*y2;s+=`<circle class="d" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" style="--d:${(dl+i*st).toFixed(3)}s"/>`;}return s;}
+const ek=(a,b)=>[a,b].sort().join('');
+function pulse(svg,pts){$$('.pulse,.pulse2',svg).forEach(n=>n.remove());if(!pts||pts.length<2)return;let L=0;for(let i=1;i<pts.length;i++)L+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);const d='M'+pts.map(p=>p.join(' ')).join(' L');const dur=(Math.max(1.6,L/170)).toFixed(2);svg.insertAdjacentHTML('beforeend',`<circle class="pulse2" r="11"><animateMotion dur="${dur}s" repeatCount="indefinite" path="${d}"/></circle><circle class="pulse" r="6"><animateMotion dur="${dur}s" repeatCount="indefinite" path="${d}"/></circle>`);}
+function bitmap(rows,{s=14,r=4.4,dl=0}={}){let o='',i=0;rows.forEach((row,y)=>[...row].forEach((c,x)=>{if(c==='.')return;o+=`<circle class="d" style="fill:var(${c==='o'?'--accent':'--ink'});--d:${(dl+i++*.012+ (x+y)*.01).toFixed(3)}s" cx="${x*s+s/2}" cy="${y*s+s/2}" r="${r}"/>`;}));return `<svg viewBox="0 0 ${rows[0].length*s} ${rows.length*s}" width="${rows[0].length*s}" height="${rows.length*s}">${o}</svg>`;}
+
+/* ---------- the map ---------- */
+const TN={J:'Jönköping',H:'Huskvarna',T:'Tenhult',N:'Nässjö',E:'Eksjö',S:'Sävsjö',V:'Vetlanda'};
+const TW={
+ J:{x:90,y:110,l:[0,-21,'middle'],g:[-18,5,'end']},
+ H:{x:215,y:55,l:[0,-21,'middle'],g:[18,5,'start']},
+ T:{x:240,y:190,l:[0,30,'middle'],g:[0,47,'middle']},
+ N:{x:380,y:215,l:[0,-20,'middle'],g:[-4,42,'middle']},
+ E:{x:535,y:140,l:[0,-21,'middle'],g:[0,-38,'middle']},
+ S:{x:175,y:350,l:[0,30,'middle'],g:[-18,5,'end']},
+ V:{x:475,y:360,l:[0,30,'middle'],g:[18,5,'start']}};
+const ED=[['J','H',8],['J','T',16],['J','S',55],['H','T',12],['T','N',20],['N','E',22],['N','V',45],['N','S',35],['E','V',40],['S','V',30]];
+function mapSVG(o={}){const P=o.pos||TW,E=o.edges||ED,keys=Object.keys(P),w=o.vw||600,h=o.vh||410,W=o.w||w;
+ let s=`<svg class="map" viewBox="0 0 ${w} ${h}" width="${W}" height="${(W*h/w).toFixed(0)}">`;
+ if(o.crow){keys.filter(k=>k!=='V').forEach((k,i)=>{s+=`<g class="crow">${dots(P[k].x,P[k].y,P.V.x,P.V.y,{gap:7,r:1.6,delay:.9+i*.08,step:.008})}</g>`;});}
+ E.forEach(([a,b],i)=>{s+=`<g class="edge" data-e="${ek(a,b)}">${dots(P[a].x,P[a].y,P[b].x,P[b].y,{delay:.05+i*.05})}</g>`;});
+ if(o.weights!==false)E.forEach(([a,b,km],i)=>{if(km==null)return;const A=P[a],B=P[b],mx=(A.x+B.x)/2,my=(A.y+B.y)/2,L=Math.hypot(B.x-A.x,B.y-A.y);let nx=-(B.y-A.y)/L,ny=(B.x-A.x)/L;if(ny>0){nx=-nx;ny=-ny;}s+=`<text class="w fade" style="--d:${(.5+i*.05).toFixed(2)}s" x="${(mx+nx*13).toFixed(1)}" y="${(my+ny*13).toFixed(1)}">${km}</text>`;});
+ keys.forEach((k,i)=>{const p=P[k],l=p.l,g=p.g,tg=(o.tags&&o.tags[k])||'';s+=`<g class="node" data-n="${k}" transform="translate(${p.x},${p.y})"><g class="pop" style="--d:${(.15+i*.06).toFixed(2)}s"><circle class="halo" r="16"/><circle class="core" r="9"/><text class="lbl" x="${l[0]}" y="${l[1]}" style="text-anchor:${l[2]}">${p.name||TN[k]}</text><text class="tag ${o.tagOn&&o.tagOn.includes(k)?'on':''}" x="${g[0]}" y="${g[1]}" style="text-anchor:${g[2]}">${tg}</text></g></g>`;});
+ return s+'</svg>';}
+
+function tableStep(el,s,n){$$('tr[data-r]',el).forEach(tr=>{const r=+tr.dataset.r;tr.classList.toggle('on',r<s);tr.classList.toggle('now',r===s-1);});$$('.onfin',el).forEach(x=>x.classList.toggle('on',s===n));const sl=$('.stepl',el);if(sl){sl.innerHTML=(s===0?'Tryck <kbd>→</kbd> för att starta':`Steg ${s} av ${n}`)+`<span class="sdots">${Array.from({length:n},(_,i)=>`<i class="${i<s?'on':''}"></i>`).join('')}</span>`;}}
+function mapStep(el,s,A){const svg=$('svg.map',el),st=A.steps,n=st.length,exp=new Set(),disc=new Set(['J']);for(let i=0;i<s;i++){exp.add(st[i].exp);disc.add(st[i].exp);st[i].front.forEach(f=>disc.add(f));}
+ const front=new Set(s?st[s-1].front:[]),fin=s===n,cur=s?st[s-1].exp:null;
+ $$('.node',svg).forEach(g=>{const k=g.dataset.n;g.classList.toggle('exp',exp.has(k));g.classList.toggle('front',front.has(k)&&!exp.has(k));g.classList.toggle('cur',k===cur&&!fin);g.classList.toggle('path',fin&&A.path.includes(k));const t=$('.tag',g);t.textContent=A.tagAll?A.tagAll[k]:(s>0&&disc.has(k)?A.tag[k]:'');t.classList.toggle('on',front.has(k)&&!exp.has(k));});
+ $$('.edge',svg).forEach(g=>g.classList.remove('tree','path'));
+ if(s>0)disc.forEach(k=>{if(k==='J')return;const e=$(`.edge[data-e="${ek(k,A.par[k])}"]`,svg);e&&e.classList.add('tree');});
+ if(fin)A.path.forEach((k,i)=>{if(i)$(`.edge[data-e="${ek(k,A.path[i-1])}"]`,svg).classList.add('path');});
+ pulse(svg,fin?A.path.map(k=>[TW[k].x,TW[k].y]):null);tableStep(el,s,n);}
+
+/* ---------- trees ---------- */
+function N(k,id,c=[],o={}){return Object.assign({k,id,c},o);}
+let uid=0;
+function treeSVG(root,o={}){const w=o.w||600,h=o.h||400,top=o.top??40,bot=o.bottom??50,pad=o.pad??60,letters=!!o.letters;let leaves=0,maxd=0;const all=[],ids={};
+ (function walk(n,d,p){n.d=d;n.p=p;if(!n.id)n.id='u'+(uid++);all.push(n);ids[n.id]=n;maxd=Math.max(maxd,d);if(!n.c.length){n.lx=leaves++;}else{n.c.forEach(ch=>walk(ch,d+1,n));n.lx=(n.c[0].lx+n.c[n.c.length-1].lx)/2;}})(root,0,null);
+ const sx=leaves>1?(w-2*pad)/(leaves-1):0,sy=maxd?(h-top-bot)/maxd:0;
+ all.forEach(n=>{n.x=leaves>1?pad+n.lx*sx:w/2;n.y=top+n.d*sy;});
+ root._ids=ids;const r=letters?22:9;let e='',nd='';
+ all.forEach(n=>{if(n.p)e+=`<g class="edge" data-e="${n.id}">${dots(n.p.x,n.p.y,n.x,n.y,{gap:o.gap||11,delay:.1+n.d*.2,step:.014})}</g>`;
+  const label=letters?`<text class="in">${n.k}</text>`:(()=>{const lr=!n.p||n.lp==='r';return `<text class="lbl" x="${lr?r+8:0}" y="${lr?5:r+21}" style="text-anchor:${lr?'start':'middle'}">${TN[n.k]||n.k}</text>`;})();
+  nd+=`<g class="node ${n.dash?'dash':''}" data-n="${n.id}" transform="translate(${n.x.toFixed(1)},${n.y.toFixed(1)})"><g class="pop" style="--d:${(.05+n.d*.2).toFixed(2)}s"><circle class="halo" r="${r+7}"/><circle class="core" r="${r}"/>${label}<g class="badge" transform="translate(${-r-6},${-r-6})"><circle r="10"/><text></text></g></g></g>`;});
+ return `<svg class="tree" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">${o.under?o.under(ids):''}${e}${nd}${o.extra?o.extra(ids):''}</svg>`;}
+function treeStep(el,s,R){const ids=R.root._ids,order=R.order,n=order.length,exp=new Set(order.slice(0,s)),fin=s===n,svg=$('svg.tree',el);
+ $$('.node',svg).forEach(g=>{const t=ids[g.dataset.n],e=exp.has(t.id),f=!e&&t.p&&exp.has(t.p.id);g.classList.toggle('exp',e);g.classList.toggle('front',!!f);g.classList.toggle('faint',!e&&!f&&!!t.p);g.classList.toggle('cur',!fin&&s>0&&order[s-1]===t.id);g.classList.toggle('path',fin&&R.path.includes(t.id));g.classList.toggle('num',e);$('.badge text',g).textContent=e?order.indexOf(t.id)+1:'';});
+ $$('.edge',svg).forEach(g=>{const t=ids[g.dataset.e],disc=exp.has(t.p.id);g.classList.toggle('tree',disc);g.classList.toggle('faint',!disc);g.classList.toggle('path',fin&&R.path.includes(t.id)&&R.path.includes(t.p.id));});
+ pulse(svg,fin?R.path.map(id=>[ids[id].x,ids[id].y]):null);tableStep(el,s,n);}
+function setNodes(el,map){Object.entries(map).forEach(([cls,list])=>list.forEach(id=>{const g=$(`.node[data-n="${id}"]`,el);g&&g.classList.add(cls);}));}
+function setEdges(el,cls,list){list.forEach(id=>{const g=$(`.edge[data-e="${id}"]`,el);g&&g.classList.add(cls);});}
+
+/* ---------- canvas animations ---------- */
+function titleDots(cv,el,lines=['Sökalgoritmer'],cy=318){const W=1280,H=720,x=setup(cv,W,H);let pts=[],m={x:-999,y:-999};
+ const build=()=>{const o=document.createElement('canvas');o.width=W;o.height=H;const c=o.getContext('2d');const f=s=>`600 ${s}px "Inter Tight", Inter, "Helvetica Neue", Arial, sans-serif`;c.font=f(100);const mw=Math.max(...lines.map(l=>c.measureText(l).width));const fs=Math.min(196,100*1110/mw);c.font=f(fs);c.textAlign='center';c.textBaseline='middle';c.fillStyle='#000';lines.forEach((l,k)=>c.fillText(l,640,cy+(k-(lines.length-1)/2)*fs*1.02));const d=c.getImageData(0,0,W,H).data,G=7;for(let y=0;y<H;y+=G)for(let xx=0;xx<W;xx+=G)if(d[(y*W+xx)*4+3]>140){const a=Math.random()*Math.PI*2,R=500+Math.random()*500;pts.push({tx:xx,ty:y,x:640+Math.cos(a)*R,y:cy+Math.sin(a)*R*.6,vx:0,vy:0,a:Math.random()<.045,dl:Math.random()*30});}};
+ const mv=e=>{const r=cv.getBoundingClientRect();m.x=(e.clientX-r.left)/K;m.y=(e.clientY-r.top)/K;};const lv=()=>{m.x=m.y=-999};
+ cv.parentNode.addEventListener('pointermove',mv);cv.parentNode.addEventListener('pointerleave',lv);
+ const go=()=>{build();const ink=cssv('--ink'),acc=cssv('--accent');let f=0;return loop(el,()=>{f++;x.clearRect(0,0,W,H);x.beginPath();const A=[];for(const p of pts){if(f>p.dl){p.vx+=(p.tx-p.x)*.035;p.vy+=(p.ty-p.y)*.035;}const dx=p.x-m.x,dy=p.y-m.y,d2=dx*dx+dy*dy;if(d2<9000){const d=Math.sqrt(d2)||1,k=(1-d/95)*4.2;p.vx+=dx/d*k;p.vy+=dy/d*k;}p.vx*=.84;p.vy*=.84;p.x+=p.vx;p.y+=p.vy;if(p.a){A.push(p);continue;}x.moveTo(p.x+2.8,p.y);x.arc(p.x,p.y,2.8,0,6.283);}x.fillStyle=ink;x.fill();x.beginPath();for(const p of A){x.moveTo(p.x+3.2,p.y);x.arc(p.x,p.y,3.2,0,6.283);}x.fillStyle=acc;x.fill();});};
+ let stop=()=>{};const fr=document.fonts&&document.fonts.ready?Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,1200))]):Promise.resolve();fr.then(()=>{if(el.isConnected)stop=go();});
+ return()=>{stop();cv.parentNode&&cv.parentNode.removeEventListener('pointermove',mv);};}
+
+function maze(cv,el){const W=560,H=420,G=14,C=39,R=29,x=setup(cv,W,H),ox=(W-(C-1)*G)/2,oy=(H-(R-1)*G)/2;let g,dist,pathIdx,goal,gd,plen,wave,pc,hold,col;
+ function gen(){g=Array.from({length:R},()=>Array(C).fill(1));const st=[[1,1]];g[1][1]=0;while(st.length){const[cx,cy]=st[st.length-1];const nb=[[2,0],[-2,0],[0,2],[0,-2]].map(([dx,dy])=>[cx+dx,cy+dy,dx,dy]).filter(([nx,ny])=>nx>0&&ny>0&&nx<C-1&&ny<R-1&&g[ny][nx]===1);if(!nb.length){st.pop();continue;}const[nx,ny,dx,dy]=nb[Math.random()*nb.length|0];g[cy+dy/2][cx+dx/2]=0;g[ny][nx]=0;st.push([nx,ny]);}
+  for(let i=0;i<70;i++){const rx=1+(Math.random()*(C-2)|0),ry=1+(Math.random()*(R-2)|0);if(g[ry][rx]===1&&((rx%2===0)!==(ry%2===0)))g[ry][rx]=0;}
+  dist=Array.from({length:R},()=>Array(C).fill(-1));const par={},q=[[1,1]];dist[1][1]=0;while(q.length){const[cx,cy]=q.shift();for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=cx+dx,ny=cy+dy;if(g[ny][nx]===0&&dist[ny][nx]<0){dist[ny][nx]=dist[cy][cx]+1;par[ny*C+nx]=cy*C+cx;q.push([nx,ny]);}}}
+  goal=[C-2,R-2];gd=dist[goal[1]][goal[0]];pathIdx=new Map();const path=[];let k=goal[1]*C+goal[0];while(k!==undefined){path.unshift(k);k=par[k];}path.forEach((k,i)=>pathIdx.set(k,i));plen=path.length;wave=0;pc=0;hold=0;
+  col={ink:cssv('--ink'),line:cssv('--line'),sub:cssv('--subtle'),acc:cssv('--accent'),hl:cssv('--hl')};}
+ gen();
+ return loop(el,()=>{if(wave<=gd+3)wave+=.75;else if(pc<plen)pc+=2.2;else if(++hold>170)gen();
+  const L=[[],[],[],[]];for(let y=0;y<R;y++)for(let xx=0;xx<C;xx++){if(g[y][xx])continue;const d=dist[y][xx],k=y*C+xx,pi=pathIdx.has(k)?pathIdx.get(k):-1;let c;if(pi>=0&&pi<pc)c=3;else if(d<0||d>wave)c=0;else if(wave-d<3&&wave<=gd+3)c=2;else c=1;L[c].push(ox+xx*G,oy+y*G);}
+  const R_=[2.2,3,3.8,4.4],Cc=[col.line,col.sub,col.acc,col.hl];x.clearRect(0,0,W,H);
+  L.forEach((a,i)=>{x.beginPath();for(let j=0;j<a.length;j+=2){x.moveTo(a[j]+R_[i],a[j+1]);x.arc(a[j],a[j+1],R_[i],0,6.283);}x.fillStyle=Cc[i];x.fill();});
+  x.beginPath();x.arc(ox+G,oy+G,6,0,6.283);x.fillStyle=col.ink;x.fill();
+  x.beginPath();x.arc(ox+goal[0]*G,oy+goal[1]*G,6.5,0,6.283);x.lineWidth=2.5;x.strokeStyle=col.acc;x.stroke();});}
+
+function waveDots(cv,el,mode,out){const W=500,H=250,G=15,x=setup(cv,W,H),cols=Math.floor(W/G),rows=Math.floor(H/G),ox=(W-(cols-1)*G)/2,oy=(H-(rows-1)*G)/2;const s=[ox+2*G,oy+Math.floor(rows/2)*G],g=[ox+(cols-3)*G,s[1]],D=g[0]-s[0];
+ const pts=[];for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const px=ox+i*G,py=oy+j*G,ds=Math.hypot(px-s[0],py-s[1]),dg=Math.hypot(px-g[0],py-g[1]);pts.push([px,py,ds,mode==='u'||ds+dg<=D*1.1]);}
+ const col={ink:cssv('--ink'),line:cssv('--line'),mut:cssv('--subtle'),acc:cssv('--accent')};let last=-1;
+ return loop(el,(t)=>{const T=(t%7000)/1000,rr=Math.min(T/4.2,1)*D;let n=0;const L=[[],[],[]];for(const p of pts){const lit=p[3]&&p[2]<=rr;if(lit){n++;L[rr-p[2]<20&&rr<D?2:1].push(p);}else L[0].push(p);}
+  if(n!==last){out.textContent=fmt(n);last=n;}x.clearRect(0,0,W,H);const Rr=[2,3,3.6],Cc=[col.line,col.mut,col.acc];
+  L.forEach((a,i)=>{x.beginPath();a.forEach(p=>{x.moveTo(p[0]+Rr[i],p[1]);x.arc(p[0],p[1],Rr[i],0,6.283);});x.fillStyle=Cc[i];x.fill();});
+  x.beginPath();x.arc(s[0],s[1],6.5,0,6.283);x.fillStyle=col.ink;x.fill();
+  x.beginPath();x.arc(g[0],g[1],7,0,6.283);x.lineWidth=2.5;x.strokeStyle=col.acc;x.stroke();if(rr>=D){x.beginPath();x.arc(g[0],g[1],4,0,6.283);x.fillStyle=col.acc;x.fill();}});}
+
+function explode(cv,el){const S=400,x=setup(cv,S,S),cnt=[0,35,1225,42875,1500625,52521875,1838265625],num=$('.bigc',el),cap=$('.cap',el);let d=0,t0=0,from=0,shown=0,tm;
+ const col={ink:cssv('--ink'),acc:cssv('--accent')};
+ function grid(n,r,prog,stag){const sp=S/n;x.beginPath();let i=0;for(let j=0;j<n;j++)for(let k=0;k<n;k++,i++){const p=stag?Math.max(0,Math.min(1,prog*1.6-i/(n*n)*.6)):prog;if(p<=0)continue;const rr=r*p;x.moveTo(k*sp+sp/2+rr,j*sp+sp/2);x.arc(k*sp+sp/2,j*sp+sp/2,rr,0,6.283);}x.fill();}
+ function draw(prog){x.clearRect(0,0,S,S);x.fillStyle=col.ink;if(d===1){const sp=S/7;x.beginPath();for(let i=0;i<35;i++){const p=Math.max(0,Math.min(1,prog*1.8-i/35*.8)),cx=(i%7)*sp+sp/2,cy=Math.floor(i/7)*sp+sp/2+sp;x.moveTo(cx+14*p,cy);x.arc(cx,cy,14*p,0,6.283);}x.fill();}
+  else if(d===2)grid(35,3.9,prog,true);else{x.globalAlpha=Math.min(1,prog*1.5);grid(207,.82,1,false);x.globalAlpha=1;}
+  if(d>=4){x.fillStyle=col.acc;x.beginPath();x.arc(S/2,S/2,5,0,6.283);x.fill();}}
+ function next(){d=d>=6?1:d+1;t0=performance.now();from=d===1?0:shown;$$('tr[data-r]',el).forEach(tr=>tr.classList.toggle('now',+tr.dataset.r===d));cap.innerHTML=d<4?'1 prick = 1 ställning':`1 prick = ${fmt(35**(d-3))} ställningar <span class="acc">●</span>`;tm=setTimeout(next,d===6?4200:1900);}
+ next();const stop=loop(el,(t,now)=>{const p=Math.min(1,(now-t0)/900),e=1-Math.pow(1-p,3);draw(Math.min(1,(now-t0)/700));shown=Math.round(from+(cnt[d]-from)*e);num.textContent=fmt(shown);});
+ return()=>{stop();clearTimeout(tm);};}
+
+function ambient(cv,el){const W=1280,H=720,x=setup(cv,W,H),ink=cssv('--ink'),acc=cssv('--accent');const P=Array.from({length:110},()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25,r:1.5+Math.random()*3,a:Math.random()<.07,o:.15+Math.random()*.35}));
+ return loop(el,()=>{x.clearRect(0,0,W,H);for(const p of P){p.x=(p.x+p.vx+W)%W;p.y=(p.y+p.vy+H)%H;x.globalAlpha=p.a?.9:p.o;x.fillStyle=p.a?acc:ink;x.beginPath();x.arc(p.x,p.y,p.r,0,6.283);x.fill();}x.globalAlpha=1;});}
+
+function lane(box,type){let items=[],n=0,first=true;const pos=i=>type==='q'?[24+i*54,108]:[box.clientWidth/2-20,160-i*46];
+ const lay=()=>items.forEach((it,i)=>{const[a,b]=pos(i);it.d.style.transform=`translate(${a}px,${b}px)`;it.d.classList.toggle('next',type==='q'?i===0:i===items.length-1);});
+ const push=()=>{const d=document.createElement('div');d.className='qd';d.textContent=++n;const[a,b]=type==='q'?[24+6*54,108]:[box.clientWidth/2-20,-50];d.style.transform=`translate(${a}px,${b}px)`;box.appendChild(d);items.push({d});d.offsetWidth;lay();};
+ const pop=()=>{const it=type==='q'?items.shift():items.pop();const[a,b]=type==='q'?[-60,108]:[box.clientWidth/2-20,-60];it.d.classList.add('out');it.d.style.transform=`translate(${a}px,${b}px)`;setTimeout(()=>it.d.remove(),600);lay();};
+ const seq=['+','+','+','-','+','-','+','+','-','-','+','-','-','+','+','-'];let i=0;push();push();
+ const id=setInterval(()=>{if(!box.isConnected){clearInterval(id);return;}let op=seq[i++%seq.length];if(op==='-'&&items.length<2)op='+';if(op==='+'&&items.length>=5)op='-';op==='+'?push():pop();},1100);return()=>clearInterval(id);}
+
+/* ---------- agent-specific animations ---------- */
+function vision(cv,el){const W=520,H=300,G=16,x=setup(cv,W,H),cols=Math.floor(W/G),rows=Math.floor(H/G),ox=(W-(cols-1)*G)/2,oy=(H-(rows-1)*G)/2;const col={ink:cssv('--ink'),line:cssv('--line'),mut:cssv('--subtle'),acc:cssv('--accent')};const goal=[ox+(cols-4)*G,oy+3*G];
+ return loop(el,t=>{const s=t/1000,ax=W/2+Math.sin(s*.45)*190,ay=H/2+Math.sin(s*.7+1)*95,R=82;x.clearRect(0,0,W,H);const L=[[],[]];for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const px=ox+i*G,py=oy+j*G;(Math.hypot(px-ax,py-ay)<R?L[1]:L[0]).push([px,py]);}
+  [[L[0],2,col.line],[L[1],3,col.mut]].forEach(([a,r,c])=>{x.beginPath();a.forEach(p=>{x.moveTo(p[0]+r,p[1]);x.arc(p[0],p[1],r,0,6.283);});x.fillStyle=c;x.fill();});
+  const seen=Math.hypot(goal[0]-ax,goal[1]-ay)<R;x.beginPath();x.arc(goal[0],goal[1],6,0,6.283);if(seen){x.fillStyle=col.acc;x.fill();}else{x.lineWidth=1.5;x.setLineDash([1,4]);x.strokeStyle=col.mut;x.stroke();x.setLineDash([]);}
+  x.beginPath();x.arc(ax,ay,R,0,6.283);x.lineWidth=1.5;x.setLineDash([0,7]);x.lineCap='round';x.strokeStyle=col.mut;x.stroke();x.setLineDash([]);
+  x.beginPath();x.arc(ax,ay,11,0,6.283);x.fillStyle=col.ink;x.fill();});}
+
+function vacuum(el){const svg=$('svg.vac',el),rob=$('.robot',svg),tb=$('.vtab',el),out=$('.vout',el);const X={A:150,B:480};let pos='A',dirt={A:true,B:false},busy=false;
+ const show=()=>{rob.style.transform=`translate(${X[pos]}px,150px)`;['A','B'].forEach(c=>{$(`.dirt[data-c=${c}]`,svg).classList.toggle('gone',!dirt[c]);$(`.st[data-c=${c}]`,svg).textContent=(dirt[c]?'SMUTSIG':'REN')+(pos===c?' · ROBOT':'');});};
+ show();let ph=0;
+ const id=setInterval(()=>{if(!el.isConnected){clearInterval(id);return;}if(ph===0){const r=(pos==='A'?0:2)+(dirt[pos]?0:1);$$('tr[data-r]',tb).forEach(tr=>tr.classList.toggle('hi',+tr.dataset.r===r));const act=dirt[pos]?'Sug':(pos==='A'?'Höger':'Vänster');out.innerHTML=`<span class="muted">[${pos}, ${dirt[pos]?'smutsig':'ren'}]</span> → <b class="acc">${act}</b>`;}
+  else{if(dirt[pos])dirt[pos]=false;else pos=pos==='A'?'B':'A';const o=pos==='A'?'B':'A';if(!dirt[o]&&Math.random()<.45)dirt[o]=true;show();}ph^=1;},900);
+ return()=>clearInterval(id);}
+
+function hack(cv,el,mode,cnt,pct){const W=520,H=170,x=setup(cv,W,H),P=[75,195,315,435],Y=95,C=1300;const col={ink:cssv('--ink'),line:cssv('--line'),mut:cssv('--muted'),acc:cssv('--accent')};
+ const off=[];for(let i=0;i<10;i++){const a=i*2.39996,r=3+Math.sqrt(i)*6.5;off.push([Math.cos(a)*r,Math.sin(a)*r*.75+24]);}
+ let n=0,lastCycle=-1;const lerp=(a,b,t)=>a+(b-a)*t,ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+ return loop(el,t=>{x.clearRect(0,0,W,H);x.beginPath();for(let gx=15;gx<W;gx+=20)for(let gy=15;gy<H;gy+=20){x.moveTo(gx+1.6,gy);x.arc(gx,gy,1.6,0,6.283);}x.fillStyle=col.line;x.fill();
+  let rx,ry=Y-28,clean=[0,0,0,0],fly=null,ft=0;
+  if(mode==='hack'){const cy=Math.floor(t/C),p=(t%C)/C;if(cy!==lastCycle){lastCycle=cy;n++;}rx=P[0];fly=0;ft=p<.45?ease(p/.45):p<.55?1:1-ease((p-.55)/.45);}
+  else{const T=C*6,tt=t%T,i=Math.floor(tt/C),p=(tt%C)/C;if(tt<C*4){for(let k=0;k<i;k++)clean[k]=1;const px=i?P[i-1]:P[0]-60;rx=p<.4?lerp(px,P[i],ease(p/.4)):P[i];if(p>=.4){fly=i;ft=ease((p-.4)/.6);}n=i+(p>=.95?1:0);}else{clean=[1,1,1,1];rx=P[3];n=4;}}
+  x.beginPath();P.forEach((px,i)=>{if(clean[i])return;off.forEach(o=>{let dx=px+o[0],dy=Y+o[1];if(fly===i){dx=lerp(dx,rx,ft);dy=lerp(dy,ry,ft);if(ft>.97)return;}x.moveTo(dx+3.2,dy);x.arc(dx,dy,3.2,0,6.283);});});x.fillStyle=col.mut;x.fill();
+  x.beginPath();x.arc(rx,ry,16,0,6.283);x.fillStyle=col.ink;x.fill();x.beginPath();x.arc(rx,ry-7,3.5,0,6.283);x.fillStyle=col.acc;x.fill();
+  const c=clean.reduce((a,b)=>a+b,0)*25;cnt.textContent=fmt(n);pct.textContent=c+' %';});}
+
+/* ---------- small builders ---------- */
+const hdr=(ov,t,cls='')=>`<div class="ov rise">${ov}</div><h2 class="t ${cls} rise" style="--d:.08s">${t}</h2>`;
+const LET={P:['XXXX.','X...X','X...X','XXXX.','X....','X....','X....'],E:['XXXXX','X....','X....','XXXX.','X....','X....','XXXXX'],A:['.XXX.','X...X','X...X','XXXXX','X...X','X...X','X...X'],S:['.XXXX','X....','X....','.XXX.','....X','....X','XXXX.']};
+const peas=(items,top=210)=>`<div class="abs" style="left:72px;top:${top}px;width:1136px;display:grid;grid-template-columns:repeat(4,1fr);gap:24px">${items.map((r,i)=>`<div class="card rise" style="--d:${.15+i*.12}s;padding:26px">${bitmap(LET[r[0]].map(l=>i===0?l.replace(/X/g,'o'):l),{s:11,r:4,dl:.3+i*.15})}<div class="k" style="margin-top:22px;${i===0?'color:var(--accent)':''}">${r[1]}</div><p style="font-size:18px;line-height:27px;margin:8px 0 0">${r[2]}</p></div>`).join('')}</div>`;
+const qs=(list,top=230)=>`<div class="abs" style="left:72px;top:${top}px;width:1136px;display:flex;flex-direction:column">${list.map((q,i)=>`<div class="rise" style="--d:${.25+i*.12}s;display:flex;gap:24px;align-items:flex-start;padding:22px 0;border-top:1px solid var(--line)"><span class="num ${i===0?'a':''}" style="width:44px;height:44px;font-size:18px">${i+1}</span><p style="font-size:${list.length>2?21:24}px;line-height:${list.length>2?31:34}px;margin:4px 0 0;max-width:960px">${q}</p></div>`).join('')}</div>`;
+const amb='<canvas class="abs" style="left:0;top:0" data-c></canvas>';
+
+/* ---------- slides ---------- */
+const SEC=['Agenter och miljöer','Kapitel 1 · Vad är en agent?','Kapitel 2 · PEAS','Kapitel 3 · Miljöns egenskaper','Kapitel 4 · Fem sorters agenter','Kapitel 5 · Sandlådan','Kapitel 6 · Prestandamått och belöningsfusk','Kapitel 7 · Dagens AI-agenter','Testa dig själv'];
+const S=[
+/* 1 */{sec:0,inv:true,title:'Agenter och miljöer',html:()=>`<canvas class="abs" style="left:0;top:0" data-c></canvas>
+ <div class="ov rise">Kurs · AI 1</div><div class="hint rise abs" style="right:72px;top:52px">Andrew Galbraith · Erik Dahlbergsgymnasiet</div><h1 class="sr">Agenter och miljöer</h1>
+ <p class="lead rise abs" style="left:72px;bottom:118px;--d:1.2s;max-width:760px">Vad är det som gör en dammsugarrobot, en självkörande bil och en chattbot till agenter? Och varför är vissa miljöer så mycket svårare än andra?</p>
+ <div class="hint rise abs" style="right:72px;bottom:124px;--d:1.6s">Tryck <kbd>→</kbd> för att börja</div>`,
+ enter:el=>titleDots($('canvas',el),el,['Agenter och','miljöer'],272)},
+
+/* 2 */{sec:0,title:'Vad vi går igenom',html:()=>{const L=['Vad är en agent?','PEAS – beskriv uppgiften','Miljöns egenskaper','Fem sorters agenter','Sandlådan','Prestandamått och belöningsfusk','Dagens AI-agenter','Testa dig själv'];
+ return `${hdr('Upplägg · 2–3 lektioner','Vad vi går igenom')}<div class="abs" style="left:72px;top:200px;width:1136px;display:grid;grid-template-columns:1fr 1fr;grid-auto-flow:column;grid-template-rows:repeat(4,auto);column-gap:56px">${L.map((t,i)=>`<div class="rise" style="--d:${.15+i*.07}s;display:flex;gap:22px;align-items:center;padding:20px 0;border-top:1px solid var(--line)"><span class="mono" style="font-size:15px;color:${i===7?'var(--accent)':'var(--muted)'};width:28px">${String(i+1).padStart(2,'0')}</span><span style="font-size:22px;line-height:30px;font-weight:600">${t}</span><span style="flex:1"></span>${'<i class="agdot"></i>'.repeat(i+1)}</div>`).join('')}</div>`;}},
+
+/* 3 */{sec:1,title:'Vad är en agent?',html:()=>{const X=[250,568,886],N=['Sensorer','Agentprogrammet','Ställdon'],path='M250 257 V70 H886 V257 Z';
+ let s=`<svg viewBox="0 0 1136 300" width="1136" height="300"><rect class="fade" x="150" y="6" width="836" height="150" rx="16" style="fill:none;stroke:var(--ctrl);stroke-width:2;stroke-dasharray:0 9;stroke-linecap:round"/><text class="klab fade" x="172" y="34">AGENTEN</text>
+ <rect class="fade" x="150" y="222" width="836" height="70" rx="8" style="fill:var(--surface)"/><text class="klab fade" x="172" y="262">MILJÖN</text>
+ <path class="dp fade" style="--d:.3s" d="M250 257 V70 H886 V257"/>`;
+ for(let i=0;i<9;i++)s+=`<circle class="pulse" r="5"><animateMotion dur="7.2s" begin="-${(i*.8).toFixed(1)}s" repeatCount="indefinite" path="${path}"/></circle>`;
+ X.forEach((x,i)=>{s+=`<g class="pop" style="--d:${.2+i*.15}s"><circle cx="${x}" cy="70" r="36" style="fill:${i===1?'var(--accent)':'var(--bg)'};stroke:${i===1?'var(--accent)':'var(--ink)'};stroke-width:2.5"/>${i===1?[0,1,2].map(a=>[0,1,2].map(b=>`<circle cx="${x-12+b*12}" cy="${58+a*12}" r="3.4" style="fill:var(--on-accent)"/>`).join('')).join(''):`<circle cx="${x}" cy="70" r="6" style="fill:var(--ink)"/>`}</g><text class="fade" style="--d:${.4+i*.15}s;font:600 17px var(--sans);fill:var(--ink);text-anchor:middle" x="${x}" y="132">${N[i]}</text>`;});
+ s+=`<text class="ann fade" style="--d:.8s;text-anchor:end;font-weight:600" x="232" y="190">percept ↑</text><text class="ann fade" style="--d:.9s;font-weight:600" x="904" y="190">↓ handling</text></svg>`;
+ const W=['uppfatta','bestämma','handla','miljön ändras','uppfatta igen …'];
+ return `${hdr('Kapitel 1','Vad är en agent?')}<p class="lead rise" style="--d:.15s;max-width:1000px;font-size:19px;line-height:28px;margin-top:10px">En agent uppfattar sin omgivning med <b>sensorer</b> och påverkar den med <b>ställdon</b>. Mellan dem sitter <b>agentprogrammet</b>, som bestämmer vilken handling som ska utföras. Allt utanför agenten kallas <b>miljön</b>.</p>
+ <div class="abs" style="left:72px;top:270px">${s}</div><div class="abs rise strip" style="left:72px;top:592px;--d:.9s"><span class="k" style="margin-right:18px">Loopen</span>${W.map((w,i)=>`<span class="sw">${w}</span>${i<W.length-1?'<span class="ar">→</span>':''}`).join('')}</div>`;},
+ enter:el=>{const w=$$('.strip .sw',el);let i=0;const id=setInterval(()=>{w.forEach((x,k)=>x.classList.toggle('on',k===i));i=(i+1)%w.length;},950);return()=>clearInterval(id);}},
+
+/* 4 */{sec:1,title:'Världens minsta dammsugarvärld',html:()=>{const cl=cx=>{let s='';for(let i=0;i<16;i++){const a=i*2.39996,r=4+Math.sqrt(i)*9;s+=`<circle cx="${(cx+Math.cos(a)*r).toFixed(1)}" cy="${(205+Math.sin(a)*r*.55).toFixed(1)}" r="4" style="transition-delay:${(i*.03).toFixed(2)}s"/>`;}return s;};
+ const svg=`<svg class="vac" viewBox="0 0 640 310" width="640" height="310">${['A','B'].map((c,i)=>`<g class="fade" style="--d:${.2+i*.15}s"><rect x="${i*330}" y="30" width="300" height="230" rx="8" style="fill:var(--surface);stroke:var(--line)"/><text x="${i*330+20}" y="68" style="font:600 30px var(--display);fill:var(--ink)">${c}</text><g class="dirt" data-c="${c}">${cl(i*330+150)}</g><text class="klab st" data-c="${c}" x="${i*330+150}" y="292" style="text-anchor:middle"></text></g>`).join('')}
+ <g class="robot" style="transform:translate(150px,150px)"><circle r="34" style="fill:var(--ink)"/><circle cy="-16" r="5" style="fill:var(--accent)"/><circle r="22" style="fill:none;stroke:var(--bg);stroke-width:1.5;stroke-dasharray:0 6;stroke-linecap:round"/></g></svg>`;
+ return `${hdr('Kapitel 1 · Exempel','Världens minsta dammsugarvärld')}<p class="lead rise" style="--d:.15s;max-width:1000px;font-size:19px;line-height:28px;margin-top:10px">Två rutor, A och B. Sensorerna säger vilken ruta roboten står på och om rutan är smutsig. Agentprogrammet är en enkel tabell.</p>
+ <div class="abs" style="left:72px;top:262px">${svg}</div><div class="abs rise" style="left:780px;top:280px;width:428px;--d:.4s"><div class="vout mono" style="font-size:22px;line-height:30px;height:34px"></div><table class="tb vtab" style="font-size:17px;margin-top:18px"><thead><tr><th>Percept</th><th>Handling</th></tr></thead><tbody>${[['[A, smutsig]','Sug'],['[A, ren]','Höger'],['[B, smutsig]','Sug'],['[B, ren]','Vänster']].map((r,i)=>`<tr data-r="${i}"><td class="m">${r[0]}</td><td><b>${r[1]}</b></td></tr>`).join('')}</tbody></table></div>`;},
+ enter:el=>vacuum(el)},
+
+/* 5 */{sec:1,title:'Rationell agent',html:()=>`${hdr('Kapitel 1 · Begrepp','Rationell agent')}
+ <p class="abs rise" style="left:72px;top:200px;width:560px;--d:.2s;font:600 25px/35px var(--display);letter-spacing:-.01em;margin:0">En agent som för varje percept väljer den handling som förväntas ge <span class="acc">bäst resultat enligt ett prestandamått</span>, utifrån det den har uppfattat och det den vet om världen.</p>
+ <div class="abs band rise" style="left:72px;top:450px;width:560px;--d:.45s"><p style="margin:0;font-size:20px;line-height:29px">Rationell betyder alltså inte allvetande – agenten gör det bästa den kan med den information den har.</p></div>
+ <div class="abs fade" style="left:688px;top:200px;--d:.3s"><canvas></canvas><div class="legend" style="margin-top:14px"><span><i class="lg exp"></i>Agenten</span><span><i class="lg sub"></i>Det den ser</span><span><i class="lg path"></i>Målet – syns bara inom räckhåll</span></div></div>`,
+ enter:el=>vision($('canvas',el),el)},
+
+/* 6 */{sec:2,title:'PEAS – beskriv uppgiften',html:()=>`${hdr('Kapitel 2','PEAS – beskriv uppgiften')}<p class="lead rise" style="--d:.15s;margin-top:10px">Innan man bygger en agent måste man beskriva uppgiftsmiljön.</p>
+ ${peas([['P','Prestandamått','Hur mäter vi om agenten gör ett bra jobb?'],['E','Miljö','Var verkar agenten, och vad finns där?'],['A','Ställdon','Hur kan agenten påverka miljön?'],['S','Sensorer','Hur får agenten information?']],260)}`},
+
+/* 7 */{sec:2,inv:true,title:'Vems prestandamått?',html:()=>`${amb}${hdr('Kapitel 2 · Diskutera','Vems prestandamått?','big')}${qs(['Rekommendationsalgoritmen mäts ofta på hur länge du tittar. Är det ett bra prestandamått – <b>för vem?</b>','Vilket prestandamått skulle du själv vilja att en självkörande taxi hade? Vad händer om det bara är ”kom fram så snabbt som möjligt”?'],250)}`,
+ enter:el=>ambient($('canvas',el),el)},
+
+/* 8 */{sec:3,title:'Miljöns egenskaper',html:()=>{const R=[['Fullt observerbar','Delvis observerbar','Ser agenten allt som spelar roll?'],['En agent','Flera agenter','Finns det andra som också handlar?'],['Deterministisk','Stokastisk','Ger samma handling alltid samma utfall?'],['Episodisk','Sekventiell','Påverkar ett beslut de kommande?'],['Statisk','Dynamisk','Ändras världen medan agenten tänker?'],['Diskret','Kontinuerlig','Finns ett begränsat antal lägen och handlingar?']];
+ const ramp=i=>`<svg width="96" height="14" viewBox="0 0 96 14">${[0,1,2,3,4,5].map(k=>`<circle class="d" style="--d:${(.4+i*.08+k*.05).toFixed(2)}s;fill:var(${k>3?'--accent':'--ink'});opacity:${(.25+k*.15).toFixed(2)}" cx="${7+k*16.4}" cy="7" r="${2+k*.9}"/>`).join('')}</svg>`;
+ return `${hdr('Kapitel 3','Miljöns egenskaper')}<div class="abs rise" style="left:72px;top:180px;width:1136px;--d:.15s"><table class="tb" style="font-size:18px;line-height:26px"><thead><tr><th style="width:22%">Lättare</th><th style="width:12%"></th><th style="width:22%;color:var(--accent)">Svårare</th><th>Frågan</th></tr></thead><tbody>${R.map((r,i)=>`<tr><td style="padding:14px 12px">${r[0]}</td><td style="vertical-align:middle">${ramp(i)}</td><td style="padding:14px 12px"><b>${r[1]}</b></td><td class="muted" style="padding:14px 12px">${r[2]}</td></tr>`).join('')}</tbody></table></div>`;}},
+
+/* 9 */{sec:3,title:'Klassificera tre miljöer',html:()=>{const R=['Fullt / delvis observerbar','En / flera agenter','Deterministisk / stokastisk','Episodisk / sekventiell','Statisk / dynamisk','Diskret / kontinuerlig'];
+ return `${hdr('Kapitel 3 · Diskutera','Klassificera tre miljöer')}<div class="abs rise" style="left:72px;top:180px;width:1136px;--d:.15s"><table class="tb" style="font-size:18px;line-height:26px"><thead><tr><th style="width:31%"></th>${[['Schack'],['Röntgenbilder'],['Självkörande taxi']].map(c=>`<th>${c[0]}</th>`).join('')}</tr></thead><tbody>${R.map(r=>`<tr><td style="padding:13px 12px"><b>${r}</b></td>${'<td class="cell-empty" style="padding:13px 12px">· · ·</td>'.repeat(3)}</tr>`).join('')}</tbody></table>
+ <p class="muted" style="font-size:18px;margin-top:22px">Diskutera i par: välj ett alternativ i varje rad och motivera varför.</p></div>`;}},
+
+/* 10 */{sec:3,title:'Tre miljöer klassificerade',steps:3,html:()=>{const R=[['Observerbar','Fullt','Fullt','*Delvis'],['Agenter','*Flera','En','*Flera'],['Utfall','Deterministisk','Deterministisk','*Stokastisk'],['Följd','*Sekventiell','Episodisk','*Sekventiell'],['Förändring','Statisk','Statisk','*Dynamisk'],['Tillstånd','Diskret','*Kontinuerlig','*Kontinuerlig']];
+ const cell=(v,c)=>`<td class="ec" data-c="${c}" style="padding:13px 12px">${v[0]==='*'?`<b class="acc">${v.slice(1)}</b>`:v}</td>`;
+ return `${hdr('Kapitel 3 · Exempel','Tre miljöer klassificerade')}<div class="abs rise" style="left:72px;top:180px;width:1136px;--d:.15s"><table class="tb" style="font-size:18px;line-height:26px"><thead><tr><th style="width:22%"></th>${['Schack','Röntgenbilder','Självkörande taxi'].map((c,i)=>`<th class="ec" data-c="${i+1}">${c}</th>`).join('')}</tr></thead><tbody>${R.map(r=>`<tr><td style="padding:13px 12px" class="k">${r[0]}</td>${cell(r[1],1)}${cell(r[2],2)}${cell(r[3],3)}</tr>`).join('')}</tbody></table>
+ <p class="onfin" style="font-size:17px;line-height:25px;margin:20px 0 0"><b class="acc">Blått</b> = det svårare alternativet. Schack är deterministiskt trots motståndaren: dragen är strategiska, inte slumpmässiga.</p><div class="stepl"></div></div>`;},
+ step:(el,s)=>{$$('.ec',el).forEach(c=>{c.style.transition='opacity .4s';c.style.opacity=+c.dataset.c<=s?1:.12;});$$('.onfin',el).forEach(x=>x.classList.toggle('on',s===3));const sl=$('.stepl',el);sl.innerHTML=s===0?'Tryck <kbd>→</kbd> för att visa en miljö i taget':`${s} av 3 miljöer`;}},
+
+/* 11 */{sec:4,title:'Fem sorters agenter',html:()=>{const R=[['Enkel reflex','Samma percept ger alltid samma handling','Hamnar i loopar'],['Modellbaserad','Minns det den har sett','Utforskar allt, men tar omvägar'],['Målbaserad','Söker en väg till målet','Klar på ungefär halva tiden'],['Nyttobaserad','Väger för- och nackdelar','Åker hem och laddar innan batteriet dör'],['Lärande','Lär sig av erfarenhet','Blir bättre för varje episod']];
+ return `${hdr('Kapitel 4','Fem sorters agenter')}<div class="abs rise" style="left:72px;top:180px;width:1136px;--d:.15s"><table class="tb" style="font-size:18px;line-height:26px"><thead><tr><th style="width:30%">Agent</th><th style="width:32%">Så bestämmer den</th><th>I lägenheten</th></tr></thead><tbody>${R.map((r,i)=>`<tr class="rise" style="--d:${.25+i*.1}s"><td style="padding:14px 12px"><div style="display:flex;gap:16px;align-items:center"><span class="num ${i===4?'a':''}">${i+1}</span><b style="font-size:20px">${r[0]}</b></div></td><td style="padding:20px 12px">${r[1]}</td><td class="muted" style="padding:20px 12px">${r[2]}</td></tr>`).join('')}</tbody></table></div>`;}},
+
+/* 12 */{sec:5,title:'Vilken agent är bäst?',html:()=>{const ic=[['..XXXXX..','.X.....X.','X..XoX..X','.X.....X.','..XXXXX..'],['XXXXXXXX.','Xoo....XX','Xoo....XX','Xoo....XX','XXXXXXXX.'],['XoXXXoXXX','XXXoXXXoX','oXXXXoXXX','XXoXXXXoX','XXXXoXXXX']];
+ const C=[['Delvis observerbar','Reflexagenten fastnar. Med en stokastisk miljö slirar den ibland ut ur loopen – slumpen blir ett slags utforskning.'],['Batteri + dynamisk','Bara den nyttobaserade agenten klarar sig, eftersom den väger städandet mot risken att batteriet tar slut.'],['Allt påslaget','Alla agenter blir dåliga. Verkliga miljöer ser ut så, och därför är verklig AI svår.']];
+ return `${hdr('Kapitel 5 · Sandlådan','Vilken agent är bäst?')}<p class="lead rise" style="--d:.15s;margin-top:10px">Ingen agent är bäst i alla miljöer. Det beror på hur miljön ser ut.</p><div class="abs" style="left:72px;top:290px;width:1136px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px">${C.map((c,i)=>`<div class="card rise" style="--d:${.25+i*.12}s">${bitmap(ic[i],{s:12,r:4,dl:.4+i*.15})}<div class="k" style="margin-top:22px">${c[0]}</div><p style="font-size:18px;line-height:27px;margin:8px 0 0">${c[1]}</p></div>`).join('')}</div>`;}},
+
+/* 13 */{sec:6,inv:true,title:'En agent gör det vi mäter',html:()=>`${amb}<div class="abs" style="left:72px;top:220px;width:1100px"><div class="ov rise">Kapitel 6 · Prestandamått och belöningsfusk</div><p class="rise" style="--d:.15s;font:600 64px/72px var(--display);letter-spacing:-.02em;margin:20px 0 0">En agent gör det vi <span class="acc">mäter</span> – inte det vi <span style="text-decoration:underline dotted;text-decoration-thickness:4px;text-underline-offset:10px">menar</span>.</p></div>`,
+ enter:el=>ambient($('canvas',el),el)},
+
+/* 14 */{sec:6,title:'Belöningsfusk',html:()=>`${hdr('Kapitel 6','Belöningsfusk')}<p class="lead rise" style="--d:.15s;max-width:1080px;font-size:19px;line-height:28px;margin-top:10px">Agenten hittar ett sätt att få hög poäng som vi inte hade tänkt oss. Den är inte ”elak” – den är rationell utifrån det prestandamått vi gav den. <b>Felet ligger i måttet.</b></p>
+ <div class="abs" style="left:72px;top:252px;width:1136px;display:grid;grid-template-columns:1fr 1fr;gap:48px">${[['hack','Belönas per sugning','Tömmer dammpåsen och suger upp samma smuts igen. Vinner stort i antal sugningar.'],['ok','Belönas för ren lägenhet','Städar det som är smutsigt. Vinner i det vi egentligen ville ha.']].map((c,i)=>`<div class="rise" style="--d:${.25+i*.15}s"><div style="display:flex;justify-content:space-between;align-items:baseline"><div class="k" style="${i?'color:var(--accent)':''}">${c[1]}</div><div class="mono muted" style="font-size:13px">sugningar <b class="c1" style="color:var(--ink)">0</b> · ren <b class="c2" style="color:var(--ink)">0 %</b></div></div><canvas data-m="${c[0]}" style="margin-top:10px;background:var(--surface);border-radius:8px"></canvas><p style="font-size:17px;line-height:25px;margin:14px 0 0">${c[2]}</p></div>`).join('')}</div>
+ <div class="abs band rise" style="left:72px;top:556px;width:1136px;--d:.55s;padding:18px 28px;display:flex;gap:24px;align-items:center"><span class="k">Tumregel</span><span style="font-size:20px;line-height:28px;font-weight:600">Mät det du vill ha i miljön, inte hur du tror att agenten ska bete sig.</span></div>`,
+ enter:el=>{const f=$$('canvas',el).map(c=>hack(c,el,c.dataset.m,$('.c1',c.parentNode),$('.c2',c.parentNode)));return()=>f.forEach(x=>x());}},
+
+/* 15 */{sec:6,title:'Det händer på riktigt',html:()=>{const T=[[200,60],[255,128],[145,128]];
+ const boat=`<svg viewBox="0 0 300 170" width="300" height="170"><circle class="fade" cx="200" cy="95" r="55" style="fill:none;stroke:var(--ctrl);stroke-width:3.2;stroke-dasharray:0 10;stroke-linecap:round"/>${[[200,40],[255,95],[145,95]].map((p,i)=>`<circle class="d" style="--d:${.4+i*.1}s;fill:var(--accent)" cx="${p[0]}" cy="${p[1]}" r="7"/>`).join('')}<circle class="pulse" r="9" style="fill:var(--ink)"><animateMotion dur="2.6s" repeatCount="indefinite" path="M200 40 A55 55 0 1 1 199.9 40"/></circle><g class="fade" style="--d:.6s"><circle cx="40" cy="95" r="12" style="fill:none;stroke:var(--ink);stroke-width:2.5;stroke-dasharray:0 6;stroke-linecap:round"/><text class="klab" x="40" y="132" style="text-anchor:middle">MÅL</text></g></svg>`;
+ const tetris=bitmap(['.........','.oo...oo.','.oo...oo.','.oo...oo.','.oo...oo.','.........','XX.X..XXX','XXXXX.XXX','XXXXXXXX.'],{s:17,r:6,dl:.4});
+ let soc='<svg viewBox="0 0 300 170" width="300" height="170">';[2,3,3,4,5,6,8,10].forEach((h,c)=>{for(let k=0;k<h;k++)soc+=`<circle class="d" style="--d:${(.4+c*.12+k*.03).toFixed(2)}s;fill:var(${c===7?'--accent':'--ink'})" cx="${40+c*31}" cy="${160-k*15}" r="5.5"/>`;});soc+='</svg>';
+ const C=[[boat,'Båtrace · 2016','Fick poäng för att träffa mål längs banan. Lärde sig att åka runt i en cirkel och träffa samma mål om och om igen – utan att någonsin gå i mål.'],[tetris,'Tetris · 2013','Skulle undvika att förlora och lärde sig att pausa spelet för alltid. Den som aldrig spelar kan aldrig förlora.'],[soc,'Sociala medier','Optimerar för tittartid och kan visa allt mer upprörande innehåll, eftersom det håller kvar oss längre.']];
+ return `${hdr('Kapitel 6 · Exempel','Det händer på riktigt')}<div class="abs" style="left:72px;top:190px;width:1136px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px">${C.map((c,i)=>`<div class="card rise" style="--d:${.15+i*.12}s"><div style="height:175px;display:flex;align-items:center;justify-content:center">${c[0]}</div><div class="k" style="margin-top:18px">${c[1]}</div><p style="font-size:17px;line-height:25px;margin:8px 0 0">${c[2]}</p></div>`).join('')}</div>`;}},
+
+/* 16 */{sec:7,title:'Dagens AI-agenter',html:()=>{const c=[280,95],T=[['Söka på webben',60],['Läsa en kalender',207],['Skicka mejl',353],['Köra kod',500]],ty=330;
+ let s=`<svg viewBox="0 0 560 390" width="560" height="390"><text class="klab fade" x="280" y="20" style="text-anchor:middle">AGENTPROGRAM</text><text class="klab fade" x="0" y="${ty-40}">VERKTYG</text>`;
+ T.forEach(([n,x],i)=>{s+=`<g class="edge tree">${dots(c[0],c[1],x,ty,{gap:12,delay:.3+i*.1})}</g><circle class="pulse" r="5"><animateMotion dur="2.4s" begin="${(i*.6).toFixed(1)}s" repeatCount="indefinite" keyPoints="0;1;0" keyTimes="0;.5;1" calcMode="linear" path="M${c[0]} ${c[1]} L${x} ${ty}"/></circle>`;});
+ s+=`<g class="pop" style="--d:.15s"><circle cx="${c[0]}" cy="${c[1]}" r="50" style="fill:var(--accent)"/>${[0,1,2,3,4].map(k=>`<circle cx="${c[0]-24+k*12}" cy="${c[1]}" r="3.6" style="fill:var(--on-accent)"><animate attributeName="r" values="2.4;4.6;2.4" dur="1.2s" begin="${(k*.15).toFixed(2)}s" repeatCount="indefinite"/></circle>`).join('')}</g><text class="fade" x="${c[0]+64}" y="${c[1]+6}" style="--d:.4s;font:600 17px var(--sans);fill:var(--ink)">Språkmodell</text>`;
+ T.forEach(([n,x],i)=>{s+=`<g class="pop" style="--d:${.5+i*.1}s"><circle cx="${x}" cy="${ty}" r="16" style="fill:var(--bg);stroke:var(--ink);stroke-width:2.5"/></g><text class="fade" style="--d:${.6+i*.1}s;font:600 15px var(--sans);fill:var(--ink);text-anchor:middle" x="${x}" y="${ty+40}">${n}</text>`;});s+='</svg>';
+ return `${hdr('Kapitel 7','Dagens AI-agenter')}<div class="abs" style="left:72px;top:200px;width:500px"><p class="rise" style="--d:.15s;font:600 26px/35px var(--display);letter-spacing:-.01em;margin:0">En stor språkmodell som får använda verktyg.</p><p class="p rise" style="--d:.3s;font-size:19px;line-height:29px;margin-top:20px">Språkmodellen är agentprogrammet. Den arbetar i samma loop som dammsugaren:</p><p class="rise mono" style="--d:.45s;font-size:17px;line-height:26px;margin:16px 0 0">uppfatta → bestämma → handla → <span class="acc">se resultatet</span></p></div><div class="abs" style="left:640px;top:190px">${s}</div>`;}},
+
+/* 17 */{sec:7,title:'PEAS för AI-assistenten',html:()=>`${hdr('Kapitel 7 · Exempel','PEAS för AI-assistenten')}${peas([['P','Prestandamått','Uppgiften blir rätt löst, snabbt, utan att göra något användaren inte vill.'],['E','Miljö','Användaren, kalendrar, skolans bokningssystem, andra människor.'],['A','Ställdon','Verktygsanrop (boka, skicka meddelande) och textsvar.'],['S','Sensorer','Användarens text och resultaten från verktygen.']],200)}`},
+
+/* 18 */{sec:7,inv:true,title:'Vem bär ansvaret?',html:()=>`${amb}${hdr('Kapitel 7 · Diskutera','Vem bär ansvaret?')}${qs(['Är miljön fullt eller delvis observerbar för assistenten? Deterministisk eller stokastisk? Statisk eller dynamisk? En eller flera agenter?','Vilken av agenttyperna i kapitel 4 liknar den mest? Planerar den? Har den en modell av världen?','Assistenten fick tillåtelse att boka och skicka meddelanden. Vilka handlingar borde den fråga om innan den utför dem? <b>Vem har ansvaret om den bokar fel?</b>'],180)}`,
+ enter:el=>ambient($('canvas',el),el)},
+
+/* 19 */{sec:8,inv:true,title:'Testa dig själv',html:()=>`${amb}<div class="abs" style="left:72px;top:180px;width:900px">${hdr('Andrew Galbraith · AI 1','Testa dig själv','big')}<p class="lead rise" style="--d:.25s;margin-top:22px">Tolv frågor om allt du har gått igenom. Du får förklaringen direkt när du svarar.</p>
+ <div class="rise" style="--d:.4s;display:flex;gap:12px;margin-top:34px">${Array.from({length:12},(_,i)=>`<i class="qdot" style="animation-delay:${(.6+i*.08).toFixed(2)}s"></i>`).join('')}</div>
+ <div class="rise" style="--d:.6s;display:flex;gap:24px;align-items:center;margin-top:40px"><a class="cta" href="../agenter-och-miljoer/">Öppna testet →</a><span class="mono muted" style="font-size:15px">prolixab.github.io/ai1/agenter-och-miljoer</span></div></div>`,
+ enter:el=>ambient($('canvas',el),el)}
+];
+
+/* ---------- engine ---------- */
+const stage=$('#stage'),host=$('#slide'),dotsEl=$('#dots');let cur=0,step=0,busy=false,cleanup=[],theme=localStorage.getItem('sok-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+S.forEach((s,i)=>{const b=document.createElement('button');b.title=`${i+1}. ${s.title}`;b.setAttribute('aria-label',`Bild ${i+1}: ${s.title}`);if(i&&S[i-1].sec!==s.sec)b.className='gap';b.onclick=e=>{e.stopPropagation();go(i,i>cur?1:-1);};dotsEl.appendChild(b);});
+function fit(){K=Math.min(innerWidth/1280,innerHeight/720);stage.style.setProperty('--k',K);}
+function pal(){const dark=(theme==='dark')!==!!S[cur].inv;document.body.className=dark?'pal-dark':'pal-light';}
+function bar(){[...dotsEl.children].forEach((b,i)=>{b.classList.toggle('past',i<cur);b.classList.toggle('now',i===cur);b.setAttribute('aria-current',i===cur?'step':'false');});$('#count').textContent=`${String(cur+1).padStart(2,'0')} / ${S.length}`;$('#sec').textContent=SEC[S[cur].sec];}
+function render(){cleanup.forEach(f=>{try{f()}catch(e){}});cleanup=[];const sl=S[cur];pal();host.innerHTML=`<section class="slide" aria-label="${sl.title}">${sl.html()}</section>`;const el=host.firstElementChild;if(sl.enter){const c=sl.enter(el);if(c)cleanup.push(c);}if(sl.step)sl.step(el,step);bar();try{history.replaceState(null,'','#'+(cur+1));}catch(e){}}
+function wipe(dir,mid,done){if(reduce){mid();done();return;}const c=$('#wipe'),x=setup(c,1280,720),col=cssv('--ink'),G=36,cols=Math.ceil(1280/G)+1,rows=Math.ceil(720/G)+1,maxR=G*.74,T=330;let t0=performance.now(),ph=0;
+ const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+ const f=now=>{const t=(now-t0)/T;x.clearRect(0,0,1280,720);x.fillStyle=col;x.beginPath();for(let i=0;i<cols;i++){const dx=dir>0?i/cols:1-i/cols;for(let j=0;j<rows;j++){const dl=dx*.55+((j*7+i*3)%5)/5*.12;let p=Math.max(0,Math.min(1,(t-dl)/.45));p=ease(p);const r=(ph?1-p:p)*maxR;if(r<=.2)continue;const cx=i*G,cy=j*G;x.moveTo(cx+r,cy);x.arc(cx,cy,r,0,6.283);}}x.fill();
+  if(t<1.12)requestAnimationFrame(f);else if(!ph){ph=1;t0=now;mid();requestAnimationFrame(f);}else{x.clearRect(0,0,1280,720);done();}};requestAnimationFrame(f);}
+function go(i,dir=1,atEnd=false){if(i<0||i>=S.length||i===cur&&!atEnd||busy)return;busy=true;wipe(dir,()=>{cur=i;step=atEnd?(S[i].steps||0):0;render();},()=>busy=false);}
+function next(){if(busy)return;const sl=S[cur];if(step<(sl.steps||0)){step++;sl.step(host.firstElementChild,step);}else go(cur+1,1);}
+function prev(){if(busy)return;const sl=S[cur];if(step>0){step--;sl.step(host.firstElementChild,step);}else go(cur-1,-1,true);}
+addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return;const k=e.key;if(['ArrowRight','ArrowDown','PageDown',' ','Enter'].includes(k)){if(k==='Enter'&&e.target.tagName==='BUTTON')return;e.preventDefault();next();}else if(['ArrowLeft','ArrowUp','PageUp','Backspace'].includes(k)){e.preventDefault();prev();}else if(k==='Home')go(0,-1);else if(k==='End')go(S.length-1,1);else if(k==='f'||k==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{});}else if(k==='t'||k==='T')toggleTheme();});
+function toggleTheme(){theme=theme==='dark'?'light':'dark';try{localStorage.setItem('sok-theme',theme);}catch(e){}render();}
+$('#theme').onclick=e=>{e.stopPropagation();toggleTheme();};$('#prev').onclick=e=>{e.stopPropagation();prev();};$('#next').onclick=e=>{e.stopPropagation();next();};
+let px=null;stage.addEventListener('pointerdown',e=>{px=[e.clientX,e.clientY];});stage.addEventListener('pointerup',e=>{if(!px||e.target.closest('button,a'))return;const dx=e.clientX-px[0];px=null;if(Math.abs(dx)>50){dx<0?next():prev();}else next();});
+let rt;addEventListener('resize',()=>{fit();clearTimeout(rt);rt=setTimeout(render,250);});
+addEventListener('hashchange',()=>{const n=parseInt(location.hash.slice(1))-1;if(n>=0&&n<S.length&&n!==cur)go(n,n>cur?1:-1);});
+fit();const h=parseInt(location.hash.slice(1));if(h>=1&&h<=S.length)cur=h-1;render();
+})();
+</script>
+</body>
+</html>

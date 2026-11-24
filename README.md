@@ -22,6 +22,8 @@ Digitalt kursmaterial för **AI 1** på Teknikprogrammet vid Erik Dahlbergsgymna
 │   └── index.html      ← Sökning (BFS, DFS, Dijkstra, girig sökning, A*)
 ├── sokalgoritmer/
 │   └── index.html      ← Presentation: Sökalgoritmer (animerade bilder, piltangenter)
+├── agenter-presentation/
+│   └── index.html      ← Presentation: Agenter och miljöer
 ├── forstarkt-inlarning/
 │   └── index.html      ← Förstärkt inlärning (Q-learning i ett 3D-rum)
 ├── beslutstrad/

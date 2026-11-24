@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sökalgoritmer – AI 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Inter+Tight:wght@600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--sans:"Inter","Helvetica Neue",Arial,system-ui,sans-serif;--display:"Inter Tight","Inter","Helvetica Neue",Arial,sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace}
+.pal-light{--bg:#ffffff;--surface:#f5f5f5;--raised:#ffffff;--ink:#0a0a0a;--muted:#5c5c5c;--subtle:#8a8a8a;--line:#e5e5e5;--ctrl:#8a8a8a;--accent:#2f4bff;--accent-h:#1f36d6;--on-accent:#ffffff;--tint:#eef0ff;--hl:#ff5a1f;--on-hl:#0a0a0a;--shadow:0 1px 2px rgba(10,10,10,.06)}
+.pal-dark{--bg:#0a0a0a;--surface:#171717;--raised:#1f1f1f;--ink:#fafafa;--muted:#a3a3a3;--subtle:#6b6b6b;--line:#262626;--ctrl:#6b6b6b;--accent:#7b8cff;--accent-h:#9aa7ff;--on-accent:#0a0a0a;--tint:#161b3d;--hl:#ff6a33;--on-hl:#0a0a0a;--shadow:0 1px 2px rgba(0,0,0,.5)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:24px;transition:background-color .25s;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;transform:translate(-50%,-50%) scale(var(--k,1));transform-origin:center;overflow:hidden;user-select:none}
+#slide{position:absolute;inset:0}
+.slide{position:absolute;inset:0;padding:52px 72px 84px}
+#wipe{position:absolute;left:0;top:0;width:1280px;height:720px;pointer-events:none;z-index:9}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.abs{position:absolute}
+canvas{display:block}
+
+/* type */
+.ov{font:600 12px/16px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:10px}
+.ov::before{content:"";width:8px;height:8px;border-radius:9999px;background:var(--accent);flex:none}
+.t{font-family:var(--display);font-weight:600;font-size:44px;line-height:52px;letter-spacing:-.02em;margin:14px 0 0;max-width:1100px;text-wrap:balance}
+.t.big{font-size:60px;line-height:64px}
+.t.huge{font-size:56px;line-height:62px}
+.lead{font-size:22px;line-height:32px;color:var(--muted);margin:18px 0 0;max-width:720px;text-wrap:pretty}
+.k{font:600 12px/16px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.h3{font-size:20px;line-height:28px;font-weight:600;margin:6px 0 0}
+.p{font-size:17px;line-height:26px;color:var(--muted);margin:6px 0 0}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.acc{color:var(--accent)}
+.strong{font-weight:600}
+b{font-weight:600}
+.hint{font:600 12px/16px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+kbd{font:600 12px var(--mono);border:1px solid var(--ctrl);border-radius:4px;padding:1px 6px;margin:0 2px;color:var(--ink)}
+
+/* entry animation */
+.rise{animation:rise .7s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--d,0s)}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+.fade{animation:fade .8s ease both;animation-delay:var(--d,0s)}
+@keyframes fade{from{opacity:0}}
+@keyframes pop{from{transform:scale(0)}}
+
+/* svg dots */
+svg{overflow:visible;display:block}
+.d{fill:var(--ctrl);transform-box:fill-box;transform-origin:center;animation:pop .45s cubic-bezier(.3,1.7,.5,1) both;animation-delay:var(--d,0s);transition:fill .35s,r .35s,opacity .35s}
+.edge.tree .d{fill:var(--ink)}
+.edge.faint .d{opacity:.3}
+.edge.path .d{fill:var(--accent);r:3.7px}
+.edge.p1 .d{fill:var(--ink);r:3.7px}
+.crow .d{fill:var(--accent);opacity:.55}
+.pop{transform-box:fill-box;transform-origin:center;animation:pop .55s cubic-bezier(.3,1.6,.5,1) both;animation-delay:var(--d,0s)}
+.node{transition:opacity .35s}
+.node .core{fill:var(--bg);stroke:var(--ink);stroke-width:2.5;transition:fill .3s,stroke .3s}
+.node .halo{fill:none;stroke:transparent;stroke-width:2;transition:stroke .3s}
+.node.dash .core{stroke-dasharray:0 5.4;stroke-linecap:round;stroke-width:3.2}
+.node.exp .core{fill:var(--ink);stroke:var(--ink)}
+.node.front .core{fill:var(--tint);stroke:var(--accent)}
+.node.front .halo{stroke:var(--accent);animation:ring 1.6s ease-in-out infinite}
+.node.cur .halo{stroke:var(--hl);stroke-width:3.5;animation:none}
+.node.path .core{fill:var(--accent);stroke:var(--accent)}
+.node.faint{opacity:.28}
+.node .lbl{font:600 15px var(--sans);fill:var(--ink);text-anchor:middle;paint-order:stroke;stroke:var(--bg);stroke-width:6px;stroke-linejoin:round}
+.node .in{font:600 19px var(--sans);text-anchor:middle;dominant-baseline:central;fill:var(--ink);transition:fill .3s}
+.node.exp .in,.node.path .in{fill:var(--bg)}
+.node .tag{font:600 12px var(--mono);fill:var(--muted);text-anchor:middle;paint-order:stroke;stroke:var(--bg);stroke-width:5px;stroke-linejoin:round}
+.node .tag.on{fill:var(--accent)}
+.badge{opacity:0;transition:opacity .3s}
+.node.num .badge{opacity:1}
+.badge circle{fill:var(--bg);stroke:var(--ink);stroke-width:1.5}
+.badge text{font:600 11px var(--mono);fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+@keyframes ring{50%{stroke-opacity:.2}}
+.w{font:400 13px var(--mono);fill:var(--muted);text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:var(--bg);stroke-width:6px;stroke-linejoin:round}
+.pulse{fill:var(--accent)}
+.pulse2{fill:none;stroke:var(--accent);stroke-width:2;opacity:.4}
+.ann{font:400 14px var(--sans);fill:var(--muted)}
+.ann.s{font-weight:600;fill:var(--ink)}
+.dp{fill:none;stroke:var(--ctrl);stroke-width:3.4;stroke-linecap:round;stroke-dasharray:0 9}
+.dp.a{stroke:var(--accent)}
+.dp.i{stroke:var(--ink)}
+.nd{fill:var(--ink)}
+.nd.a{fill:var(--accent)}
+.reveal .d{animation:none;transform:scale(0)}
+.reveal.show .d{transform:none;animation:pop .45s cubic-bezier(.3,1.7,.5,1) both;animation-delay:var(--d,0s)}
+.ln{stroke:var(--line);stroke-width:1.4}
+.lvl{stroke:var(--line);stroke-width:1.5;stroke-dasharray:0 8;stroke-linecap:round}
+
+/* legend */
+.legend{display:flex;gap:20px;flex-wrap:wrap;font-size:14px;line-height:20px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:8px}
+.lg{width:14px;height:14px;border-radius:9999px;border:2.5px solid var(--ink);background:var(--bg);display:inline-block}
+.lg.exp{background:var(--ink)}
+.lg.front{border-color:var(--accent);background:var(--tint)}
+.lg.cur{border-color:var(--hl);border-width:3px}
+.lg.path{border-color:var(--accent);background:var(--accent)}
+.lg.dash{border-style:dotted}
+.lg.sub{border:0;background:var(--subtle)}
+.lg.line{border:0;background:var(--line)}
+
+/* table */
+.tb{border-collapse:collapse;width:100%;font-size:15px;line-height:21px}
+.tb th{font:600 12px/16px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 12px;background:var(--surface)}
+.tb td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tb td.n{font-family:var(--mono);color:var(--muted);width:34px}
+.tb .m{font-family:var(--mono);font-size:14px}
+.tb tr.hi td{background:var(--tint)}
+.wk tr[data-r]{opacity:0;transition:opacity .35s,background-color .3s}
+.wk tr[data-r] td{transition:background-color .3s}
+.wk tr.on{opacity:1}
+.wk tr.now td{background:var(--tint)}
+.q{font-family:var(--mono);font-size:14px;letter-spacing:.06em;color:var(--muted)}
+.q b{color:var(--accent)}
+.goal{color:var(--accent);font-weight:600}
+.dim{color:var(--muted);font-size:13px}
+.onfin{opacity:0;transition:opacity .4s,transform .4s;transform:translateY(8px)}
+.onfin.on{opacity:1;transform:none}
+.stepl{font:600 12px/16px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:14px;display:flex;gap:6px;align-items:center}
+.sdots{display:inline-flex;gap:5px;margin-left:8px}
+.sdots i{width:7px;height:7px;border-radius:9999px;background:var(--line);transition:background .3s}
+.sdots i.on{background:var(--ink)}
+
+/* blocks */
+.card{background:var(--raised);border:1px solid var(--line);border-radius:8px;padding:24px}
+.band{background:var(--ink);color:var(--bg);border-radius:8px;padding:28px 32px}
+.band .k{color:var(--bg);opacity:.75}
+.band .p{color:var(--bg);opacity:.8}
+.row{display:flex;gap:24px}
+.col{display:flex;flex-direction:column}
+.chip{display:inline-flex;align-items:center;gap:10px;font-size:16px}
+.num{width:36px;height:36px;border-radius:9999px;background:var(--ink);color:var(--bg);display:inline-flex;align-items:center;justify-content:center;font:600 15px var(--mono);flex:none}
+.num.a{background:var(--accent);color:var(--on-accent)}
+.cell-empty{color:var(--subtle);letter-spacing:.3em}
+
+/* queue/stack */
+.lane{position:relative;height:210px;border-radius:8px;background:var(--surface);overflow:hidden}
+.qd{position:absolute;left:0;top:0;width:40px;height:40px;border-radius:9999px;background:var(--ink);color:var(--bg);font:600 14px var(--mono);display:flex;align-items:center;justify-content:center;transition:transform .55s cubic-bezier(.3,1.25,.5,1),opacity .45s,background-color .3s}
+.qd.next{background:var(--accent);color:var(--on-accent)}
+.qd.out{opacity:0;background:var(--accent);color:var(--on-accent)}
+.lane .mk{position:absolute;font:600 11px/14px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* progress bar */
+#bar{position:absolute;left:72px;right:72px;bottom:26px;height:24px;display:flex;align-items:center;z-index:5}
+#sec{flex:1;font:600 12px/16px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+#dots{display:flex;align-items:center;gap:7px}
+#dots button{position:relative;width:8px;height:8px;border-radius:9999px;border:0;padding:0;background:var(--subtle);opacity:.4;cursor:pointer;transition:width .35s cubic-bezier(.3,1.3,.5,1),background-color .35s,opacity .35s}
+#dots button::after{content:"";position:absolute;inset:-8px -4px}
+#dots button.gap{margin-left:12px}
+#dots button.past{background:var(--ink);opacity:1}
+#dots button.now{width:26px;background:var(--accent);opacity:1}
+#dots button:hover{opacity:1}
+#right{flex:1;display:flex;justify-content:flex-end;align-items:center;gap:6px}
+#count{font:400 13px var(--mono);color:var(--muted);min-width:64px;text-align:center}
+.nb{width:28px;height:28px;border-radius:4px;border:1px solid var(--ctrl);background:transparent;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
+.nb:hover{background:var(--surface)}
+.nb svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body class="pal-light">
+<div id="stage" aria-live="polite">
+  <div id="slide"></div>
+  <nav id="bar" aria-label="Bildnavigering">
+    <div id="sec"></div>
+    <div id="dots"></div>
+    <div id="right">
+      <button class="nb" id="theme" title="Byt ljust/mörkt tema (T)" aria-label="Byt tema"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg></button>
+      <button class="nb" id="prev" aria-label="Föregående"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <span id="count">01 / 31</span>
+      <button class="nb" id="next" aria-label="Nästa"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+  </nav>
+  <canvas id="wipe"></canvas>
+</div>
+<script>
+(()=>{
+"use strict";
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let K=1;
+const cssv=n=>getComputedStyle(document.body).getPropertyValue(n).trim();
+const fmt=n=>n.toLocaleString('sv-SE');
+
+/* ---------- helpers ---------- */
+function setup(cv,w,h){const R=(window.devicePixelRatio||1)*Math.max(K,.5);cv.width=Math.round(w*R);cv.height=Math.round(h*R);cv.style.width=w+'px';cv.style.height=h+'px';const x=cv.getContext('2d');x.setTransform(R,0,0,R,0,0);return x;}
+function loop(el,fn){let id,t0=performance.now();const f=t=>{if(!el.isConnected)return;fn(t-t0,t);id=requestAnimationFrame(f)};id=requestAnimationFrame(f);return()=>cancelAnimationFrame(id);}
+function dots(x1,y1,x2,y2,o={}){const gap=o.gap||12,r=o.r||2.4,dl=o.delay||0,st=o.step??.016;const L=Math.hypot(x2-x1,y2-y1);const n=Math.max(1,Math.round(L/gap));let s='';for(let i=0;i<=n;i++){const t=i/n;s+=`<circle class="d" cx="${(x1+(x2-x1)*t).toFixed(1)}" cy="${(y1+(y2-y1)*t).toFixed(1)}" r="${r}" style="--d:${(dl+i*st).toFixed(3)}s"/>`;}return s;}
+function qdots(x1,y1,cx,cy,x2,y2,o={}){const gap=o.gap||12,r=o.r||2.4,dl=o.delay||0,st=o.step??.016;let L=0,px=x1,py=y1;for(let i=1;i<=50;i++){const t=i/50,x=(1-t)*(1-t)*x1+2*(1-t)*t*cx+t*t*x2,y=(1-t)*(1-t)*y1+2*(1-t)*t*cy+t*t*y2;L+=Math.hypot(x-px,y-py);px=x;py=y;}const n=Math.round(L/gap);let s='';for(let i=0;i<=n;i++){const t=i/n,x=(1-t)*(1-t)*x1+2*(1-t)*t*cx+t*t*x2,y=(1-t)*(1-t)*y1+2*(1-t)*t*cy+t*t*y2;s+=`<circle class="d" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" style="--d:${(dl+i*st).toFixed(3)}s"/>`;}return s;}
+const ek=(a,b)=>[a,b].sort().join('');
+function pulse(svg,pts){$$('.pulse,.pulse2',svg).forEach(n=>n.remove());if(!pts||pts.length<2)return;let L=0;for(let i=1;i<pts.length;i++)L+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);const d='M'+pts.map(p=>p.join(' ')).join(' L');const dur=(Math.max(1.6,L/170)).toFixed(2);svg.insertAdjacentHTML('beforeend',`<circle class="pulse2" r="11"><animateMotion dur="${dur}s" repeatCount="indefinite" path="${d}"/></circle><circle class="pulse" r="6"><animateMotion dur="${dur}s" repeatCount="indefinite" path="${d}"/></circle>`);}
+function bitmap(rows,{s=14,r=4.4,dl=0}={}){let o='',i=0;rows.forEach((row,y)=>[...row].forEach((c,x)=>{if(c==='.')return;o+=`<circle class="d" style="fill:var(${c==='o'?'--accent':'--ink'});--d:${(dl+i++*.012+ (x+y)*.01).toFixed(3)}s" cx="${x*s+s/2}" cy="${y*s+s/2}" r="${r}"/>`;}));return `<svg viewBox="0 0 ${rows[0].length*s} ${rows.length*s}" width="${rows[0].length*s}" height="${rows.length*s}">${o}</svg>`;}
+
+/* ---------- the map ---------- */
+const TN={J:'Jönköping',H:'Huskvarna',T:'Tenhult',N:'Nässjö',E:'Eksjö',S:'Sävsjö',V:'Vetlanda'};
+const TW={
+ J:{x:90,y:110,l:[0,-21,'middle'],g:[-18,5,'end']},
+ H:{x:215,y:55,l:[0,-21,'middle'],g:[18,5,'start']},
+ T:{x:240,y:190,l:[0,30,'middle'],g:[0,47,'middle']},
+ N:{x:380,y:215,l:[0,-20,'middle'],g:[-4,42,'middle']},
+ E:{x:535,y:140,l:[0,-21,'middle'],g:[0,-38,'middle']},
+ S:{x:175,y:350,l:[0,30,'middle'],g:[-18,5,'end']},
+ V:{x:475,y:360,l:[0,30,'middle'],g:[18,5,'start']}};
+const ED=[['J','H',8],['J','T',16],['J','S',55],['H','T',12],['T','N',20],['N','E',22],['N','V',45],['N','S',35],['E','V',40],['S','V',30]];
+function mapSVG(o={}){const P=o.pos||TW,E=o.edges||ED,keys=Object.keys(P),w=o.vw||600,h=o.vh||410,W=o.w||w;
+ let s=`<svg class="map" viewBox="0 0 ${w} ${h}" width="${W}" height="${(W*h/w).toFixed(0)}">`;
+ if(o.crow){keys.filter(k=>k!=='V').forEach((k,i)=>{s+=`<g class="crow">${dots(P[k].x,P[k].y,P.V.x,P.V.y,{gap:7,r:1.6,delay:.9+i*.08,step:.008})}</g>`;});}
+ E.forEach(([a,b],i)=>{s+=`<g class="edge" data-e="${ek(a,b)}">${dots(P[a].x,P[a].y,P[b].x,P[b].y,{delay:.05+i*.05})}</g>`;});
+ if(o.weights!==false)E.forEach(([a,b,km],i)=>{if(km==null)return;const A=P[a],B=P[b],mx=(A.x+B.x)/2,my=(A.y+B.y)/2,L=Math.hypot(B.x-A.x,B.y-A.y);let nx=-(B.y-A.y)/L,ny=(B.x-A.x)/L;if(ny>0){nx=-nx;ny=-ny;}s+=`<text class="w fade" style="--d:${(.5+i*.05).toFixed(2)}s" x="${(mx+nx*13).toFixed(1)}" y="${(my+ny*13).toFixed(1)}">${km}</text>`;});
+ keys.forEach((k,i)=>{const p=P[k],l=p.l,g=p.g,tg=(o.tags&&o.tags[k])||'';s+=`<g class="node" data-n="${k}" transform="translate(${p.x},${p.y})"><g class="pop" style="--d:${(.15+i*.06).toFixed(2)}s"><circle class="halo" r="16"/><circle class="core" r="9"/><text class="lbl" x="${l[0]}" y="${l[1]}" style="text-anchor:${l[2]}">${p.name||TN[k]}</text><text class="tag ${o.tagOn&&o.tagOn.includes(k)?'on':''}" x="${g[0]}" y="${g[1]}" style="text-anchor:${g[2]}">${tg}</text></g></g>`;});
+ return s+'</svg>';}
+
+function tableStep(el,s,n){$$('tr[data-r]',el).forEach(tr=>{const r=+tr.dataset.r;tr.classList.toggle('on',r<s);tr.classList.toggle('now',r===s-1);});$$('.onfin',el).forEach(x=>x.classList.toggle('on',s===n));const sl=$('.stepl',el);if(sl){sl.innerHTML=(s===0?'Tryck <kbd>→</kbd> för att starta':`Steg ${s} av ${n}`)+`<span class="sdots">${Array.from({length:n},(_,i)=>`<i class="${i<s?'on':''}"></i>`).join('')}</span>`;}}
+function mapStep(el,s,A){const svg=$('svg.map',el),st=A.steps,n=st.length,exp=new Set(),disc=new Set(['J']);for(let i=0;i<s;i++){exp.add(st[i].exp);disc.add(st[i].exp);st[i].front.forEach(f=>disc.add(f));}
+ const front=new Set(s?st[s-1].front:[]),fin=s===n,cur=s?st[s-1].exp:null;
+ $$('.node',svg).forEach(g=>{const k=g.dataset.n;g.classList.toggle('exp',exp.has(k));g.classList.toggle('front',front.has(k)&&!exp.has(k));g.classList.toggle('cur',k===cur&&!fin);g.classList.toggle('path',fin&&A.path.includes(k));const t=$('.tag',g);t.textContent=A.tagAll?A.tagAll[k]:(s>0&&disc.has(k)?A.tag[k]:'');t.classList.toggle('on',front.has(k)&&!exp.has(k));});
+ $$('.edge',svg).forEach(g=>g.classList.remove('tree','path'));
+ if(s>0)disc.forEach(k=>{if(k==='J')return;const e=$(`.edge[data-e="${ek(k,A.par[k])}"]`,svg);e&&e.classList.add('tree');});
+ if(fin)A.path.forEach((k,i)=>{if(i)$(`.edge[data-e="${ek(k,A.path[i-1])}"]`,svg).classList.add('path');});
+ pulse(svg,fin?A.path.map(k=>[TW[k].x,TW[k].y]):null);tableStep(el,s,n);}
+
+/* ---------- trees ---------- */
+function N(k,id,c=[],o={}){return Object.assign({k,id,c},o);}
+let uid=0;
+function treeSVG(root,o={}){const w=o.w||600,h=o.h||400,top=o.top??40,bot=o.bottom??50,pad=o.pad??60,letters=!!o.letters;let leaves=0,maxd=0;const all=[],ids={};
+ (function walk(n,d,p){n.d=d;n.p=p;if(!n.id)n.id='u'+(uid++);all.push(n);ids[n.id]=n;maxd=Math.max(maxd,d);if(!n.c.length){n.lx=leaves++;}else{n.c.forEach(ch=>walk(ch,d+1,n));n.lx=(n.c[0].lx+n.c[n.c.length-1].lx)/2;}})(root,0,null);
+ const sx=leaves>1?(w-2*pad)/(leaves-1):0,sy=maxd?(h-top-bot)/maxd:0;
+ all.forEach(n=>{n.x=leaves>1?pad+n.lx*sx:w/2;n.y=top+n.d*sy;});
+ root._ids=ids;const r=letters?22:9;let e='',nd='';
+ all.forEach(n=>{if(n.p)e+=`<g class="edge" data-e="${n.id}">${dots(n.p.x,n.p.y,n.x,n.y,{gap:o.gap||11,delay:.1+n.d*.2,step:.014})}</g>`;
+  const label=letters?`<text class="in">${n.k}</text>`:(()=>{const lr=!n.p||n.lp==='r';return `<text class="lbl" x="${lr?r+8:0}" y="${lr?5:r+21}" style="text-anchor:${lr?'start':'middle'}">${TN[n.k]||n.k}</text>`;})();
+  nd+=`<g class="node ${n.dash?'dash':''}" data-n="${n.id}" transform="translate(${n.x.toFixed(1)},${n.y.toFixed(1)})"><g class="pop" style="--d:${(.05+n.d*.2).toFixed(2)}s"><circle class="halo" r="${r+7}"/><circle class="core" r="${r}"/>${label}<g class="badge" transform="translate(${-r-6},${-r-6})"><circle r="10"/><text></text></g></g></g>`;});
+ return `<svg class="tree" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">${o.under?o.under(ids):''}${e}${nd}${o.extra?o.extra(ids):''}</svg>`;}
+function treeStep(el,s,R){const ids=R.root._ids,order=R.order,n=order.length,exp=new Set(order.slice(0,s)),fin=s===n,svg=$('svg.tree',el);
+ $$('.node',svg).forEach(g=>{const t=ids[g.dataset.n],e=exp.has(t.id),f=!e&&t.p&&exp.has(t.p.id);g.classList.toggle('exp',e);g.classList.toggle('front',!!f);g.classList.toggle('faint',!e&&!f&&!!t.p);g.classList.toggle('cur',!fin&&s>0&&order[s-1]===t.id);g.classList.toggle('path',fin&&R.path.includes(t.id));g.classList.toggle('num',e);$('.badge text',g).textContent=e?order.indexOf(t.id)+1:'';});
+ $$('.edge',svg).forEach(g=>{const t=ids[g.dataset.e],disc=exp.has(t.p.id);g.classList.toggle('tree',disc);g.classList.toggle('faint',!disc);g.classList.toggle('path',fin&&R.path.includes(t.id)&&R.path.includes(t.p.id));});
+ pulse(svg,fin?R.path.map(id=>[ids[id].x,ids[id].y]):null);tableStep(el,s,n);}
+function setNodes(el,map){Object.entries(map).forEach(([cls,list])=>list.forEach(id=>{const g=$(`.node[data-n="${id}"]`,el);g&&g.classList.add(cls);}));}
+function setEdges(el,cls,list){list.forEach(id=>{const g=$(`.edge[data-e="${id}"]`,el);g&&g.classList.add(cls);});}
+
+/* ---------- canvas animations ---------- */
+function titleDots(cv,el){const W=1280,H=720,x=setup(cv,W,H);let pts=[],m={x:-999,y:-999};
+ const build=()=>{const o=document.createElement('canvas');o.width=W;o.height=H;const c=o.getContext('2d');let fs=180;const f=s=>`600 ${s}px "Inter Tight", Inter, "Helvetica Neue", Arial, sans-serif`;c.font=f(fs);fs=Math.min(196,fs*1110/c.measureText('Sökalgoritmer').width);c.font=f(fs);c.textAlign='center';c.textBaseline='middle';c.fillStyle='#000';c.fillText('Sökalgoritmer',640,318);const d=c.getImageData(0,0,W,H).data,G=7;for(let y=0;y<H;y+=G)for(let xx=0;xx<W;xx+=G)if(d[(y*W+xx)*4+3]>140){const a=Math.random()*Math.PI*2,R=500+Math.random()*500;pts.push({tx:xx,ty:y,x:640+Math.cos(a)*R,y:318+Math.sin(a)*R*.6,vx:0,vy:0,a:Math.random()<.045,dl:Math.random()*30});}};
+ const mv=e=>{const r=cv.getBoundingClientRect();m.x=(e.clientX-r.left)/K;m.y=(e.clientY-r.top)/K;};const lv=()=>{m.x=m.y=-999};
+ cv.parentNode.addEventListener('pointermove',mv);cv.parentNode.addEventListener('pointerleave',lv);
+ const go=()=>{build();const ink=cssv('--ink'),acc=cssv('--accent');let f=0;return loop(el,()=>{f++;x.clearRect(0,0,W,H);x.beginPath();const A=[];for(const p of pts){if(f>p.dl){p.vx+=(p.tx-p.x)*.035;p.vy+=(p.ty-p.y)*.035;}const dx=p.x-m.x,dy=p.y-m.y,d2=dx*dx+dy*dy;if(d2<9000){const d=Math.sqrt(d2)||1,k=(1-d/95)*4.2;p.vx+=dx/d*k;p.vy+=dy/d*k;}p.vx*=.84;p.vy*=.84;p.x+=p.vx;p.y+=p.vy;if(p.a){A.push(p);continue;}x.moveTo(p.x+2.8,p.y);x.arc(p.x,p.y,2.8,0,6.283);}x.fillStyle=ink;x.fill();x.beginPath();for(const p of A){x.moveTo(p.x+3.2,p.y);x.arc(p.x,p.y,3.2,0,6.283);}x.fillStyle=acc;x.fill();});};
+ let stop=()=>{};const fr=document.fonts&&document.fonts.ready?Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,1200))]):Promise.resolve();fr.then(()=>{if(el.isConnected)stop=go();});
+ return()=>{stop();cv.parentNode&&cv.parentNode.removeEventListener('pointermove',mv);};}
+
+function maze(cv,el){const W=560,H=420,G=14,C=39,R=29,x=setup(cv,W,H),ox=(W-(C-1)*G)/2,oy=(H-(R-1)*G)/2;let g,dist,pathIdx,goal,gd,plen,wave,pc,hold,col;
+ function gen(){g=Array.from({length:R},()=>Array(C).fill(1));const st=[[1,1]];g[1][1]=0;while(st.length){const[cx,cy]=st[st.length-1];const nb=[[2,0],[-2,0],[0,2],[0,-2]].map(([dx,dy])=>[cx+dx,cy+dy,dx,dy]).filter(([nx,ny])=>nx>0&&ny>0&&nx<C-1&&ny<R-1&&g[ny][nx]===1);if(!nb.length){st.pop();continue;}const[nx,ny,dx,dy]=nb[Math.random()*nb.length|0];g[cy+dy/2][cx+dx/2]=0;g[ny][nx]=0;st.push([nx,ny]);}
+  for(let i=0;i<70;i++){const rx=1+(Math.random()*(C-2)|0),ry=1+(Math.random()*(R-2)|0);if(g[ry][rx]===1&&((rx%2===0)!==(ry%2===0)))g[ry][rx]=0;}
+  dist=Array.from({length:R},()=>Array(C).fill(-1));const par={},q=[[1,1]];dist[1][1]=0;while(q.length){const[cx,cy]=q.shift();for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=cx+dx,ny=cy+dy;if(g[ny][nx]===0&&dist[ny][nx]<0){dist[ny][nx]=dist[cy][cx]+1;par[ny*C+nx]=cy*C+cx;q.push([nx,ny]);}}}
+  goal=[C-2,R-2];gd=dist[goal[1]][goal[0]];pathIdx=new Map();const path=[];let k=goal[1]*C+goal[0];while(k!==undefined){path.unshift(k);k=par[k];}path.forEach((k,i)=>pathIdx.set(k,i));plen=path.length;wave=0;pc=0;hold=0;
+  col={ink:cssv('--ink'),line:cssv('--line'),sub:cssv('--subtle'),acc:cssv('--accent'),hl:cssv('--hl')};}
+ gen();
+ return loop(el,()=>{if(wave<=gd+3)wave+=.75;else if(pc<plen)pc+=2.2;else if(++hold>170)gen();
+  const L=[[],[],[],[]];for(let y=0;y<R;y++)for(let xx=0;xx<C;xx++){if(g[y][xx])continue;const d=dist[y][xx],k=y*C+xx,pi=pathIdx.has(k)?pathIdx.get(k):-1;let c;if(pi>=0&&pi<pc)c=3;else if(d<0||d>wave)c=0;else if(wave-d<3&&wave<=gd+3)c=2;else c=1;L[c].push(ox+xx*G,oy+y*G);}
+  const R_=[2.2,3,3.8,4.4],Cc=[col.line,col.sub,col.acc,col.hl];x.clearRect(0,0,W,H);
+  L.forEach((a,i)=>{x.beginPath();for(let j=0;j<a.length;j+=2){x.moveTo(a[j]+R_[i],a[j+1]);x.arc(a[j],a[j+1],R_[i],0,6.283);}x.fillStyle=Cc[i];x.fill();});
+  x.beginPath();x.arc(ox+G,oy+G,6,0,6.283);x.fillStyle=col.ink;x.fill();
+  x.beginPath();x.arc(ox+goal[0]*G,oy+goal[1]*G,6.5,0,6.283);x.lineWidth=2.5;x.strokeStyle=col.acc;x.stroke();});}
+
+function waveDots(cv,el,mode,out){const W=500,H=250,G=15,x=setup(cv,W,H),cols=Math.floor(W/G),rows=Math.floor(H/G),ox=(W-(cols-1)*G)/2,oy=(H-(rows-1)*G)/2;const s=[ox+2*G,oy+Math.floor(rows/2)*G],g=[ox+(cols-3)*G,s[1]],D=g[0]-s[0];
+ const pts=[];for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const px=ox+i*G,py=oy+j*G,ds=Math.hypot(px-s[0],py-s[1]),dg=Math.hypot(px-g[0],py-g[1]);pts.push([px,py,ds,mode==='u'||ds+dg<=D*1.1]);}
+ const col={ink:cssv('--ink'),line:cssv('--line'),mut:cssv('--subtle'),acc:cssv('--accent')};let last=-1;
+ return loop(el,(t)=>{const T=(t%7000)/1000,rr=Math.min(T/4.2,1)*D;let n=0;const L=[[],[],[]];for(const p of pts){const lit=p[3]&&p[2]<=rr;if(lit){n++;L[rr-p[2]<20&&rr<D?2:1].push(p);}else L[0].push(p);}
+  if(n!==last){out.textContent=fmt(n);last=n;}x.clearRect(0,0,W,H);const Rr=[2,3,3.6],Cc=[col.line,col.mut,col.acc];
+  L.forEach((a,i)=>{x.beginPath();a.forEach(p=>{x.moveTo(p[0]+Rr[i],p[1]);x.arc(p[0],p[1],Rr[i],0,6.283);});x.fillStyle=Cc[i];x.fill();});
+  x.beginPath();x.arc(s[0],s[1],6.5,0,6.283);x.fillStyle=col.ink;x.fill();
+  x.beginPath();x.arc(g[0],g[1],7,0,6.283);x.lineWidth=2.5;x.strokeStyle=col.acc;x.stroke();if(rr>=D){x.beginPath();x.arc(g[0],g[1],4,0,6.283);x.fillStyle=col.acc;x.fill();}});}
+
+function explode(cv,el){const S=400,x=setup(cv,S,S),cnt=[0,35,1225,42875,1500625,52521875,1838265625],num=$('.bigc',el),cap=$('.cap',el);let d=0,t0=0,from=0,shown=0,tm;
+ const col={ink:cssv('--ink'),acc:cssv('--accent')};
+ function grid(n,r,prog,stag){const sp=S/n;x.beginPath();let i=0;for(let j=0;j<n;j++)for(let k=0;k<n;k++,i++){const p=stag?Math.max(0,Math.min(1,prog*1.6-i/(n*n)*.6)):prog;if(p<=0)continue;const rr=r*p;x.moveTo(k*sp+sp/2+rr,j*sp+sp/2);x.arc(k*sp+sp/2,j*sp+sp/2,rr,0,6.283);}x.fill();}
+ function draw(prog){x.clearRect(0,0,S,S);x.fillStyle=col.ink;if(d===1){const sp=S/7;x.beginPath();for(let i=0;i<35;i++){const p=Math.max(0,Math.min(1,prog*1.8-i/35*.8)),cx=(i%7)*sp+sp/2,cy=Math.floor(i/7)*sp+sp/2+sp;x.moveTo(cx+14*p,cy);x.arc(cx,cy,14*p,0,6.283);}x.fill();}
+  else if(d===2)grid(35,3.9,prog,true);else{x.globalAlpha=Math.min(1,prog*1.5);grid(207,.82,1,false);x.globalAlpha=1;}
+  if(d>=4){x.fillStyle=col.acc;x.beginPath();x.arc(S/2,S/2,5,0,6.283);x.fill();}}
+ function next(){d=d>=6?1:d+1;t0=performance.now();from=d===1?0:shown;$$('tr[data-r]',el).forEach(tr=>tr.classList.toggle('now',+tr.dataset.r===d));cap.innerHTML=d<4?'1 prick = 1 ställning':`1 prick = ${fmt(35**(d-3))} ställningar <span class="acc">●</span>`;tm=setTimeout(next,d===6?4200:1900);}
+ next();const stop=loop(el,(t,now)=>{const p=Math.min(1,(now-t0)/900),e=1-Math.pow(1-p,3);draw(Math.min(1,(now-t0)/700));shown=Math.round(from+(cnt[d]-from)*e);num.textContent=fmt(shown);});
+ return()=>{stop();clearTimeout(tm);};}
+
+function ambient(cv,el){const W=1280,H=720,x=setup(cv,W,H),ink=cssv('--ink'),acc=cssv('--accent');const P=Array.from({length:110},()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25,r:1.5+Math.random()*3,a:Math.random()<.07,o:.15+Math.random()*.35}));
+ return loop(el,()=>{x.clearRect(0,0,W,H);for(const p of P){p.x=(p.x+p.vx+W)%W;p.y=(p.y+p.vy+H)%H;x.globalAlpha=p.a?.9:p.o;x.fillStyle=p.a?acc:ink;x.beginPath();x.arc(p.x,p.y,p.r,0,6.283);x.fill();}x.globalAlpha=1;});}
+
+function lane(box,type){let items=[],n=0,first=true;const pos=i=>type==='q'?[24+i*54,108]:[box.clientWidth/2-20,160-i*46];
+ const lay=()=>items.forEach((it,i)=>{const[a,b]=pos(i);it.d.style.transform=`translate(${a}px,${b}px)`;it.d.classList.toggle('next',type==='q'?i===0:i===items.length-1);});
+ const push=()=>{const d=document.createElement('div');d.className='qd';d.textContent=++n;const[a,b]=type==='q'?[24+6*54,108]:[box.clientWidth/2-20,-50];d.style.transform=`translate(${a}px,${b}px)`;box.appendChild(d);items.push({d});d.offsetWidth;lay();};
+ const pop=()=>{const it=type==='q'?items.shift():items.pop();const[a,b]=type==='q'?[-60,108]:[box.clientWidth/2-20,-60];it.d.classList.add('out');it.d.style.transform=`translate(${a}px,${b}px)`;setTimeout(()=>it.d.remove(),600);lay();};
+ const seq=['+','+','+','-','+','-','+','+','-','-','+','-','-','+','+','-'];let i=0;push();push();
+ const id=setInterval(()=>{if(!box.isConnected){clearInterval(id);return;}let op=seq[i++%seq.length];if(op==='-'&&items.length<2)op='+';if(op==='+'&&items.length>=5)op='-';op==='+'?push():pop();},1100);return()=>clearInterval(id);}
+
+/* ---------- algorithm data ---------- */
+const DIJ={steps:[{exp:'J',front:['H','T','S']},{exp:'H',front:['T','S']},{exp:'T',front:['N','S']},{exp:'N',front:['S','E','V']},{exp:'S',front:['E','V']},{exp:'E',front:['V']},{exp:'V',front:[]}],par:{H:'J',T:'J',S:'J',N:'T',E:'N',V:'N'},path:['J','T','N','V'],tag:{J:'g = 0',H:'g = 8',T:'g = 16',S:'g = 55',N:'g = 36',E:'g = 58',V:'g = 81'}};
+const GRE={steps:[{exp:'J',front:['S','T','H']},{exp:'S',front:['V','N','T','H']},{exp:'V',front:[]}],par:{S:'J',T:'J',H:'J',V:'S',N:'S'},path:['J','S','V'],tagAll:{J:'h = 60',H:'h = 56',T:'h = 48',N:'h = 35',E:'h = 30',S:'h = 27',V:'h = 0'}};
+const AST={steps:[{exp:'J',front:['H','T','S']},{exp:'H',front:['T','S']},{exp:'T',front:['N','S']},{exp:'N',front:['V','S','E']},{exp:'V',front:[]}],par:{H:'J',T:'J',S:'J',N:'T',V:'N',E:'N'},path:['J','T','N','V'],tag:{J:'f = 60',H:'f = 64',T:'f = 64',S:'f = 82',N:'f = 71',V:'f = 81',E:'f = 88'}};
+const BFS={root:N('J','j',[N('H','h',[N('T','ht')]),N('S','s',[N('N','sn'),N('V','sv')]),N('T','t',[N('H','th'),N('N','tn')])]),order:['j','h','s','t','ht','sn','sv'],path:['j','s','sv']};
+const DFS={root:N('J','j',[N('H','h',[N('T','ht',[N('N','htn',[N('E','e',[N('V','ev')],{lp:'r'}),N('S','ns'),N('V','nv')],{lp:'r'})],{lp:'r'})],{lp:'r'}),N('S','s'),N('T','t')]),order:['j','h','ht','htn','e','ev'],path:['j','h','ht','htn','e','ev']};
+
+/* ---------- small builders ---------- */
+const hdr=(ov,t,cls='')=>`<div class="ov rise">${ov}</div><h2 class="t ${cls} rise" style="--d:.08s">${t}</h2>`;
+const qf=s=>{const a=s.split(' ');return `<span class="q"><b>${a[0]}</b> ${a.slice(1).join(' ')}</span>`;};
+const rows=(arr)=>arr.map((r,i)=>`<tr data-r="${i}"><td class="n">${i+1}</td>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('');
+const legend=(items)=>`<div class="legend">${items.map(([c,t])=>`<span><i class="lg ${c}"></i>${t}</span>`).join('')}</div>`;
+const LEG=legend([['exp','Expanderad'],['front','I fronten'],['cur','Expanderas nu'],['path','Funnen väg']]);
+function chain(labels,km,accent){const xs=labels.map((_,i)=>20+i*130);let s=`<svg viewBox="0 0 ${xs[xs.length-1]+40} 70" width="${xs[xs.length-1]+40}" height="70">`;xs.forEach((x,i)=>{if(i)s+=`<g class="edge ${accent?'path':'tree'}">${dots(xs[i-1],22,x,22,{gap:11,delay:.3+i*.2})}</g><text class="w fade" style="--d:.6s" x="${(xs[i-1]+x)/2}" y="6">${km[i-1]}</text>`;});
+ xs.forEach((x,i)=>{s+=`<g class="node ${i===xs.length-1?(accent?'path':'exp'):'exp'}" transform="translate(${x},22)"><g class="pop" style="--d:${.2+i*.2}s"><circle class="core" r="9"/><text class="lbl" y="34">${TN[labels[i]]}</text></g></g>`;});return s+'</svg>';}
+
+/* ---------- slides ---------- */
+const SEC=['Sökalgoritmer','Del A · Vad är ett sökproblem?','Del B · Träd och grafer','Del C · Oinformerad sökning','Del D · Kostnad och heuristik','Del E · Jämförelse och omvärld'];
+const S=[
+/* 1 */{sec:0,inv:true,title:'Sökalgoritmer',html:()=>`
+ <canvas class="abs" style="left:0;top:0" data-c></canvas>
+ <div class="ov rise">AI 1 · Fyra lektioner</div><h1 class="sr">Sökalgoritmer</h1>
+ <p class="lead rise abs" style="left:72px;bottom:128px;--d:1.2s;max-width:620px">Från ett problem till ett sökträd – och hur en algoritm hittar vägen genom det</p>
+ <div class="hint rise abs" style="right:72px;bottom:134px;--d:1.6s">Tryck <kbd>→</kbd> för att börja</div>`,
+ enter:el=>titleDots($('canvas',el),el)},
+
+/* 2 */{sec:1,title:'Hur vet Google Maps vägen?',html:()=>`
+ <div class="abs" style="left:72px;top:150px;width:520px">${hdr('Del A · Vad är ett sökproblem?','Hur vet Google Maps vägen?','big')}
+ <p class="lead rise" style="--d:.2s">Och hur hittar en robot ut ur en labyrint – utan att prova varenda väg?</p>
+ <div class="rise" style="--d:.4s;margin-top:40px">${legend([['exp','Start'],['sub','Utforskat'],['front','Fronten'],['path" style="background:var(--hl);border-color:var(--hl)','Hittad väg']])}</div></div>
+ <canvas class="abs fade" style="right:64px;top:132px;--d:.2s" data-c></canvas>`,
+ enter:el=>maze($('canvas',el),el)},
+
+/* 3 */{sec:1,title:'Den målbaserade agenten måste planera',html:()=>{const X=[110,400,690,980],L=[['Sensorer','Var är jag nu?'],['Modell','Vad händer om jag gör X?'],['Sökning','Vilken följd av steg når målet?'],['Handling','Kör planen, steg för steg']];
+ let s=`<svg viewBox="0 0 1136 330" width="1136" height="330"><path class="dp fade" style="--d:.3s" d="M${X[0]} 120 H${X[3]} C${X[3]} -30 ${X[0]} -30 ${X[0]} 120"/><text class="ann fade" style="--d:.8s;text-anchor:middle" x="545" y="10">… och om igen</text>`;
+ X.forEach((x,i)=>{s+=`<g class="pop" style="--d:${.2+i*.15}s"><circle cx="${x}" cy="120" r="44" style="fill:${i===2?'var(--accent)':'var(--bg)'};stroke:${i===2?'var(--accent)':'var(--ink)'};stroke-width:2.5"/><text x="${x}" y="121" style="font:600 22px var(--mono);text-anchor:middle;dominant-baseline:central;fill:${i===2?'var(--on-accent)':'var(--ink)'}">${i+1}</text></g>`;});
+ s+=`<circle class="pulse" r="7"><animateMotion dur="5s" repeatCount="indefinite" path="M${X[0]} 120 H${X[3]} C${X[3]} -30 ${X[0]} -30 ${X[0]} 120"/></circle></svg>`;
+ return `${hdr('Del A · Vad är ett sökproblem?','Den målbaserade agenten måste planera')}<div class="abs" style="left:72px;top:200px">${s}</div>
+ <div class="abs" style="left:72px;top:395px;width:1136px;display:grid;grid-template-columns:repeat(4,1fr);gap:24px">${L.map((l,i)=>`<div class="rise" style="--d:${.4+i*.12}s;text-align:center;padding:0 10px"><div class="k" style="${i===2?'color:var(--accent)':''}">${l[0]}</div><div class="h3">${l[1]}</div></div>`).join('')}</div>
+ <p class="abs rise" style="left:72px;top:520px;width:860px;--d:.9s;font-size:26px;line-height:36px;font-family:var(--display);font-weight:600;letter-spacing:-.01em;margin:0">En reflexagent reagerar. En målbaserad agent tänker framåt – och det tänkandet är <span class="acc">sökning</span>.</p>`;}},
+
+/* 4 */{sec:1,title:'Ett sökproblem har fyra delar',html:()=>`${hdr('Del A · Vad är ett sökproblem?','Ett sökproblem har fyra delar')}
+ <div class="abs" style="left:72px;top:190px;width:470px;display:flex;flex-direction:column;gap:22px">${[['Starttillstånd','Vi står i Jönköping'],['Handlingar','Kör längs en väg till en grannort'],['Måltest','Är vi i Vetlanda?'],['Kostnad','Antal kilometer vi har kört']].map((p,i)=>`<div class="rise" style="--d:${.2+i*.12}s;display:flex;gap:18px;align-items:flex-start;padding-bottom:20px;${i<3?'border-bottom:1px solid var(--line)':''}"><span class="num ${i===2?'a':''}">${i+1}</span><div><div class="k">${p[0]}</div><div class="h3" style="margin-top:4px">${p[1]}</div></div></div>`).join('')}</div>
+ <div class="abs" style="left:610px;top:180px">${mapSVG({tags:{J:'START',V:'MÅL'},tagOn:['V']})}<div class="muted fade" style="--d:1s;font-size:14px;margin-top:6px;text-align:right">Avstånd i km, avrundade</div></div>`,
+ enter:el=>{setNodes(el,{exp:['J'],path:['V']});}},
+
+/* 5 */{sec:1,title:'Er tur: fyll i de fyra delarna',html:()=>`${hdr('Del A · Vad är ett sökproblem?','Er tur: fyll i de fyra delarna')}
+ <div class="abs rise" style="left:72px;top:200px;width:1136px;--d:.2s"><table class="tb" style="font-size:18px;line-height:26px"><thead><tr><th style="width:20%">Problem</th><th>Starttillstånd</th><th>Handlingar</th><th>Måltest</th><th>Kostnad</th></tr></thead><tbody>
+ ${[['8-pussel',bitmap(['xxx','xx.','xxx'].map(r=>r.replace(/x/g,'X')),{s:12,r:4,dl:.4})],['Rubiks kub',bitmap(['XoX','XXX','XXX'],{s:12,r:4,dl:.6})],['Robot i lager',bitmap(['X.X','XXX','.o.'],{s:12,r:4,dl:.8})]].map(([n,ic],i)=>`<tr><td style="padding:26px 12px"><div style="display:flex;gap:16px;align-items:center">${ic}<b>${n}</b></div></td>${'<td style="padding:26px 12px" class="cell-empty">· · ·</td>'.repeat(4)}</tr>`).join('')}
+ </tbody></table><p class="muted" style="font-size:17px;margin-top:24px">Vad är starttillståndet? Vilka handlingar finns? Hur vet vi att vi är framme? Vad kostar ett steg?</p></div>`},
+
+/* 6 */{sec:2,title:'Träd du redan känner',html:()=>{
+ const fam=`<svg viewBox="0 0 280 150" width="280" height="150"><path class="dp fade" d="M140 20 L60 75 M140 20 L140 75 M140 20 L220 75 M60 75 L35 130 M60 75 L85 130 M140 75 L140 130 M220 75 L195 130 M220 75 L245 130"/>${[[140,20,1],[60,75],[140,75],[220,75],[35,130],[85,130],[140,130],[195,130],[245,130]].map(([x,y,a],i)=>`<circle class="d" style="fill:var(${a?'--accent':'--ink'});--d:${.3+i*.06}s" cx="${x}" cy="${y}" r="8"/>`).join('')}</svg>`;
+ const fol=`<svg viewBox="0 0 280 150" width="280" height="150"><path class="dp fade" d="M20 14 V44 H52 M52 44 V74 H84 M84 74 V104 H116 M84 104 V134 H116"/>${[[20,14,'Dokument'],[52,44,'Skola'],[84,74,'AI 1',1],[116,104,'fil'],[116,134,'fil']].map(([x,y,t,a],i)=>`<circle class="d" style="fill:var(${a?'--accent':'--ink'});--d:${.4+i*.1}s" cx="${x}" cy="${y}" r="8"/><text class="ann fade" style="--d:${.5+i*.1}s" x="${x+16}" y="${y+5}">${t}</text>`).join('')}</svg>`;
+ let br='',bn='';const L0=[...Array(8)].map((_,i)=>12+i*18);const lv=[L0];while(lv[lv.length-1].length>1){const p=lv[lv.length-1],q=[];for(let i=0;i<p.length;i+=2)q.push((p[i]+p[i+1])/2);lv.push(q);}const xs=[24,100,176,252];
+ lv.forEach((ys,d)=>{ys.forEach((y,i)=>{bn+=`<circle class="d" style="fill:var(${d===3?'--accent':'--ink'});--d:${.3+d*.25+i*.03}s" cx="${xs[d]}" cy="${y}" r="${7-d*.4}"/>`;if(d<3&&i%2===0){const y2=ys[i+1],xm=(xs[d]+xs[d+1])/2;br+=`M${xs[d]} ${y} H${xm} V${y2} H${xs[d]} M${xm} ${(y+y2)/2} H${xs[d+1]} `;}});});
+ const tour=`<svg viewBox="0 0 280 150" width="280" height="150"><path class="dp fade" d="${br}"/>${bn}</svg>`;
+ return `${hdr('Del B · Träd och grafer','Träd du redan känner')}<div class="abs" style="left:72px;top:200px;width:1136px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px">${[[fam,'Släkträd','Mormor överst, sedan hennes barn, sedan barnbarnen.'],[fol,'Mappar','Dokument → Skola → AI 1 → filer. Varje mapp ligger i exakt en mapp.'],[tour,'Turneringsträd','Åtta lag blir fyra, två, en vinnare – ett träd på sidan.']].map((c,i)=>`<div class="card rise" style="--d:${.15+i*.12}s;padding:28px"><div style="height:160px;display:flex;align-items:center;justify-content:center">${c[0]}</div><div class="h3" style="margin-top:20px">${c[1]}</div><p class="p">${c[2]}</p></div>`).join('')}</div>`;}},
+
+/* 7 */{sec:2,title:'Ett träds delar',html:()=>{const R=N('A','A',[N('B','B',[N('E','E',[],{dash:1}),N('F','F',[],{dash:1})]),N('C','C',[],{dash:1}),N('D','D',[N('G','G',[],{dash:1})])]);
+ const svg=treeSVG(R,{w:640,h:420,top:60,bottom:70,pad:80,letters:true,
+  under:I=>`<rect class="fade" style="--d:1s;fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:0 8;stroke-linecap:round" x="${I.B.x-38}" y="${I.B.y-38}" width="${I.D.x-I.B.x+76}" height="76" rx="38"/>`,
+  extra:I=>`<text class="ann s fade" style="--d:.9s" x="${I.A.x+36}" y="${I.A.y+5}">← rot</text><text class="ann fade" style="--d:1s;text-anchor:end" x="${I.B.x-46}" y="${I.B.y+5}">förälder</text><text class="ann fade" style="--d:1.1s;fill:var(--accent);font-weight:600" x="${I.D.x+46}" y="${I.D.y+5}">syskon B C D</text><text class="ann fade" style="--d:1.2s;text-anchor:middle" x="${(I.E.x+I.F.x)/2}" y="${I.E.y+50}">barn till B</text><text class="ann fade" style="--d:1.3s" x="${I.G.x+34}" y="${I.G.y+5}">löv</text><text class="ann fade" style="--d:1.3s;text-anchor:end" x="${(I.A.x+I.B.x)/2-14}" y="${(I.A.y+I.B.y)/2-4}">kant</text>`});
+ const defs=[['Nod','en punkt i trädet'],['Kant','förbindelsen mellan två noder'],['Rot','noden överst, utan förälder'],['Förälder / barn','B är förälder till E och F'],['Syskon','samma förälder'],['Löv','nod utan barn (prickad: C, E, F, G)']];
+ return `${hdr('Del B · Träd och grafer','Ett träds delar')}<div class="abs" style="left:40px;top:160px">${svg}</div><div class="abs" style="left:760px;top:190px;width:448px">${defs.map((d,i)=>`<div class="rise" style="--d:${.3+i*.08}s;padding:12px 0;border-bottom:1px solid var(--line);font-size:18px;line-height:26px"><b>${d[0]}</b> <span class="muted">– ${d[1]}</span></div>`).join('')}</div>`;},
+ enter:el=>setNodes(el,{exp:['A']})},
+
+/* 8 */{sec:2,title:'Djup och nivåer',html:()=>{const R=N('A','A',[N('B','B',[N('E','E'),N('F','F')]),N('C','C'),N('D','D',[N('G','G')])]);
+ const svg=treeSVG(R,{w:720,h:420,top:60,bottom:60,pad:190,letters:true,under:I=>[0,1,2].map(d=>{const y=[I.A.y,I.B.y,I.E.y][d];return `<line class="lvl fade" style="--d:${.6+d*.15}s" x1="110" x2="720" y1="${y}" y2="${y}"/><text class="k fade" style="--d:${.6+d*.15}s;fill:var(--muted);font:600 12px var(--sans);letter-spacing:.08em" x="0" y="${y+4}">NIVÅ ${d}</text>`;}).join(''),extra:I=>`<text class="ann s fade" style="--d:1.4s;fill:var(--accent)" x="${I.E.x-34}" y="${I.E.y+52}">djup 2</text>`});
+ return `${hdr('Del B · Träd och grafer','Djup och nivåer')}<div class="abs" style="left:72px;top:160px">${svg}</div><div class="abs" style="left:850px;top:220px;width:358px"><div class="k rise" style="--d:.3s">Djup</div><p class="h3 rise" style="--d:.35s;font-size:26px;line-height:34px;margin-top:8px">= antal kanter från roten</p><p class="p rise" style="--d:.5s;font-size:19px;line-height:28px;margin-top:20px">A → B → E är två kanter.<br><b style="color:var(--ink)">E har djup 2.</b></p><p class="p rise" style="--d:.65s;font-size:19px;line-height:28px;margin-top:20px">Alla noder på samma djup bildar en <b style="color:var(--ink)">nivå</b>.</p></div>`;},
+ enter:el=>{setNodes(el,{path:['A','B','E']});setEdges(el,'path',['B','E']);const R={};const svg=$('svg.tree',el);const g=['A','B','E'].map(id=>{const m=$(`.node[data-n="${id}"]`,svg).getAttribute('transform').match(/translate\(([\d.]+),([\d.]+)\)/);return[+m[1],+m[2]];});setTimeout(()=>el.isConnected&&pulse(svg,g),900);}},
+
+/* 9 */{sec:2,title:'Förgreningsfaktor',html:()=>{const W=1136,x0=230,Wd=W-x0,ys=[24,104,184,264,344],rad=[11,9,7,5,3.6];let ln='',dt='';
+ for(let d=0;d<5;d++){const n=3**d;for(let i=0;i<n;i++){const x=x0+(i+.5)*Wd/n;if(d){const pi=Math.floor(i/3),px=x0+(pi+.5)*Wd/(n/3);ln+=`<line class="ln fade" style="--d:${(.3+d*.45).toFixed(2)}s" x1="${px.toFixed(1)}" y1="${ys[d-1]}" x2="${x.toFixed(1)}" y2="${ys[d]}"/>`;}dt+=`<circle class="d" style="fill:var(${d===4?'--accent':'--ink'});--d:${(.2+d*.45+i*(d===4?.006:.03)).toFixed(3)}s" cx="${x.toFixed(1)}" cy="${ys[d]}" r="${rad[d]}"/>`;}
+  dt+=`<g class="fade" style="--d:${.2+d*.45}s"><text x="0" y="${ys[d]-6}" style="font:600 12px var(--sans);letter-spacing:.08em;fill:var(--muted)">DJUP ${d}</text><text x="0" y="${ys[d]+18}" style="font:600 20px var(--mono);fill:${d===4?'var(--accent)':'var(--ink)'}">${3**d} ${d?'noder':'nod'}</text></g>`;}
+ return `${hdr('Del B · Träd och grafer','Förgreningsfaktor')}<p class="lead rise" style="--d:.15s;margin-top:10px"><b class="mono" style="color:var(--ink)">b</b> = antal barn per nod. Med <b class="mono" style="color:var(--ink)">b = 3</b> tredubblas varje nivå.</p><div class="abs" style="left:72px;top:225px"><svg viewBox="0 0 ${W} 370" width="${W}" height="370">${ln}${dt}</svg></div>`;}},
+
+/* 10 */{sec:2,title:'Graf eller träd?',html:()=>{const P={J:{x:60,y:80,l:[0,-21,'middle'],g:[0,0,'middle']},H:{x:250,y:50,l:[0,-21,'middle'],g:[0,0,'middle']},T:{x:200,y:210,l:[0,30,'middle'],g:[0,0,'middle']},N:{x:400,y:250,l:[0,30,'middle'],g:[0,0,'middle']}};
+ const g=mapSVG({pos:P,edges:[['J','H',8],['J','T',16],['H','T',12],['T','N',20]],vw:460,vh:300,w:460});
+ const t=treeSVG(N('J','tj',[N('H','th',[N('T','tht',[],{dash:1})]),N('T','tt',[N('H','tth',[],{dash:1}),N('N','ttn')])]),{w:480,h:300,top:30,bottom:50,pad:60});
+ return `${hdr('Del B · Träd och grafer','Graf eller träd?')}<div class="abs" style="left:72px;top:175px;width:1136px;display:grid;grid-template-columns:1fr 1fr;gap:48px">
+ <div class="rise" style="--d:.1s"><div class="k">Kartan är en graf</div><div style="margin-top:28px;height:310px">${g}</div><p class="p" style="font-size:18px">Cykler och flera vägar. Varje ort finns en gång.</p></div>
+ <div class="rise" style="--d:.25s;border-left:1px solid var(--line);padding-left:48px"><div class="k">Sökträdet är alla vägar från start</div><div style="margin-top:28px;height:310px">${t}</div><p class="p" style="font-size:18px">Inga cykler. Samma ort kan finnas flera gånger (prickad).</p></div></div>`;},
+ enter:el=>{setNodes(el,{exp:['tj']});$$('svg.map .edge',el).forEach(e=>e.classList.add('tree'));}},
+
+/* 11 */{sec:2,title:'Från karta till sökträd',html:()=>{const R=N('J','r',[N('H','h',[N('J','hj',[],{dash:1}),N('T','ht',[],{dash:1})]),N('S','s',[N('J','sj',[],{dash:1}),N('N','sn'),N('V','sv')]),N('T','t',[N('J','tj',[],{dash:1}),N('H','th',[],{dash:1}),N('N','tn',[],{dash:1})])]);
+ return `${hdr('Del B · Träd och grafer','Från karta till sökträd')}<div class="abs" style="left:72px;top:180px">${treeSVG(R,{w:1136,h:360,top:40,bottom:60,pad:60})}</div><p class="abs p rise" style="left:72px;top:570px;--d:1s;font-size:18px">Barnen = grannorterna på kartan. Prickade noder är orter som redan finns i trädet.</p>`;},
+ enter:el=>setNodes(el,{exp:['r']})},
+
+/* 12 */{sec:2,title:'En nod är mer än en ort',html:()=>`${hdr('Del B · Träd och grafer','En nod är mer än en ort')}
+ <div class="abs" style="left:72px;top:190px;width:1136px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px">
+ ${[['Nod 1',['J','T','N'],[16,20],'Jönköping → Tenhult → Nässjö','16 + 20 = 36 km',1],['Nod 2',['J','S','N'],[55,35],'Jönköping → Sävsjö → Nässjö','55 + 35 = 90 km',0]].map((c,i)=>`<div class="card rise" style="--d:${.15+i*.15}s"><div class="k">${c[0]}</div><div class="h3">Ort: Nässjö</div><div style="margin:22px 0 10px">${chain(c[1],c[2],c[5])}</div><p class="p" style="font-size:15px">Väg: ${c[3]}</p><div class="mono" style="font-size:22px;line-height:30px;margin-top:12px;${c[5]?'color:var(--accent)':''}">g = ${c[4]}</div></div>`).join('')}
+ <div class="band rise" style="--d:.45s"><div class="k">Stoppa loopar</div><p style="font-size:20px;line-height:28px;font-weight:600;margin:12px 0 0">Lägg inte till en ort som redan finns på vägen dit.</p><p class="p" style="font-size:16px;margin-top:14px">Striktare variant: en besöktlista med alla orter som redan expanderats.</p></div></div>
+ <p class="abs rise" style="left:72px;top:540px;--d:.7s;font:600 26px/34px var(--display);letter-spacing:-.01em;margin:0">Samma tillstånd (Nässjö) – två olika noder.</p>`},
+
+/* 13 */{sec:2,inv:true,title:'Kontrollfråga',steps:1,html:()=>{let s='';let i=0;for(let by=0;by<3;by++)for(let bx=0;bx<3;bx++)for(let y=0;y<3;y++)for(let x=0;x<3;x++){s+=`<circle class="d" style="--d:${((by*3+bx)*.12+(y*3+x)*.02).toFixed(2)}s;fill:var(${by===0&&bx===0?'--accent':'--ink'})" cx="${bx*118+x*34+17}" cy="${by*118+y*34+17}" r="11"/>`;i++;}
+ return `<canvas class="abs" style="left:0;top:0" data-c></canvas><div class="abs" style="left:72px;top:52px;width:600px">${hdr('Kontrollfråga','Hur många noder finns på djup 4 om b = 3?','huge')}<p class="lead rise" style="--d:.3s">Tänk själv först. Tryck <kbd>→</kbd> för svaret.</p></div>
+ <div class="abs reveal" style="left:760px;top:150px"><svg viewBox="0 0 370 370" width="370" height="370">${s}</svg><div class="mono onfin" style="font-size:30px;line-height:40px;margin-top:28px;text-align:center"><b style="font-size:44px">81</b> = 3 · 3 · 3 · 3</div></div>`;},
+ enter:el=>ambient($('canvas',el),el),
+ step:(el,s)=>{const r=$('.reveal',el);r.classList.toggle('show',s>0);$$('.onfin',el).forEach(x=>x.classList.toggle('on',s>0));}},
+
+/* 14 */{sec:3,title:'Fronten är algoritmens att göra-lista',html:()=>{const R=N('J','fj',[N('H','fh'),N('S','fs'),N('T','ft')]);
+ return `${hdr('Del C · Oinformerad sökning','Fronten är algoritmens att göra-lista')}<div class="abs" style="left:72px;top:200px;width:480px">
+ <div class="rise" style="--d:.2s;padding-bottom:22px;border-bottom:1px solid var(--line)"><div class="k">Fronten</div><p class="h3" style="font-weight:400;font-size:21px;line-height:30px">noder vi vet om men ännu inte har expanderat.</p></div>
+ <div class="rise" style="--d:.35s;padding:22px 0"><div class="k">Expandera</div><p class="h3" style="font-weight:400;font-size:21px;line-height:30px">ta fram en nods barn och lägga dem i fronten.</p></div>
+ <div class="rise" style="--d:.5s;margin-top:18px">${legend([['exp','Expanderad'],['front','I fronten'],['path','Funnen väg']])}</div></div>
+ <div class="abs" style="left:620px;top:190px">${treeSVG(R,{w:580,h:320,top:50,bottom:80,pad:80,extra:I=>`<rect class="fade" style="--d:1s;fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:0 8;stroke-linecap:round" x="${I.fh.x-60}" y="${I.fh.y-30}" width="${I.ft.x-I.fh.x+120}" height="90" rx="30"/><text class="ann fade" style="--d:1.1s;fill:var(--accent);font-weight:600;text-anchor:middle" x="${I.fs.x}" y="${I.fs.y+90}">fronten</text>`})}</div>`;},
+ enter:el=>{setNodes(el,{exp:['fj'],front:['fh','fs','ft']});setEdges(el,'tree',['fh','fs','ft']);}},
+
+/* 15 */{sec:3,title:'Samma grundalgoritm – varje gång',html:()=>{const cx=250,cy=225,r=150,A=[-90,30,150].map(a=>[cx+r*Math.cos(a*Math.PI/180),cy+r*Math.sin(a*Math.PI/180)]);
+ const T=[['1 · Välj','Ta ut en nod ur fronten',[0,-72,'middle']],['2 · Testa','Är den målet? Ja – klart!',[0,78,'middle']],['3 · Expandera','Lägg barnen i fronten. Gå till 1.',[0,78,'middle']]];
+ let s=`<svg viewBox="0 0 500 440" width="500" height="440"><circle class="dp fade" cx="${cx}" cy="${cy}" r="${r}"/><circle class="pulse" r="7"><animateMotion dur="4.5s" repeatCount="indefinite" path="M${cx} ${cy-r} A${r} ${r} 0 1 1 ${cx-.01} ${cy-r}"/></circle>`;
+ A.forEach(([x,y],i)=>{s+=`<g class="pop" style="--d:${.2+i*.15}s"><circle cx="${x}" cy="${y}" r="38" style="fill:${i===0?'var(--accent)':'var(--bg)'};stroke:${i===0?'var(--accent)':'var(--ink)'};stroke-width:2.5"/><text x="${x}" y="${y+1}" style="font:600 22px var(--mono);text-anchor:middle;dominant-baseline:central;fill:${i===0?'var(--on-accent)':'var(--ink)'}">${i+1}</text></g><g class="fade" style="--d:${.5+i*.15}s"><text x="${x+T[i][2][0]}" y="${y+T[i][2][1]-(i===0?10:0)}" style="font:600 12px var(--sans);letter-spacing:.08em;text-anchor:middle;fill:${i===0?'var(--accent)':'var(--muted)'}">${T[i][0].toUpperCase()}</text><text x="${x}" y="${y+T[i][2][1]+(i===0?10:22)}" style="font:600 16px var(--sans);text-anchor:middle;fill:var(--ink)">${T[i][1]}</text></g>`;});s+='</svg>';
+ const al=[['BFS','den äldsta'],['DFS','den nyaste'],['Dijkstra','lägst g'],['Girig','lägst h'],['A*','lägst g + h']];
+ return `${hdr('Del C · Oinformerad sökning','Samma grundalgoritm – varje gång')}<div class="abs" style="left:60px;top:200px">${s}</div>
+ <div class="abs" style="left:690px;top:200px;width:518px"><p class="rise" style="--d:.5s;font-size:21px;line-height:30px;margin:0 0 20px">Bara valet i <b class="acc">steg 1</b> skiljer algoritmerna åt:</p>${al.map((a,i)=>`<div class="rise" style="--d:${.6+i*.1}s;display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)"><b style="font-size:20px">${a[0]}</b><span class="mono" style="font-size:17px">${a[1]}</span></div>`).join('')}</div>`;}},
+
+/* 16 */{sec:3,title:'Kö eller stack?',html:()=>`${hdr('Del C · Oinformerad sökning','Kö eller stack?')}
+ <div class="abs" style="left:72px;top:185px;width:1136px;display:grid;grid-template-columns:1fr 1fr;gap:32px">
+ <div class="rise" style="--d:.15s"><div class="lane" data-l="q"><span class="mk" style="left:24px;top:160px">← först ut</span><span class="mk" style="right:24px;top:160px">nya ställer sig sist</span></div><div class="h3" style="margin-top:22px">Kö – som i matkön</div><p class="p">Först in, först ut (FIFO). Nya ställer sig sist.</p><p style="font-size:18px;margin:12px 0 0"><b>→ Bredden först (BFS)</b></p></div>
+ <div class="rise" style="--d:.3s"><div class="lane" data-l="s"><span class="mk" style="left:24px;top:24px">↑ sist in, först ut</span></div><div class="h3" style="margin-top:22px">Stack – som en tallrikstrave</div><p class="p">Sist in, först ut (LIFO). Nya läggs överst.</p><p style="font-size:18px;margin:12px 0 0"><b>→ Djupet först (DFS)</b></p></div></div>`,
+ enter:el=>{const a=lane($('[data-l=q]',el),'q'),b=lane($('[data-l=s]',el),'s');return()=>{a();b();};}},
+
+/* 17 */{sec:3,title:'BFS – bredden först',steps:7,html:()=>`${hdr('Del C · Oinformerad sökning','BFS – bredden först, nivå för nivå')}
+ <div class="abs" style="left:52px;top:165px">${treeSVG(BFS.root,{w:640,h:380,top:40,bottom:60,pad:60})}</div>
+ <div class="abs" style="left:740px;top:170px;width:468px"><table class="tb wk"><thead><tr><th>#</th><th>Expanderar</th><th>Fronten (kö →)</th></tr></thead><tbody>${rows([['Jönköping',qf('H S T')],['Huskvarna',qf('S T T')],['Sävsjö',qf('T T N V')],['Tenhult',qf('T N V H N')],['T (via H)',qf('N V H N N')],['Nässjö',qf('V H N N E T V')],['Vetlanda','<span class="goal">Mål!</span>']])}</tbody></table>
+ <div class="stepl"></div><div style="margin-top:16px">${LEG}</div><p class="onfin" style="font-size:17px;line-height:25px;margin:16px 0 0"><b class="acc">Väg:</b> Jönköping → Sävsjö → Vetlanda · 2 steg · 85 km</p></div>`,
+ step:(el,s)=>treeStep(el,s,BFS)},
+
+/* 18 */{sec:3,title:'DFS – djupet först',steps:6,html:()=>`${hdr('Del C · Oinformerad sökning','DFS – djupet först, en gren i taget')}
+ <div class="abs" style="left:52px;top:160px">${treeSVG(DFS.root,{w:640,h:450,top:24,bottom:40,pad:60})}</div>
+ <div class="abs" style="left:740px;top:170px;width:468px"><table class="tb wk"><thead><tr><th>#</th><th>Expanderar</th><th>Stack (överst →)</th></tr></thead><tbody>${rows([['Jönköping',qf('H S T')],['Huskvarna',qf('T S T')],['Tenhult',qf('N S T')],['Nässjö',qf('E S V S T')],['Eksjö',qf('V S V S T')],['Vetlanda','<span class="goal">Mål!</span>']])}</tbody></table>
+ <div class="stepl"></div><div style="margin-top:16px">${LEG}</div><p class="onfin" style="font-size:17px;line-height:25px;margin:16px 0 0"><b class="acc">Väg:</b> J → H → T → N → E → V · 5 steg · 102 km</p></div>`,
+ step:(el,s)=>treeStep(el,s,DFS)},
+
+/* 19 */{sec:3,title:'BFS mot DFS',html:()=>{const dr=(n,c)=>`<span style="display:inline-flex;gap:4px;margin-left:10px;vertical-align:middle">${('<i style="width:9px;height:9px;border-radius:9999px;background:var('+c+');display:inline-block"></i>').repeat(n)}</span>`;
+ return `${hdr('Del C · Oinformerad sökning','BFS mot DFS')}<div class="abs rise" style="left:72px;top:185px;width:1136px;--d:.15s"><table class="tb" style="font-size:18px;line-height:26px"><thead><tr><th style="width:22%"></th><th>BFS (kö)</th><th>DFS (stack)</th></tr></thead><tbody>
+ <tr><td class="k" style="padding-top:16px">Ordning</td><td>Nivå för nivå</td><td>En gren i taget, ner till löven</td></tr>
+ <tr><td class="k" style="padding-top:16px">Fronten</td><td>Stor – växte till 7 noder ${dr(7,'--ink')}</td><td>Liten – högst 5 noder ${dr(5,'--ink')}</td></tr>
+ <tr><td class="k" style="padding-top:16px">Resultat</td><td class="mono">2 steg, 85 km</td><td class="mono">5 steg, 102 km</td></tr>
+ <tr><td class="k" style="padding-top:16px">Färst steg?</td><td><b class="acc">Ja, alltid</b></td><td>Nej</td></tr>
+ <tr><td class="k" style="padding-top:16px">Risk</td><td>Minnet tar slut i stora träd</td><td>Kan gå vilse i en oändlig gren</td></tr></tbody></table>
+ <p style="font:600 24px/32px var(--display);letter-spacing:-.01em;margin:36px 0 0">Ingen av dem bryr sig om kilometer. <span class="muted">Det tar vi i lektion 3.</span></p></div>`;}},
+
+/* 20 */{sec:3,inv:true,title:'Nu är du algoritmen',html:()=>`<canvas class="abs" style="left:0;top:0" data-c></canvas>${hdr('Över till demon','Nu är du algoritmen','big')}
+ <div class="abs" style="left:72px;top:250px;width:1136px;display:grid;grid-template-columns:1fr 1fr;gap:28px 56px">${[['Öppna <b>Sökning – AI 1, avsnitt 3</b>'],['Välj <b>BFS</b> och klicka den nod algoritmen tar härnäst'],['Byt till <b>DFS</b>. Vad blir annorlunda?'],['Kontrollera era handräkningar i avsnitt 2']].map((t,i)=>`<div class="rise" style="--d:${.25+i*.12}s;display:flex;gap:20px;align-items:flex-start;padding:22px 0;border-top:1px solid var(--line)"><span class="num ${i===1?'a':''}" style="width:48px;height:48px;font-size:19px">${i+1}</span><p style="font-size:22px;line-height:32px;margin:6px 0 0">${t[0]}</p></div>`).join('')}</div>`,
+ enter:el=>ambient($('canvas',el),el)},
+
+/* 21 */{sec:4,title:'Få steg ≠ kort väg',steps:2,html:()=>`${hdr('Del D · Kostnad och heuristik','Få steg ≠ kort väg')}
+ <div class="abs" style="left:72px;top:190px;width:470px">
+ <div class="s1 onstep" data-s="1" style="padding-bottom:22px;border-bottom:1px solid var(--line)"><div class="k">BFS hittar</div><div class="h3 mono" style="font-size:26px;line-height:36px">J → S → V</div><p class="p mono" style="font-size:16px">2 steg · 55 + 30 = <b style="color:var(--ink)">85 km</b></p></div>
+ <div class="s2 onstep" data-s="2" style="padding:22px 0"><div class="k" style="color:var(--accent)">Kortast</div><div class="h3 mono acc" style="font-size:26px;line-height:36px">J → T → N → V</div><p class="p mono" style="font-size:16px">3 steg · 16 + 20 + 45 = <b class="acc">81 km</b></p></div>
+ <p class="onstep" data-s="2" style="font:600 26px/34px var(--display);letter-spacing:-.01em;margin:18px 0 0">BFS räknar steg.<br>Vi bryr oss om km.</p>
+ <div class="stepl"></div></div>
+ <div class="abs" style="left:610px;top:180px">${mapSVG()}</div>`,
+ step:(el,s)=>{$$('.onstep',el).forEach(x=>{x.style.transition='opacity .4s';x.style.opacity=s>=+x.dataset.s?1:.18;});const svg=$('svg.map',el);$$('.edge,.node',svg).forEach(g=>g.classList.remove('p1','path','exp'));
+  if(s>=1){setEdges(svg,'p1',['JS','SV']);setNodes(svg,{exp:['J','S','V']});}
+  if(s>=2){setEdges(svg,'path',['JT','NT','NV']);setNodes(svg,{path:['J','T','N','V']});}
+  pulse(svg,s>=2?['J','T','N','V'].map(k=>[TW[k].x,TW[k].y]):s>=1?['J','S','V'].map(k=>[TW[k].x,TW[k].y]):null);
+  const sl=$('.stepl',el);sl.innerHTML=(s===0?'Tryck <kbd>→</kbd> för att jämföra':`Steg ${s} av 2`);}},
+
+/* 22 */{sec:4,title:'Dijkstra: välj alltid lägst g',steps:7,html:()=>`${hdr('Del D · Kostnad och heuristik','Dijkstra: välj alltid lägst g')}
+ <p class="lead rise" style="--d:.15s;font-size:18px;line-height:26px;margin-top:8px;max-width:1100px"><b class="mono" style="color:var(--ink)">g</b> = km hittills. Fronten är en sorterad lista – en prioritetskö.</p>
+ <div class="abs" style="left:40px;top:220px">${mapSVG({w:560})}<div style="margin:6px 0 0 30px">${LEG}</div></div>
+ <div class="abs" style="left:640px;top:205px;width:568px"><table class="tb wk" style="font-size:14px;line-height:19px"><thead><tr><th>#</th><th style="width:34%">Expanderar (g)</th><th>Fronten efteråt, lägst g först</th></tr></thead><tbody>${rows([['Jönköping <span class="m">(0)</span>','Huskvarna 8 · Tenhult 16 · Sävsjö 55'],['Huskvarna <span class="m">(8)</span>','Tenhult 16 · Sävsjö 55 <span class="dim">(Tenhult via H = 20, sämre)</span>'],['Tenhult <span class="m">(16)</span>','Nässjö 36 · Sävsjö 55'],['Nässjö <span class="m">(36)</span>','Sävsjö 55 · Eksjö 58 · Vetlanda 81'],['Sävsjö <span class="m">(55)</span>','Eksjö 58 · Vetlanda 81 <span class="dim">(via Sävsjö = 85, sämre)</span>'],['Eksjö <span class="m">(58)</span>','Vetlanda 81 <span class="dim">(via Eksjö = 98, sämre)</span>'],['Vetlanda <span class="m">(81)</span>','<span class="goal">Mål!</span> J → T → N → V, 81 km – billigast']])}</tbody></table><div class="stepl"></div></div>`,
+ step:(el,s)=>mapStep(el,s,DIJ)},
+
+/* 23 */{sec:4,title:'Vad är en heuristik?',html:()=>{const a=[50,150],b=[400,150];
+ const mini=`<svg viewBox="0 0 460 210" width="460" height="210"><g class="edge tree">${qdots(a[0],a[1],225,-20,b[0],b[1],{gap:11,delay:.5})}</g><g class="edge path">${dots(a[0],a[1],b[0],b[1],{gap:11,delay:.9})}</g><text class="w fade" style="--d:1s;font-size:14px" x="225" y="44">väg 45 km</text><text class="w fade" style="--d:1.2s;font-size:14px;fill:var(--accent);font-weight:600" x="225" y="128">fågelväg 35 km</text>
+ <g class="node exp" transform="translate(${a})"><g class="pop" style="--d:.3s"><circle class="core" r="9"/><text class="lbl" y="34">Nässjö</text></g></g><g class="node path" transform="translate(${b})"><g class="pop" style="--d:.4s"><circle class="core" r="9"/><text class="lbl" y="34">Vetlanda</text></g></g></svg>`;
+ return `${hdr('Del D · Kostnad och heuristik','Vad är en heuristik?')}<div class="abs" style="left:72px;top:180px;width:480px"><p class="rise" style="--d:.15s;font-size:22px;line-height:32px;margin:0">En tumregel som uppskattar hur långt det är kvar.</p><p class="rise" style="--d:.25s;font-size:22px;line-height:32px;margin:16px 0 0"><b class="mono acc">h</b> = fågelvägen till Vetlanda.</p><div class="rise" style="--d:.35s;margin-top:34px">${mini}</div><p class="p rise" style="--d:.5s;font-size:16px">Nässjö → Vetlanda: vägen är 45 km, fågelvägen 35 km.</p></div>
+ <div class="abs" style="left:610px;top:180px">${mapSVG({crow:true,weights:false,tags:GRE.tagAll,tagOn:Object.keys(TN)})}</div>`;},
+ enter:el=>setNodes($$('svg.map',el)[0],{path:['V']})},
+
+/* 24 */{sec:4,title:'Girig sökning: välj lägst h',steps:3,html:()=>`${hdr('Del D · Kostnad och heuristik','Girig sökning: välj lägst h')}
+ <p class="lead rise" style="--d:.15s;font-size:18px;line-height:26px;margin-top:8px;max-width:1100px">Gå alltid mot den ort som ser ut att ligga närmast målet.</p>
+ <div class="abs" style="left:40px;top:220px">${mapSVG({w:560})}<div style="margin:6px 0 0 30px">${LEG}</div></div>
+ <div class="abs" style="left:640px;top:205px;width:568px"><table class="tb wk"><thead><tr><th>#</th><th style="width:34%">Expanderar (h)</th><th>Fronten efteråt, lägst h först</th></tr></thead><tbody>${rows([['Jönköping <span class="m">(60)</span>','Sävsjö 27 · Tenhult 48 · Huskvarna 56'],['Sävsjö <span class="m">(27)</span>','Vetlanda 0 · Nässjö 35 · Tenhult 48 · Huskvarna 56'],['Vetlanda <span class="m">(0)</span>','<span class="goal">Mål!</span> J → S → V = 85 km']])}</tbody></table><div class="stepl"></div>
+ <div class="onfin" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px"><div class="card" style="padding:20px"><div class="k" style="color:var(--accent)">Snabb</div><p style="margin:6px 0 0;font-size:17px;line-height:25px">3 expansioner – Dijkstra behövde 7</p></div><div class="card" style="padding:20px"><div class="k">Men lurad</div><p style="margin:6px 0 0;font-size:17px;line-height:25px">85 km i stället för 81 – den bryr sig inte om g</p></div></div></div>`,
+ step:(el,s)=>mapStep(el,s,GRE)},
+
+/* 25 */{sec:4,title:'A*: välj lägst f = g + h',steps:5,html:()=>`${hdr('Del D · Kostnad och heuristik','A*: välj lägst f = g + h')}
+ <p class="lead rise" style="--d:.15s;font-size:18px;line-height:26px;margin-top:8px;max-width:1100px"><b class="mono" style="color:var(--ink)">g</b> = km hittills &nbsp;·&nbsp; <b class="mono" style="color:var(--ink)">h</b> = fågelväg kvar</p>
+ <div class="abs" style="left:40px;top:220px">${mapSVG({w:560})}<div style="margin:6px 0 0 30px">${LEG}</div></div>
+ <div class="abs" style="left:640px;top:205px;width:568px"><table class="tb wk" style="font-size:14px;line-height:19px"><thead><tr><th>#</th><th style="width:30%">Expanderar (f)</th><th>Fronten efteråt: g + h = f, lägst f först</th></tr></thead><tbody>${rows([['Jönköping <span class="m">(60)</span>','Huskvarna 8+56 = 64 · Tenhult 16+48 = 64 · Sävsjö 55+27 = 82'],['Huskvarna <span class="m">(64)</span>','Tenhult 64 · Sävsjö 82 <span class="dim">(Tenhult via H: 20+48 = 68, sämre)</span>'],['Tenhult <span class="m">(64)</span>','Nässjö 36+35 = 71 · Sävsjö 82'],['Nässjö <span class="m">(71)</span>','Vetlanda 81+0 = 81 · Sävsjö 82 · Eksjö 58+30 = 88'],['Vetlanda <span class="m">(81)</span>','<span class="goal">Mål!</span> J → T → N → V, 81 km – billigast']])}</tbody></table><div class="stepl"></div>
+ <div class="onfin" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px">${[['Dijkstra','7 expansioner','81 km'],['Girig','3 expansioner','85 km'],['A*','5 expansioner','81 km']].map((c,i)=>`<div class="card" style="padding:16px;${i===2?'border-color:var(--accent);background:var(--tint)':''}"><div class="k" style="${i===2?'color:var(--accent)':''}">${c[0]}</div><div class="mono" style="font-size:14px;margin-top:6px">${c[1]}<br><b>${c[2]}</b></div></div>`).join('')}</div></div>`,
+ step:(el,s)=>mapStep(el,s,AST)},
+
+/* 26 */{sec:4,title:'Varför hittar A* billigaste vägen?',html:()=>{const D=[['Jönköping',60,81],['Huskvarna',56,77],['Tenhult',48,65],['Nässjö',35,45],['Eksjö',30,40],['Sävsjö',27,30]];
+ const bar=(h,r,i)=>{const a=Math.round(h/5),b=Math.round(r/5);let s='';for(let k=0;k<b;k++)s+=`<circle class="d" style="--d:${(.4+i*.1+k*.025).toFixed(3)}s;${k<a?'fill:var(--accent)':'fill:none;stroke:var(--ink);stroke-width:1.5'}" cx="${k*13+6}" cy="8" r="${k<a?4.5:3.8}"/>`;return `<svg width="${b*13}" height="16" viewBox="0 0 ${b*13} 16">${s}</svg>`;};
+ return `${hdr('Del D · Kostnad och heuristik','Varför hittar A* billigaste vägen?')}<div class="abs rise" style="left:72px;top:180px;width:700px;--d:.15s"><table class="tb" style="font-size:16px"><thead><tr><th>Ort</th><th>h</th><th>Verkligt kvar</th><th>För högt?</th><th></th></tr></thead><tbody>${D.map((d,i)=>`<tr><td><b>${d[0]}</b></td><td class="m acc">${d[1]}</td><td class="m">${d[2]}</td><td>Nej</td><td style="vertical-align:middle">${bar(d[1],d[2],i)}</td></tr>`).join('')}</tbody></table>
+ <div class="legend" style="margin-top:14px"><span><i class="lg" style="border:0;background:var(--accent)"></i>h, en prick = 5 km</span><span><i class="lg" style="border-width:1.5px"></i>verkligt kvar</span></div></div>
+ <div class="abs" style="left:820px;top:180px;width:388px"><div class="band rise" style="--d:.3s"><p style="font:600 28px/36px var(--display);letter-spacing:-.01em;margin:0">h får aldrig överskatta.</p><p class="p" style="font-size:17px;margin-top:14px">En sådan heuristik kallas <b style="opacity:1">tillåten</b>. Fågelvägen är alltid tillåten – en rak linje är aldrig längre än vägen.</p></div><p class="rise" style="--d:.5s;font-size:18px;line-height:27px;margin:24px 0 0">Då är <b class="mono">f</b> en underskattning – ingen gömd väg kan vara billigare än den A* väljer.</p></div>`;}},
+
+/* 27 */{sec:5,title:'Fem algoritmer – en loop',html:()=>`${hdr('Del E · Jämförelse och omvärld','Fem algoritmer – en loop')}
+ <div class="abs rise" style="left:72px;top:180px;width:1136px;--d:.15s"><table class="tb" style="font-size:17px;line-height:24px"><thead><tr><th>Algoritm</th><th>Väljer</th><th>Fronten</th><th>Billigast?</th><th>Vår karta</th><th>Kommentar</th></tr></thead><tbody>
+ ${[['BFS','äldsta','kö','Nej – färst steg','85 km','Stor front'],['DFS','nyaste','stack','Nej','102 km','Liten front, kan gå vilse'],['Dijkstra','lägst g','prioritetskö','Ja','81 km','Söker åt alla håll'],['Girig','lägst h','prioritetskö','Nej','85 km','Snabb men kan luras'],['A*','lägst g + h','prioritetskö','Ja, om h är tillåten','81 km','Billigast och snabb']].map((r,i)=>`<tr class="${i===4?'hi':''}"><td style="padding:16px 12px"><b style="font-size:19px">${r[0]}</b></td><td class="m" style="padding-top:17px">${r[1]}</td><td style="padding-top:16px">${r[2]}</td><td style="padding-top:16px">${r[3].startsWith('Ja')?'<b class="acc">'+r[3]+'</b>':r[3]}</td><td class="m" style="padding-top:17px">${r[4]}</td><td class="muted" style="padding-top:16px">${r[5]}</td></tr>`).join('')}</tbody></table></div>`},
+
+/* 28 */{sec:5,title:'Vad vet algoritmen om målet?',html:()=>`${hdr('Del E · Jämförelse och omvärld','Vad vet algoritmen om målet?')}
+ <div class="abs" style="left:72px;top:180px;width:1136px;display:grid;grid-template-columns:1fr 1fr;gap:48px">
+ ${[['u','Oinformerad','Känner igen målet när den står på det – men vet inte var det ligger.','BFS · DFS · Dijkstra'],['i','Informerad','Har en ledtråd – heuristiken h – om hur långt det är kvar.','Girig sökning · A*']].map((c,i)=>`<div class="rise" style="--d:${.15+i*.15}s"><div style="display:flex;justify-content:space-between;align-items:baseline"><div class="k" style="${i?'color:var(--accent)':''}">${c[1]}</div><div class="mono muted" style="font-size:13px">undersökta: <b class="cnt" style="color:var(--ink)">0</b></div></div><canvas data-m="${c[0]}" style="margin-top:14px"></canvas><p style="font-size:19px;line-height:28px;margin:18px 0 0">${c[2]}</p><p class="mono" style="font-size:15px;margin:10px 0 0;color:var(--muted)">${c[3]}</p></div>`).join('')}</div>`,
+ enter:el=>{const f=$$('canvas',el).map(c=>waveDots(c,el,c.dataset.m,$('.cnt',c.parentNode)));return()=>f.forEach(x=>x());}},
+
+/* 29 */{sec:5,title:'Kombinatorisk explosion',html:()=>`${hdr('Del E · Jämförelse och omvärld','Kombinatorisk explosion')}
+ <div class="abs" style="left:72px;top:180px;width:390px"><p class="rise" style="--d:.15s;font-size:19px;line-height:28px;margin:0">I schack finns i snitt cirka 35 möjliga drag per ställning: <b class="mono">b ≈ 35</b>.</p>
+ <div class="rise" style="--d:.3s;margin-top:26px"><div class="mono bigc" style="font-size:36px;line-height:44px;font-weight:600;white-space:nowrap">0</div><div class="k" style="margin-top:6px">ställningar</div></div>
+ <p class="rise" style="--d:.4s;font-size:17px;line-height:26px;margin:22px 0 0" ><b class="acc">1,8 miljarder</b> ställningar efter bara sex halvdrag – tre drag var.</p>
+ <p class="p rise" style="--d:.5s;font-size:16px;line-height:24px;margin-top:14px">Därför räcker det inte att söka igenom hela trädet. Man behöver heuristik – och i dag ofta neurala nät.</p></div>
+ <div class="abs fade" style="left:500px;top:178px;--d:.2s"><canvas></canvas><div class="cap mono muted" style="font-size:13px;margin-top:10px;text-align:center"></div></div>
+ <div class="abs rise" style="left:940px;top:180px;width:268px;--d:.3s"><table class="tb wk" style="font-size:15px"><thead><tr><th>Djup</th><th style="text-align:right">Noder (35^d)</th></tr></thead><tbody>${[35,1225,42875,1500625,52521875,1838265625].map((n,i)=>`<tr data-r="${i+1}" class="on"><td class="m">${i+1}</td><td class="m" style="text-align:right">${fmt(n)}</td></tr>`).join('')}</tbody></table></div>`,
+ enter:el=>explode($('canvas',el),el)},
+
+/* 30 */{sec:5,title:'Sökning i AI i dag',html:()=>{const ic={nav:['..XXXXX..','.XX...XX.','XX..o..XX','XX.....XX','.XX...XX.','..XX.XX..','...XXX...','....X....'],rob:['....o....','....X....','.XXXXXXX.','.X.....X.','.X.X.X.X.','.X.....X.','.XXXXXXX.','X..X.X..X'],lag:['XXXXXXXXX','X..X..X.X','X..X.oX.X','XXXXXXXXX','X.X..X..X','X.X..X..X','XXXXXXXXX','X.......X'],spel:['.........','.XXXXXXX.','XX.XXXXXX','X...XXoXX','XX.XXXXXX','XXXXXXXXX','XXX...XXX','XX.....XX']};
+ const C=[[ic.nav,'Navigation','Ruttplanering i vägnät med miljontals korsningar – varianter av A*.'],[ic.rob,'Robotik','Robotar och robotarmar planerar en väg runt hinder.'],[ic.lag,'Lager','Hundratals lagerrobotar planerar rutter utan att krocka.'],[ic.spel,'Spel','Figurer i datorspel hittar vägen över kartan.']];
+ return `${hdr('Del E · Jämförelse och omvärld','Sökning i AI i dag')}<div class="abs" style="left:72px;top:170px;width:1136px;display:grid;grid-template-columns:repeat(4,1fr);gap:24px">${C.map((c,i)=>`<div class="card rise" style="--d:${.1+i*.1}s;padding:22px">${bitmap(c[0],{s:9,r:3,dl:.3+i*.15})}<div class="h3" style="margin-top:16px">${c[1]}</div><p class="p" style="font-size:15px;line-height:22px">${c[2]}</p></div>`).join('')}</div>
+ <div class="abs band rise" style="left:72px;top:440px;width:1136px;--d:.55s;display:flex;gap:40px;align-items:center"><div style="flex:none"><div class="k">Exempel</div><div style="font:600 40px/44px var(--display);letter-spacing:-.02em;margin-top:6px">AlphaGo</div></div><p style="font-size:18px;line-height:27px;margin:0;opacity:.9">= trädsökning + neurala nät. Näten uppskattar vilka drag och ställningar som är bra – sökningen räknar framåt. Slog världsettan Lee Sedol i go 2016.</p></div>`;}},
+
+/* 31 */{sec:5,inv:true,title:'Reflektion',html:()=>`<canvas class="abs" style="left:0;top:0" data-c></canvas><div class="abs" style="left:72px;top:170px;width:900px">${hdr('Reflektion','När är en snabb men inte optimal lösning bäst?','big')}<p class="lead rise" style="--d:.3s;max-width:760px;margin-top:28px">Tänk på en ambulans, ett datorspel, en lagerrobot – och på vad det kostar att räkna länge.</p></div>`,
+ enter:el=>ambient($('canvas',el),el)}
+];
+
+/* ---------- engine ---------- */
+const stage=$('#stage'),host=$('#slide'),dotsEl=$('#dots');let cur=0,step=0,busy=false,cleanup=[],theme=localStorage.getItem('sok-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+S.forEach((s,i)=>{const b=document.createElement('button');b.title=`${i+1}. ${s.title}`;b.setAttribute('aria-label',`Bild ${i+1}: ${s.title}`);if(i&&S[i-1].sec!==s.sec)b.className='gap';b.onclick=e=>{e.stopPropagation();go(i,i>cur?1:-1);};dotsEl.appendChild(b);});
+function fit(){K=Math.min(innerWidth/1280,innerHeight/720);stage.style.setProperty('--k',K);}
+function pal(){const dark=(theme==='dark')!==!!S[cur].inv;document.body.className=dark?'pal-dark':'pal-light';}
+function bar(){[...dotsEl.children].forEach((b,i)=>{b.classList.toggle('past',i<cur);b.classList.toggle('now',i===cur);b.setAttribute('aria-current',i===cur?'step':'false');});$('#count').textContent=`${String(cur+1).padStart(2,'0')} / ${S.length}`;$('#sec').textContent=SEC[S[cur].sec];}
+function render(){cleanup.forEach(f=>{try{f()}catch(e){}});cleanup=[];const sl=S[cur];pal();host.innerHTML=`<section class="slide" aria-label="${sl.title}">${sl.html()}</section>`;const el=host.firstElementChild;if(sl.enter){const c=sl.enter(el);if(c)cleanup.push(c);}if(sl.step)sl.step(el,step);bar();try{history.replaceState(null,'','#'+(cur+1));}catch(e){}}
+function wipe(dir,mid,done){if(reduce){mid();done();return;}const c=$('#wipe'),x=setup(c,1280,720),col=cssv('--ink'),G=36,cols=Math.ceil(1280/G)+1,rows=Math.ceil(720/G)+1,maxR=G*.74,T=330;let t0=performance.now(),ph=0;
+ const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+ const f=now=>{const t=(now-t0)/T;x.clearRect(0,0,1280,720);x.fillStyle=col;x.beginPath();for(let i=0;i<cols;i++){const dx=dir>0?i/cols:1-i/cols;for(let j=0;j<rows;j++){const dl=dx*.55+((j*7+i*3)%5)/5*.12;let p=Math.max(0,Math.min(1,(t-dl)/.45));p=ease(p);const r=(ph?1-p:p)*maxR;if(r<=.2)continue;const cx=i*G,cy=j*G;x.moveTo(cx+r,cy);x.arc(cx,cy,r,0,6.283);}}x.fill();
+  if(t<1.12)requestAnimationFrame(f);else if(!ph){ph=1;t0=now;mid();requestAnimationFrame(f);}else{x.clearRect(0,0,1280,720);done();}};requestAnimationFrame(f);}
+function go(i,dir=1,atEnd=false){if(i<0||i>=S.length||i===cur&&!atEnd||busy)return;busy=true;wipe(dir,()=>{cur=i;step=atEnd?(S[i].steps||0):0;render();},()=>busy=false);}
+function next(){if(busy)return;const sl=S[cur];if(step<(sl.steps||0)){step++;sl.step(host.firstElementChild,step);}else go(cur+1,1);}
+function prev(){if(busy)return;const sl=S[cur];if(step>0){step--;sl.step(host.firstElementChild,step);}else go(cur-1,-1,true);}
+addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return;const k=e.key;if(['ArrowRight','ArrowDown','PageDown',' ','Enter'].includes(k)){if(k==='Enter'&&e.target.tagName==='BUTTON')return;e.preventDefault();next();}else if(['ArrowLeft','ArrowUp','PageUp','Backspace'].includes(k)){e.preventDefault();prev();}else if(k==='Home')go(0,-1);else if(k==='End')go(S.length-1,1);else if(k==='f'||k==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{});}else if(k==='t'||k==='T')toggleTheme();});
+function toggleTheme(){theme=theme==='dark'?'light':'dark';try{localStorage.setItem('sok-theme',theme);}catch(e){}render();}
+$('#theme').onclick=e=>{e.stopPropagation();toggleTheme();};$('#prev').onclick=e=>{e.stopPropagation();prev();};$('#next').onclick=e=>{e.stopPropagation();next();};
+let px=null;stage.addEventListener('pointerdown',e=>{px=[e.clientX,e.clientY];});stage.addEventListener('pointerup',e=>{if(!px||e.target.closest('button'))return;const dx=e.clientX-px[0];px=null;if(Math.abs(dx)>50){dx<0?next():prev();}else next();});
+let rt;addEventListener('resize',()=>{fit();clearTimeout(rt);rt=setTimeout(render,250);});
+addEventListener('hashchange',()=>{const n=parseInt(location.hash.slice(1))-1;if(n>=0&&n<S.length&&n!==cur)go(n,n>cur?1:-1);});
+fit();const h=parseInt(location.hash.slice(1));if(h>=1&&h<=S.length)cur=h-1;render();
+})();
+</script>
+</body>
+</html>

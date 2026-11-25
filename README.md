@@ -6,8 +6,17 @@ Digitalt kursmaterial för **AI 1** på Teknikprogrammet vid Erik Dahlbergsgymna
 
 ```
 /
-├── index.html          ← Startsida, materialet ordnat efter kursens teman
-├── oversikt.html       ← Allt material sorterat efter typ (den gamla startsidan)
+├── index.html          ← Startsida: ett kort per moment
+├── moment/
+│   ├── historia/       ← 01 AI:s historia och vem som bestämmer
+│   ├── agenter/        ← 02 Agenter och miljöer
+│   ├── algoritmer/     ← 03 Algoritmer och sökning
+│   ├── maskininlarning/      ← 04 Maskininlärning
+│   ├── neurala-natverk/      ← 05 Neurala nätverk
+│   ├── samhallet/            ← 06 AI och samhället
+│   └── python-och-matematik/ ← 07 Python och matematik
+│                       (varje mapp har en index.html med momentets material och provomfattning)
+├── oversikt.html       ← Allt material på en sida, sorterat efter typ
 ├── assembler/
 │   └── index.html      ← Assembler-simulator (maskinspråk)
 ├── data-i-datorn/
@@ -51,7 +60,8 @@ Ge varje sida `<meta charset="utf-8">` och använd relativa länkar mellan sidor
 ## Lägg till nytt material
 
 Skapa en ny mapp, t.ex. `talsystem/`, med en `index.html` inuti.
-Lägg sedan till ett kort under rätt tema i `index.html` och under rätt typ i `oversikt.html`.
+Lägg sedan till ett kort på rätt momentsida i `moment/<moment>/index.html` och under rätt typ i `oversikt.html`.
+Startsidans kort visar antal material och ikoner för varje moment – uppdatera dem också.
 
 ## Python för AI – övning och lärarvy
 

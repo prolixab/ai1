@@ -6,7 +6,8 @@ Digitalt kursmaterial för **AI 1** på Teknikprogrammet vid Erik Dahlbergsgymna
 
 ```
 /
-├── index.html          ← Startsida / materialöversikt
+├── index.html          ← Startsida, materialet ordnat efter kursens teman
+├── oversikt.html       ← Allt material sorterat efter typ (den gamla startsidan)
 ├── assembler/
 │   └── index.html      ← Assembler-simulator (maskinspråk)
 ├── data-i-datorn/
@@ -50,7 +51,7 @@ Ge varje sida `<meta charset="utf-8">` och använd relativa länkar mellan sidor
 ## Lägg till nytt material
 
 Skapa en ny mapp, t.ex. `talsystem/`, med en `index.html` inuti.
-Lägg sedan till ett kort i `index.html` på startsidan som pekar dit.
+Lägg sedan till ett kort under rätt tema i `index.html` och under rätt typ i `oversikt.html`.
 
 ## Python för AI – övning och lärarvy
 

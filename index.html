@@ -1,4 +1,7 @@
+<!DOCTYPE html>
+<html lang="sv">
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI 1 — Kursmaterial</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -491,6 +494,25 @@ a { color: inherit; text-decoration: none; }
   font-size: 11px;
   color: var(--text-dim);
 }
+
+/* ── THEMES ── */
+.theme-nav { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--border); }
+.theme-nav-inner { max-width: 1060px; margin: 0 auto; padding: 10px 24px; display: flex; gap: 6px; flex-wrap: wrap; }
+.theme-nav a { flex: none; font-size: 12.5px; font-weight: 500; color: var(--text-muted); padding: 5px 12px 5px 6px;
+  border: 1px solid var(--border); border-radius: 999px; background: var(--surface); display: inline-flex; align-items: center; gap: 7px; transition: border-color .15s, color .15s; }
+.theme-nav a span { font-family: var(--mono); font-size: 10.5px; width: 20px; height: 20px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center; background: var(--surface-hi); color: var(--accent); }
+.theme-nav a:hover { color: var(--text); border-color: var(--border-hi); }
+.theme { margin-bottom: 56px; scroll-margin-top: 64px; }
+.theme-head { display: flex; gap: 18px; align-items: flex-start; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+.theme-num { font-family: var(--mono); font-size: 28px; font-weight: 500; line-height: 1; color: var(--accent); padding-top: 2px; }
+.theme-title { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; color: var(--text); }
+.theme-desc { font-size: 13.5px; color: var(--text-muted); margin-top: 4px; max-width: 640px; }
+.sub-head { font-family: var(--mono); font-size: 10.5px; font-weight: 500; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--text-muted); margin: 22px 0 10px; display: flex; align-items: center; gap: 10px; }
+.sub-head::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.all-link { color: var(--accent); text-decoration: underline; }
+@media (max-width: 700px) { .theme-nav-inner { flex-wrap: nowrap; overflow-x: auto; } }
 </style>
 
 <!-- HEADER -->
@@ -519,8 +541,8 @@ a { color: inherit; text-decoration: none; }
       AI 1 — <span>Artificiell intelligens</span>
     </h1>
     <p class="hero-desc">
-      Digitala verktyg, simulatorer och läsmaterial för kursen AI 1.
-      Klicka på ett kort för att öppna materialet.
+      Digitala verktyg, simulatorer och läsmaterial för kursen AI 1, ordnat efter kursens teman.
+      Vill du hellre se allt sorterat efter typ? <a class="all-link" href="oversikt.html">Allt material →</a>
     </p>
     <div class="hero-meta">
       <div class="meta-item">
@@ -539,446 +561,38 @@ a { color: inherit; text-decoration: none; }
   </div>
 </section>
 
+<nav class="theme-nav" aria-label="Teman">
+  <div class="theme-nav-inner">
+    <a href="#historia"><span>1</span>AI:s historia och grunder</a>
+    <a href="#agenter"><span>2</span>Agenter och miljöer</a>
+    <a href="#algoritmer"><span>3</span>Algoritmer och sökning</a>
+    <a href="#ml"><span>4</span>Maskininlärning</a>
+    <a href="#nn"><span>5</span>Neurala nätverk</a>
+    <a href="#etik"><span>6</span>AI och samhället</a>
+    <a href="#datorn"><span>7</span>Datorn och data</a>
+    <a href="#verktyg"><span>8</span>Python och matematik</a>
+  </div>
+</nav>
+
 <!-- MAIN -->
 <main class="main">
 
-  <!-- Tools & Simulators -->
-  <div class="section-head">
-    <span class="section-title">Verktyg &amp; Simulatorer</span>
-    <span class="section-count">3 tillgängliga</span>
-  </div>
-
-  <div class="card-grid" style="margin-bottom: 40px;" id="tools-grid">
-
-    <!-- Shark Tank — ACTIVE (lives on the exit ticket platform, which has a database) -->
-    <a href="https://exitticket.teed.se/shark/spela" class="card available color-blue">
-      <div class="card-top">
-        <div class="card-icon">🦈</div>
-        <span class="card-badge badge-lab">Aktivitet</span>
-      </div>
-      <div>
-        <div class="card-module">Projekt · AI och entreprenörskap</div>
-        <div class="card-title">Shark Tank</div>
-      </div>
-      <div class="card-desc">
-        Grupperna pitchar sina AI-företagsidéer. Logga in med din personliga kod och
-        fördela dina 100 000 USD på de företag du tror mest på.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Pitch</span>
-          <span class="tag">Investering</span>
-          <span class="tag">Röstning</span>
-        </div>
-        <span class="card-link link-blue">Investera →</span>
-      </div>
-    </a>
-
-    <!-- Assembler Simulator — ACTIVE -->
-    <a href="assembler/" class="card available color-green">
-      <div class="card-top">
-        <div class="card-icon">🖥</div>
-        <span class="card-badge badge-tool">Verktyg</span>
-      </div>
-      <div>
-        <div class="card-module">Modul 2 · Datorns uppbyggnad</div>
-        <div class="card-title">Assembler-Simulator</div>
-      </div>
-      <div class="card-desc">
-        Interaktiv simulator för en 8-bitars maskinspråksdator med 16 register
-        och 256 minnesceller. Skriv, kör och felsök program i hexadecimalt maskinspråk.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Maskinspråk</span>
-          <span class="tag">CPU</span>
-          <span class="tag">Hex</span>
-        </div>
-        <span class="card-link link-green">Öppna →</span>
-      </div>
-    </a>
-
-    <!-- Miljölabbet — 3D-städrobot om miljöns egenskaper -->
-    <a href="miljolabbet/" class="card available color-purple">
-      <div class="card-top">
-        <div class="card-icon">🤖</div>
-        <span class="card-badge badge-lab">Spel</span>
-      </div>
-      <div>
-        <div class="card-module">Modul 1 · Introduktion till AI</div>
-        <div class="card-title">Miljölabbet</div>
-      </div>
-      <div class="card-desc">
-        Styr en städrobot i 3D. Sug upp smutsen och kör hem till laddstationen på så få
-        drag som möjligt – och känn efter vad som gör en miljö lätt eller svår för en agent.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Agenter</span>
-          <span class="tag">Miljöer</span>
-          <span class="tag">3D</span>
-        </div>
-        <span class="card-link link-purple">Spela →</span>
-      </div>
-    </a>
-
-    <!-- Algoritmer — vad en algoritm är, fem krav, byggstenar, effektivitet -->
-    <a href="algoritmer/" class="card available color-amber">
-      <div class="card-top">
-        <div class="card-icon">🧩</div>
-        <span class="card-badge badge-lesson">Lektion</span>
-      </div>
-      <div>
-        <div class="card-module">Modul 1 · Introduktion till AI</div>
-        <div class="card-title">Algoritmer</div>
-      </div>
-      <div class="card-desc">
-        Vad en algoritm är och vilka fem krav den måste uppfylla. Kör sekvens, selektion och iteration,
-        spåra pseudokod i ett flödesschema, tävla linjär mot binär sökning – och skriv regler mot en AI.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Pseudokod</span>
-          <span class="tag">Ordo</span>
-          <span class="tag">Flödesschema</span>
-        </div>
-        <span class="card-link link-amber">Öppna →</span>
-      </div>
-    </a>
-
-    <!-- DEFCON 1 — spel: stoppa ett kärnvapenkrig med pseudokod och flödesscheman -->
-    <a href="defcon/" class="card available color-green">
-      <div class="card-top">
-        <div class="card-icon">📟</div>
-        <span class="card-badge badge-lab">Spel</span>
-      </div>
-      <div>
-        <div class="card-module">Modul 1 · Introduktion till AI</div>
-        <div class="card-title">DEFCON 1</div>
-      </div>
-      <div class="card-desc">
-        Datorn MIMER tror att ett krigsspel är på riktigt. Stoppa kärnvapenkriget i sex uppdrag
-        genom att skriva algoritmer i pseudokod och bygga flödesscheman – byggt på verkliga falsklarm under kalla kriget.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Pseudokod</span>
-          <span class="tag">Flödesschema</span>
-          <span class="tag">Kalla kriget</span>
-        </div>
-        <span class="card-link link-green">Spela →</span>
-      </div>
-    </a>
-
-    <!-- Grafer och träd — bygg egna grafer och kör algoritmer -->
-    <a href="grafer/" class="card available color-purple">
-      <div class="card-top">
-        <div class="card-icon">🕸️</div>
-        <span class="card-badge badge-tool">Verktyg</span>
-      </div>
-      <div>
-        <div class="card-module">Modul 1 · Introduktion till AI</div>
-        <div class="card-title">Grafer och träd</div>
-      </div>
-      <div class="card-desc">
-        Bygg egna grafer och se direkt om de är sammanhängande, har cykler eller är träd.
-        Kör bredden först, djupet först, Dijkstra och trädgenomgångar steg för steg.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Grafer</span>
-          <span class="tag">Träd</span>
-          <span class="tag">Dijkstra</span>
-        </div>
-        <span class="card-link link-purple">Öppna →</span>
-      </div>
-    </a>
-
-    <!-- Sökning — BFS, DFS, Dijkstra, girig sökning och A* -->
-    <a href="sokning/" class="card available color-blue">
-      <div class="card-top">
-        <div class="card-icon">🧭</div>
-        <span class="card-badge badge-tool">Verktyg</span>
-      </div>
-      <div>
-        <div class="card-module">Modul 1 · Introduktion till AI</div>
-        <div class="card-title">Sökning</div>
-      </div>
-      <div class="card-desc">
-        Se bredden först, djupet först, Dijkstra, girig sökning och A* arbeta steg för steg –
-        på en karta runt Jönköping och i ett rutnät du ritar själv. Var algoritmen och gissa nästa steg.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">BFS</span>
-          <span class="tag">A*</span>
-          <span class="tag">Heuristik</span>
-        </div>
-        <span class="card-link link-blue">Öppna →</span>
-      </div>
-    </a>
-
-    <!-- Placeholder: Logic Gates -->
-    <div class="card upcoming color-blue">
-      <div class="card-top">
-        <div class="card-icon">⚡</div>
-        <span class="card-badge badge-soon">Kommer snart</span>
-      </div>
-      <div>
-        <div class="card-module">Modul 1 · Logik &amp; grindkretsar</div>
-        <div class="card-title">Grindkrets-simulator</div>
-      </div>
-      <div class="card-desc">
-        Bygg och simulera digitala kretsar med AND, OR, NOT, XOR och NAND-grindar.
-        Visualisera sanningsvärden och kombinationslogik.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Boolesk algebra</span>
-          <span class="tag">Logik</span>
-        </div>
-      </div>
+<section class="theme" id="historia">
+  <div class="theme-head">
+    <span class="theme-num">01</span>
+    <div>
+      <h2 class="theme-title">AI:s historia och grunder</h2>
+      <p class="theme-desc">Vad är AI egentligen – och hur kom vi hit? Från Turing och Dartmouth till ChatGPT.</p>
     </div>
-
-    <!-- Så lagras data — bitar, byte, text, bilder och minne -->
-    <a href="data-i-datorn/" class="card available color-amber">
-      <div class="card-top">
-        <div class="card-icon">🔢</div>
-        <span class="card-badge badge-tool">Verktyg</span>
-      </div>
-      <div>
-        <div class="card-module">Modul 1 · Talsystem</div>
-        <div class="card-title">Så lagras data</div>
-      </div>
-      <div class="card-desc">
-        Slå på bitar och se hur ettor och nollor blir tal, text, färger och bilder.
-        Binärt, hex, tvåkomplement, UTF-8 – och hur en AI ser data: tokens, embeddings och kvantisering.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Binärt</span>
-          <span class="tag">Hex</span>
-          <span class="tag">2-kompl.</span>
-        </div>
-        <span class="card-link link-amber">Öppna →</span>
-      </div>
-    </a>
-
-    <!-- Placeholder: Neural network visualizer -->
-    <div class="card upcoming color-purple">
-      <div class="card-top">
-        <div class="card-icon">🕸️</div>
-        <span class="card-badge badge-soon">Kommer snart</span>
-      </div>
-      <div>
-        <div class="card-module">Modul 4 · Neurala nätverk</div>
-        <div class="card-title">Neuralt nätverk-visualiserare</div>
-      </div>
-      <div class="card-desc">
-        Bygg och träna enkla neurala nätverk lager för lager. Se vikter,
-        aktiveringsfunktioner och backpropagation i realtid.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Deep learning</span>
-          <span class="tag">Backprop</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Placeholder: K-means clustering -->
-    <div class="card upcoming color-rose">
-      <div class="card-top">
-        <div class="card-icon">🎯</div>
-        <span class="card-badge badge-soon">Kommer snart</span>
-      </div>
-      <div>
-        <div class="card-module">Modul 3 · Maskininlärning</div>
-        <div class="card-title">K-means kluster-visualiserare</div>
-      </div>
-      <div class="card-desc">
-        Klicka ut datapunkter och se k-means-algoritmen dela in dem
-        i kluster steg för steg. Ändra k och se hur resultatet förändras.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Klustring</span>
-          <span class="tag">Unsupervised</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Placeholder: Dataset explorer -->
-    <div class="card upcoming color-blue">
-      <div class="card-top">
-        <div class="card-icon">📊</div>
-        <span class="card-badge badge-soon">Kommer snart</span>
-      </div>
-      <div>
-        <div class="card-module">Modul 3 · Maskininlärning</div>
-        <div class="card-title">Dataset-utforskare</div>
-      </div>
-      <div class="card-desc">
-        Utforska klassiska ML-dataset (Iris, Titanic, MNIST). Skapa
-        spridningsdiagram, histogram och korrelationsmatriser interaktivt.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Data</span>
-          <span class="tag">Visualisering</span>
-          <span class="tag">Statistik</span>
-        </div>
-      </div>
-    </div>
-
   </div>
-
-  <!-- Presentations -->
-  <div class="section-head">
-    <span class="section-title">Presentationer</span>
-    <span class="section-count">2 tillgängliga</span>
-  </div>
-
-  <div class="card-grid" style="margin-bottom: 40px;">
-
-    <!-- Sökalgoritmer — animerad presentation, BFS/DFS/Dijkstra/girig/A* -->
-    <a href="sokalgoritmer/" class="card available color-blue">
-      <div class="card-top">
-        <div class="card-icon">🧭</div>
-        <span class="card-badge badge-lesson">Presentation</span>
-      </div>
-      <div>
-        <div class="card-module">Modul 1 · Introduktion till AI</div>
-        <div class="card-title">Sökalgoritmer</div>
-      </div>
-      <div class="card-desc">
-        Från sökproblem till sökträd. Steg för steg genom BFS, DFS, Dijkstra, girig sökning
-        och A* på en karta över Jönköpingstrakten – med kontrollfrågor och reflektion.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Sökning</span>
-          <span class="tag">A*</span>
-          <span class="tag">Presentation</span>
-        </div>
-        <span class="card-link link-blue">Öppna →</span>
-      </div>
-    </a>
-
-    <!-- Beslutsträd — animerad presentation, Gini, informationsvinst, sklearn -->
-    <a href="beslutstrad-presentation/" class="card available color-amber">
-      <div class="card-top">
-        <div class="card-icon">🌳</div>
-        <span class="card-badge badge-lesson">Presentation</span>
-      </div>
-      <div>
-        <div class="card-module">Modul 3 · Maskininlärning</div>
-        <div class="card-title">Beslutsträd</div>
-      </div>
-      <div class="card-desc">
-        Hur ett beslutsträd ställer frågor om data. Rötter, noder och löv, Gini-orenhet och
-        informationsvinst, överanpassning och ett första träd i scikit-learn.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Beslutsträd</span>
-          <span class="tag">Gini</span>
-          <span class="tag">Presentation</span>
-        </div>
-        <span class="card-link link-amber">Öppna →</span>
-      </div>
-    </a>
-
-  </div>
-
-  <!-- Lessons & Theory -->
-  <div class="section-head">
-    <span class="section-title">Lektioner &amp; Teori</span>
-    <span class="section-count">9 tillgängliga</span>
-  </div>
-
   <div class="card-grid">
 
-    <!-- Show me the Money! — model answers for the group task -->
-    <a href="show-me-the-money/" class="card available color-green">
-      <div class="card-top">
-        <div class="card-icon">💰</div>
-        <span class="card-badge badge-tool">Grupparbete</span>
-      </div>
-      <div>
-        <div class="card-module">Modul 5 · Etik &amp; samhälle</div>
-        <div class="card-title">Show me the Money!</div>
-      </div>
-      <div class="card-desc">
-        Vem har egentligen makten över AI? Modellsvar för sju branscher — från vård
-        och bank till försvar och skola — med aktörer, maktkartor och reflektion.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Makt</span>
-          <span class="tag">Branscher</span>
-          <span class="tag">Maktkarta</span>
-        </div>
-        <span class="card-link link-green">Öppna →</span>
-      </div>
-    </a>
-
-    <!-- Provomfattning: AI:s historia -->
-    <a href="provomfattning-ai-historia/" class="card available color-blue">
-      <div class="card-top">
-        <div class="card-icon">📝</div>
-        <span class="card-badge badge-lab">Provomfattning</span>
-      </div>
-      <div>
-        <div class="card-module">Modul 1 · Introduktion till AI</div>
-        <div class="card-title">Provomfattning – AI:s historia</div>
-      </div>
-      <div class="card-desc">
-        Vad du behöver kunna till provet om AI:s historia — från Turing till ChatGPT.
-        Tidslinje, personer, begrepp och exempelfrågor.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Prov</span>
-          <span class="tag">Historia</span>
-          <span class="tag">Begrepp</span>
-        </div>
-        <span class="card-link link-blue">Öppna →</span>
-      </div>
-    </a>
-
-    <!-- Provomfattning: Agenter och miljöer -->
-    <a href="provomfattning-agenter-och-miljoer/" class="card available color-amber">
-      <div class="card-top">
-        <div class="card-icon">📝</div>
-        <span class="card-badge badge-lab">Provomfattning</span>
-      </div>
-      <div>
-        <div class="card-module">Modul 1 · Introduktion till AI</div>
-        <div class="card-title">Provomfattning – Agenter och miljöer</div>
-      </div>
-      <div class="card-desc">
-        Vad du behöver kunna till provet om agenter: PEAS, miljöns sex egenskaper,
-        de fem agenttyperna och belöningsfusk. Begrepp och exempelfrågor.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Prov</span>
-          <span class="tag">Agenter</span>
-          <span class="tag">PEAS</span>
-        </div>
-        <span class="card-link link-amber">Öppna →</span>
-      </div>
-    </a>
-
-    <!-- Är det AI? — Two-tab page (gallery + quiz) -->
     <a href="ar-det-ai/" class="card available color-purple">
       <div class="card-top">
         <div class="card-icon">🤖</div>
         <span class="card-badge badge-lesson">Quiz</span>
       </div>
       <div>
-        <div class="card-module">Modul 1 · Introduktion till AI</div>
         <div class="card-title">Är det AI?</div>
       </div>
       <div class="card-desc">
@@ -995,14 +609,51 @@ a { color: inherit; text-decoration: none; }
       </div>
     </a>
 
-    <!-- Agenter och miljöer — dammsugarvärld, PEAS, agenttyper -->
+  </div>
+  <div class="sub-head">Inför provet</div>
+  <div class="card-grid">
+
+    <a href="provomfattning-ai-historia/" class="card available color-blue">
+      <div class="card-top">
+        <div class="card-icon">📝</div>
+        <span class="card-badge badge-lab">Provomfattning</span>
+      </div>
+      <div>
+        <div class="card-title">Provomfattning – AI:s historia</div>
+      </div>
+      <div class="card-desc">
+        Vad du behöver kunna till provet om AI:s historia — från Turing till ChatGPT.
+        Tidslinje, personer, begrepp och exempelfrågor.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Prov</span>
+          <span class="tag">Historia</span>
+          <span class="tag">Begrepp</span>
+        </div>
+        <span class="card-link link-blue">Öppna →</span>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<section class="theme" id="agenter">
+  <div class="theme-head">
+    <span class="theme-num">02</span>
+    <div>
+      <h2 class="theme-title">Agenter och miljöer</h2>
+      <p class="theme-desc">Vad gör något till en agent, hur beskriver man uppgiften med PEAS och varför är vissa miljöer så mycket svårare än andra?</p>
+    </div>
+  </div>
+  <div class="card-grid">
+
     <a href="agenter-och-miljoer/" class="card available color-amber">
       <div class="card-top">
         <div class="card-icon">🧹</div>
         <span class="card-badge badge-lesson">Lektion</span>
       </div>
       <div>
-        <div class="card-module">Modul 1 · Introduktion till AI</div>
         <div class="card-title">Agenter och miljöer</div>
       </div>
       <div class="card-desc">
@@ -1019,131 +670,196 @@ a { color: inherit; text-decoration: none; }
       </div>
     </a>
 
-    <!-- Räta linjens ekvation — ACTIVE -->
-    <a href="rata-linjens-ekvation/" class="card available color-amber">
+    <a href="miljolabbet/" class="card available color-purple">
       <div class="card-top">
-        <div class="card-icon">📐</div>
-        <span class="card-badge badge-theory">Repetition</span>
+        <div class="card-icon">🤖</div>
+        <span class="card-badge badge-lab">Spel</span>
       </div>
       <div>
-        <div class="card-module">Matematik · Förkunskaper</div>
-        <div class="card-title">Räta linjens ekvation</div>
+        <div class="card-title">Miljölabbet</div>
       </div>
       <div class="card-desc">
-        Repetition av y = kx + m. Interaktiv teori med slider, fyra övningsnivåer
-        — inklusive grafiska frågor där du avläser k och m direkt ur koordinatsystemet.
+        Styr en städrobot i 3D. Sug upp smutsen och kör hem till laddstationen på så få
+        drag som möjligt – och känn efter vad som gör en miljö lätt eller svår för en agent.
       </div>
       <div class="card-footer">
         <div class="card-tags">
-          <span class="tag">Linjär algebra</span>
-          <span class="tag">Grafer</span>
-          <span class="tag">Interaktiv</span>
+          <span class="tag">Agenter</span>
+          <span class="tag">Miljöer</span>
+          <span class="tag">3D</span>
+        </div>
+        <span class="card-link link-purple">Spela →</span>
+      </div>
+    </a>
+
+  </div>
+  <div class="sub-head">Inför provet</div>
+  <div class="card-grid">
+
+    <a href="provomfattning-agenter-och-miljoer/" class="card available color-amber">
+      <div class="card-top">
+        <div class="card-icon">📝</div>
+        <span class="card-badge badge-lab">Provomfattning</span>
+      </div>
+      <div>
+        <div class="card-title">Provomfattning – Agenter och miljöer</div>
+      </div>
+      <div class="card-desc">
+        Vad du behöver kunna till provet om agenter: PEAS, miljöns sex egenskaper,
+        de fem agenttyperna och belöningsfusk. Begrepp och exempelfrågor.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Prov</span>
+          <span class="tag">Agenter</span>
+          <span class="tag">PEAS</span>
         </div>
         <span class="card-link link-amber">Öppna →</span>
       </div>
     </a>
 
-    <!-- Python för AI — övning med lärarvy -->
-    <a href="python-for-ai/" class="card available color-blue">
+  </div>
+</section>
+
+<section class="theme" id="algoritmer">
+  <div class="theme-head">
+    <span class="theme-num">03</span>
+    <div>
+      <h2 class="theme-title">Algoritmer och sökning</h2>
+      <p class="theme-desc">Vad en algoritm är, grafer och träd, och hur en agent söker sig fram till målet med BFS, DFS, Dijkstra och A*.</p>
+    </div>
+  </div>
+  <div class="card-grid">
+
+    <a href="algoritmer/" class="card available color-amber">
       <div class="card-top">
-        <div class="card-icon">🐍</div>
-        <span class="card-badge badge-lesson">Övning</span>
+        <div class="card-icon">🧩</div>
+        <span class="card-badge badge-lesson">Lektion</span>
       </div>
       <div>
-        <div class="card-module">Programmering · Python för AI</div>
-        <div class="card-title">Python för AI – kom igång</div>
+        <div class="card-title">Algoritmer</div>
       </div>
       <div class="card-desc">
-        En kort introduktion till Python – 51 uppgifter från din första print() till din första egna AI-modell:
-        variabler, listor, villkor och loopar, programmera en dammsugaragent och en enkel modell med scikit-learn. Framstegen sparas och läraren kan följa klassen.
+        Vad en algoritm är och vilka fem krav den måste uppfylla. Kör sekvens, selektion och iteration,
+        spåra pseudokod i ett flödesschema, tävla linjär mot binär sökning – och skriv regler mot en AI.
       </div>
       <div class="card-footer">
         <div class="card-tags">
-          <span class="tag">Python</span>
-          <span class="tag">scikit-learn</span>
-          <span class="tag">Övning</span>
+          <span class="tag">Pseudokod</span>
+          <span class="tag">Ordo</span>
+          <span class="tag">Flödesschema</span>
+        </div>
+        <span class="card-link link-amber">Öppna →</span>
+      </div>
+    </a>
+
+    <a href="defcon/" class="card available color-green">
+      <div class="card-top">
+        <div class="card-icon">📟</div>
+        <span class="card-badge badge-lab">Spel</span>
+      </div>
+      <div>
+        <div class="card-title">DEFCON 1</div>
+      </div>
+      <div class="card-desc">
+        Datorn MIMER tror att ett krigsspel är på riktigt. Stoppa kärnvapenkriget i sex uppdrag
+        genom att skriva algoritmer i pseudokod och bygga flödesscheman – byggt på verkliga falsklarm under kalla kriget.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Pseudokod</span>
+          <span class="tag">Flödesschema</span>
+          <span class="tag">Kalla kriget</span>
+        </div>
+        <span class="card-link link-green">Spela →</span>
+      </div>
+    </a>
+
+    <a href="grafer/" class="card available color-purple">
+      <div class="card-top">
+        <div class="card-icon">🕸️</div>
+        <span class="card-badge badge-tool">Verktyg</span>
+      </div>
+      <div>
+        <div class="card-title">Grafer och träd</div>
+      </div>
+      <div class="card-desc">
+        Bygg egna grafer och se direkt om de är sammanhängande, har cykler eller är träd.
+        Kör bredden först, djupet först, Dijkstra och trädgenomgångar steg för steg.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Grafer</span>
+          <span class="tag">Träd</span>
+          <span class="tag">Dijkstra</span>
+        </div>
+        <span class="card-link link-purple">Öppna →</span>
+      </div>
+    </a>
+
+    <a href="sokning/" class="card available color-blue">
+      <div class="card-top">
+        <div class="card-icon">🧭</div>
+        <span class="card-badge badge-tool">Verktyg</span>
+      </div>
+      <div>
+        <div class="card-title">Sökning</div>
+      </div>
+      <div class="card-desc">
+        Se bredden först, djupet först, Dijkstra, girig sökning och A* arbeta steg för steg –
+        på en karta runt Jönköping och i ett rutnät du ritar själv. Var algoritmen och gissa nästa steg.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">BFS</span>
+          <span class="tag">A*</span>
+          <span class="tag">Heuristik</span>
         </div>
         <span class="card-link link-blue">Öppna →</span>
       </div>
     </a>
 
-    <!-- Placeholder: Introduction to ML -->
-    <div class="card upcoming color-amber">
+    <a href="sokalgoritmer/" class="card available color-blue">
       <div class="card-top">
-        <div class="card-icon">📖</div>
-        <span class="card-badge badge-soon">Kommer snart</span>
+        <div class="card-icon">🧭</div>
+        <span class="card-badge badge-lesson">Presentation</span>
       </div>
       <div>
-        <div class="card-module">Modul 3 · Maskininlärning</div>
-        <div class="card-title">Introduktion till maskininlärning</div>
+        <div class="card-title">Sökalgoritmer</div>
       </div>
       <div class="card-desc">
-        Supervised, unsupervised och reinforcement learning. Träna och
-        utvärdera enkla modeller med verkliga dataset.
+        Från sökproblem till sökträd. Steg för steg genom BFS, DFS, Dijkstra, girig sökning
+        och A* på en karta över Jönköpingstrakten – med kontrollfrågor och reflektion.
       </div>
       <div class="card-footer">
         <div class="card-tags">
-          <span class="tag">ML</span>
-          <span class="tag">Dataset</span>
-          <span class="tag">Modeller</span>
+          <span class="tag">Sökning</span>
+          <span class="tag">A*</span>
+          <span class="tag">Presentation</span>
         </div>
-      </div>
-    </div>
-
-    <a href="perceptron/" class="card available color-rose">
-      <div class="card-top">
-        <div class="card-icon">🧠</div>
-        <span class="card-badge badge-lesson">Lektion</span>
-      </div>
-      <div>
-        <div class="card-module">Modul 4 · Neurala nätverk</div>
-        <div class="card-title">Perceptronen</div>
-      </div>
-      <div class="card-desc">
-        Den första konstgjorda neuronen — teori, interaktiv demo och bildklassificering.
-        Från Rosenblatts algoritm (1957) till vad perceptronen kan och inte kan lösa.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Teori</span>
-          <span class="tag">Interaktiv</span>
-          <span class="tag">Klassificering</span>
-        </div>
-        <span class="card-link link-rose" style="color:var(--rose);border-color:rgba(255,112,150,0.3);background:var(--rose-dim)">Öppna →</span>
+        <span class="card-link link-blue">Öppna →</span>
       </div>
     </a>
 
-    <!-- Placeholder: Regression -->
-    <div class="card upcoming color-green">
-      <div class="card-top">
-        <div class="card-icon">📈</div>
-        <span class="card-badge badge-soon">Kommer snart</span>
-      </div>
-      <div>
-        <div class="card-module">Modul 3 · Maskininlärning</div>
-        <div class="card-title">Regression &amp; klassificering</div>
-      </div>
-      <div class="card-desc">
-        Linjär och logistisk regression från grunden. Kostnadsfunktioner,
-        gradientmetoden och utvärdering med precision och recall.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Regression</span>
-          <span class="tag">Gradient</span>
-          <span class="tag">Utvärdering</span>
-        </div>
-      </div>
-    </div>
+  </div>
+</section>
 
-    <!-- Beslutsträd — lekplats med CART, överanpassning, random forest och ID3 -->
+<section class="theme" id="ml">
+  <div class="theme-head">
+    <span class="theme-num">04</span>
+    <div>
+      <h2 class="theme-title">Maskininlärning</h2>
+      <p class="theme-desc">System som lär sig av data i stället för att följa regler: beslutsträd, förstärkt inlärning och mycket mer.</p>
+    </div>
+  </div>
+  <div class="card-grid">
+
     <a href="beslutstrad/" class="card available color-amber">
       <div class="card-top">
         <div class="card-icon">🌳</div>
         <span class="card-badge badge-lab">Labb</span>
       </div>
       <div>
-        <div class="card-module">Modul 3 · Maskininlärning</div>
         <div class="card-title">Beslutsträd &amp; Random Forest</div>
       </div>
       <div class="card-desc">
@@ -1160,61 +876,34 @@ a { color: inherit; text-decoration: none; }
       </div>
     </a>
 
-    <!-- Placeholder: NLP -->
-    <div class="card upcoming color-blue">
+    <a href="beslutstrad-presentation/" class="card available color-amber">
       <div class="card-top">
-        <div class="card-icon">💬</div>
-        <span class="card-badge badge-soon">Kommer snart</span>
+        <div class="card-icon">🌳</div>
+        <span class="card-badge badge-lesson">Presentation</span>
       </div>
       <div>
-        <div class="card-module">Modul 4 · Neurala nätverk</div>
-        <div class="card-title">Naturlig språkbehandling</div>
+        <div class="card-title">Beslutsträd</div>
       </div>
       <div class="card-desc">
-        Tokenisering, ordvektorer och transformer-arkitekturen bakom moderna
-        språkmodeller. Hur ChatGPT och liknande system egentligen fungerar.
+        Hur ett beslutsträd ställer frågor om data. Rötter, noder och löv, Gini-orenhet och
+        informationsvinst, överanpassning och ett första träd i scikit-learn.
       </div>
       <div class="card-footer">
         <div class="card-tags">
-          <span class="tag">NLP</span>
-          <span class="tag">Transformer</span>
-          <span class="tag">LLM</span>
+          <span class="tag">Beslutsträd</span>
+          <span class="tag">Gini</span>
+          <span class="tag">Presentation</span>
         </div>
-      </div>
-    </div>
-
-    <!-- Maskinögat — bildanalys med CNN -->
-    <a href="maskinogat/" class="card available color-rose">
-      <div class="card-top">
-        <div class="card-icon">🩻</div>
-        <span class="card-badge badge-lesson">Lektion</span>
-      </div>
-      <div>
-        <div class="card-module">Modul 4 · Neurala nätverk</div>
-        <div class="card-title">Maskinögat – AI som hittar cancer</div>
-      </div>
-      <div class="card-desc">
-        Träna ett eget faltningsnät (CNN) som skiljer godartade från elakartade tumörer –
-        direkt i webbläsaren. Filter, överanpassning, tröskel, förklarbar AI, genvägar och riktiga ultraljudsbilder.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">CNN</span>
-          <span class="tag">Computer vision</span>
-          <span class="tag">Interaktiv</span>
-        </div>
-        <span class="card-link link-rose" style="color:var(--rose);border-color:rgba(255,112,150,0.3);background:var(--rose-dim)">Öppna →</span>
+        <span class="card-link link-amber">Öppna →</span>
       </div>
     </a>
 
-    <!-- Förstärkt inlärning — Robo lär sig med Q-learning i ett 3D-rum -->
     <a href="forstarkt-inlarning/" class="card available color-green">
       <div class="card-top">
         <div class="card-icon">🎮</div>
         <span class="card-badge badge-lab">Labb</span>
       </div>
       <div>
-        <div class="card-module">Modul 3 · Maskininlärning</div>
         <div class="card-title">Förstärkt inlärning</div>
       </div>
       <div class="card-desc">
@@ -1231,14 +920,206 @@ a { color: inherit; text-decoration: none; }
       </div>
     </a>
 
-    <!-- Bias i AI — lekplats om skev data, proxyer, rättvisemått och återkopplingsloopar -->
+    <div class="card upcoming color-amber">
+      <div class="card-top">
+        <div class="card-icon">📖</div>
+        <span class="card-badge badge-soon">Kommer snart</span>
+      </div>
+      <div>
+        <div class="card-title">Introduktion till maskininlärning</div>
+      </div>
+      <div class="card-desc">
+        Supervised, unsupervised och reinforcement learning. Träna och
+        utvärdera enkla modeller med verkliga dataset.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">ML</span>
+          <span class="tag">Dataset</span>
+          <span class="tag">Modeller</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card upcoming color-green">
+      <div class="card-top">
+        <div class="card-icon">📈</div>
+        <span class="card-badge badge-soon">Kommer snart</span>
+      </div>
+      <div>
+        <div class="card-title">Regression &amp; klassificering</div>
+      </div>
+      <div class="card-desc">
+        Linjär och logistisk regression från grunden. Kostnadsfunktioner,
+        gradientmetoden och utvärdering med precision och recall.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Regression</span>
+          <span class="tag">Gradient</span>
+          <span class="tag">Utvärdering</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card upcoming color-rose">
+      <div class="card-top">
+        <div class="card-icon">🎯</div>
+        <span class="card-badge badge-soon">Kommer snart</span>
+      </div>
+      <div>
+        <div class="card-title">K-means kluster-visualiserare</div>
+      </div>
+      <div class="card-desc">
+        Klicka ut datapunkter och se k-means-algoritmen dela in dem
+        i kluster steg för steg. Ändra k och se hur resultatet förändras.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Klustring</span>
+          <span class="tag">Unsupervised</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card upcoming color-blue">
+      <div class="card-top">
+        <div class="card-icon">📊</div>
+        <span class="card-badge badge-soon">Kommer snart</span>
+      </div>
+      <div>
+        <div class="card-title">Dataset-utforskare</div>
+      </div>
+      <div class="card-desc">
+        Utforska klassiska ML-dataset (Iris, Titanic, MNIST). Skapa
+        spridningsdiagram, histogram och korrelationsmatriser interaktivt.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Data</span>
+          <span class="tag">Visualisering</span>
+          <span class="tag">Statistik</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="theme" id="nn">
+  <div class="theme-head">
+    <span class="theme-num">05</span>
+    <div>
+      <h2 class="theme-title">Neurala nätverk</h2>
+      <p class="theme-desc">Från den första konstgjorda neuronen till nätverk som ser cancer i ultraljudsbilder.</p>
+    </div>
+  </div>
+  <div class="card-grid">
+
+    <a href="perceptron/" class="card available color-rose">
+      <div class="card-top">
+        <div class="card-icon">🧠</div>
+        <span class="card-badge badge-lesson">Lektion</span>
+      </div>
+      <div>
+        <div class="card-title">Perceptronen</div>
+      </div>
+      <div class="card-desc">
+        Den första konstgjorda neuronen — teori, interaktiv demo och bildklassificering.
+        Från Rosenblatts algoritm (1957) till vad perceptronen kan och inte kan lösa.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Teori</span>
+          <span class="tag">Interaktiv</span>
+          <span class="tag">Klassificering</span>
+        </div>
+        <span class="card-link link-rose" style="color:var(--rose);border-color:rgba(255,112,150,0.3);background:var(--rose-dim)">Öppna →</span>
+      </div>
+    </a>
+
+    <a href="maskinogat/" class="card available color-rose">
+      <div class="card-top">
+        <div class="card-icon">🩻</div>
+        <span class="card-badge badge-lesson">Lektion</span>
+      </div>
+      <div>
+        <div class="card-title">Maskinögat – AI som hittar cancer</div>
+      </div>
+      <div class="card-desc">
+        Träna ett eget faltningsnät (CNN) som skiljer godartade från elakartade tumörer –
+        direkt i webbläsaren. Filter, överanpassning, tröskel, förklarbar AI, genvägar och riktiga ultraljudsbilder.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">CNN</span>
+          <span class="tag">Computer vision</span>
+          <span class="tag">Interaktiv</span>
+        </div>
+        <span class="card-link link-rose" style="color:var(--rose);border-color:rgba(255,112,150,0.3);background:var(--rose-dim)">Öppna →</span>
+      </div>
+    </a>
+
+    <div class="card upcoming color-purple">
+      <div class="card-top">
+        <div class="card-icon">🕸️</div>
+        <span class="card-badge badge-soon">Kommer snart</span>
+      </div>
+      <div>
+        <div class="card-title">Neuralt nätverk-visualiserare</div>
+      </div>
+      <div class="card-desc">
+        Bygg och träna enkla neurala nätverk lager för lager. Se vikter,
+        aktiveringsfunktioner och backpropagation i realtid.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Deep learning</span>
+          <span class="tag">Backprop</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card upcoming color-blue">
+      <div class="card-top">
+        <div class="card-icon">💬</div>
+        <span class="card-badge badge-soon">Kommer snart</span>
+      </div>
+      <div>
+        <div class="card-title">Naturlig språkbehandling</div>
+      </div>
+      <div class="card-desc">
+        Tokenisering, ordvektorer och transformer-arkitekturen bakom moderna
+        språkmodeller. Hur ChatGPT och liknande system egentligen fungerar.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">NLP</span>
+          <span class="tag">Transformer</span>
+          <span class="tag">LLM</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="theme" id="etik">
+  <div class="theme-head">
+    <span class="theme-num">06</span>
+    <div>
+      <h2 class="theme-title">AI och samhället</h2>
+      <p class="theme-desc">Bias, makt och pengar – vem påverkas av AI, och vem bestämmer över den?</p>
+    </div>
+  </div>
+  <div class="card-grid">
+
     <a href="bias/" class="card available color-rose">
       <div class="card-top">
         <div class="card-icon">⚖️</div>
         <span class="card-badge badge-lab">Labb</span>
       </div>
       <div>
-        <div class="card-module">Modul 5 · Etik &amp; samhälle</div>
         <div class="card-title">Bias i AI</div>
       </div>
       <div class="card-desc">
@@ -1255,14 +1136,56 @@ a { color: inherit; text-decoration: none; }
       </div>
     </a>
 
-    <!-- Placeholder: AI ethics -->
+    <a href="show-me-the-money/" class="card available color-green">
+      <div class="card-top">
+        <div class="card-icon">💰</div>
+        <span class="card-badge badge-tool">Grupparbete</span>
+      </div>
+      <div>
+        <div class="card-title">Show me the Money!</div>
+      </div>
+      <div class="card-desc">
+        Vem har egentligen makten över AI? Modellsvar för sju branscher — från vård
+        och bank till försvar och skola — med aktörer, maktkartor och reflektion.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Makt</span>
+          <span class="tag">Branscher</span>
+          <span class="tag">Maktkarta</span>
+        </div>
+        <span class="card-link link-green">Öppna →</span>
+      </div>
+    </a>
+
+    <a href="https://exitticket.teed.se/shark/spela" class="card available color-blue">
+      <div class="card-top">
+        <div class="card-icon">🦈</div>
+        <span class="card-badge badge-lab">Aktivitet</span>
+      </div>
+      <div>
+        <div class="card-title">Shark Tank</div>
+      </div>
+      <div class="card-desc">
+        Grupperna pitchar sina AI-företagsidéer. Logga in med din personliga kod och
+        fördela dina 100 000 USD på de företag du tror mest på.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Pitch</span>
+          <span class="tag">Investering</span>
+          <span class="tag">Röstning</span>
+        </div>
+        <span class="card-link link-blue">Investera →</span>
+      </div>
+    </a>
+
     <div class="card upcoming color-blue">
       <div class="card-top">
         <div class="card-icon">⚖️</div>
         <span class="card-badge badge-soon">Kommer snart</span>
       </div>
       <div>
-        <div class="card-module">Modul 5 · Etik &amp; samhälle</div>
         <div class="card-title">AI-etik &amp; samhällspåverkan</div>
       </div>
       <div class="card-desc">
@@ -1279,6 +1202,142 @@ a { color: inherit; text-decoration: none; }
     </div>
 
   </div>
+</section>
+
+<section class="theme" id="datorn">
+  <div class="theme-head">
+    <span class="theme-num">07</span>
+    <div>
+      <h2 class="theme-title">Datorn och data</h2>
+      <p class="theme-desc">Hur en dator fungerar på insidan och hur ettor och nollor blir tal, text och bilder.</p>
+    </div>
+  </div>
+  <div class="card-grid">
+
+    <a href="assembler/" class="card available color-green">
+      <div class="card-top">
+        <div class="card-icon">🖥</div>
+        <span class="card-badge badge-tool">Verktyg</span>
+      </div>
+      <div>
+        <div class="card-title">Assembler-Simulator</div>
+      </div>
+      <div class="card-desc">
+        Interaktiv simulator för en 8-bitars maskinspråksdator med 16 register
+        och 256 minnesceller. Skriv, kör och felsök program i hexadecimalt maskinspråk.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Maskinspråk</span>
+          <span class="tag">CPU</span>
+          <span class="tag">Hex</span>
+        </div>
+        <span class="card-link link-green">Öppna →</span>
+      </div>
+    </a>
+
+    <a href="data-i-datorn/" class="card available color-amber">
+      <div class="card-top">
+        <div class="card-icon">🔢</div>
+        <span class="card-badge badge-tool">Verktyg</span>
+      </div>
+      <div>
+        <div class="card-title">Så lagras data</div>
+      </div>
+      <div class="card-desc">
+        Slå på bitar och se hur ettor och nollor blir tal, text, färger och bilder.
+        Binärt, hex, tvåkomplement, UTF-8 – och hur en AI ser data: tokens, embeddings och kvantisering.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Binärt</span>
+          <span class="tag">Hex</span>
+          <span class="tag">2-kompl.</span>
+        </div>
+        <span class="card-link link-amber">Öppna →</span>
+      </div>
+    </a>
+
+    <div class="card upcoming color-blue">
+      <div class="card-top">
+        <div class="card-icon">⚡</div>
+        <span class="card-badge badge-soon">Kommer snart</span>
+      </div>
+      <div>
+        <div class="card-title">Grindkrets-simulator</div>
+      </div>
+      <div class="card-desc">
+        Bygg och simulera digitala kretsar med AND, OR, NOT, XOR och NAND-grindar.
+        Visualisera sanningsvärden och kombinationslogik.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Boolesk algebra</span>
+          <span class="tag">Logik</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="theme" id="verktyg">
+  <div class="theme-head">
+    <span class="theme-num">08</span>
+    <div>
+      <h2 class="theme-title">Python och matematik</h2>
+      <p class="theme-desc">Verktygen du behöver längs vägen: programmering i Python och repetition av matematiken.</p>
+    </div>
+  </div>
+  <div class="card-grid">
+
+    <a href="python-for-ai/" class="card available color-blue">
+      <div class="card-top">
+        <div class="card-icon">🐍</div>
+        <span class="card-badge badge-lesson">Övning</span>
+      </div>
+      <div>
+        <div class="card-title">Python för AI – kom igång</div>
+      </div>
+      <div class="card-desc">
+        En kort introduktion till Python – 51 uppgifter från din första print() till din första egna AI-modell:
+        variabler, listor, villkor och loopar, programmera en dammsugaragent och en enkel modell med scikit-learn. Framstegen sparas och läraren kan följa klassen.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Python</span>
+          <span class="tag">scikit-learn</span>
+          <span class="tag">Övning</span>
+        </div>
+        <span class="card-link link-blue">Öppna →</span>
+      </div>
+    </a>
+
+    <a href="rata-linjens-ekvation/" class="card available color-amber">
+      <div class="card-top">
+        <div class="card-icon">📐</div>
+        <span class="card-badge badge-theory">Repetition</span>
+      </div>
+      <div>
+        <div class="card-title">Räta linjens ekvation</div>
+      </div>
+      <div class="card-desc">
+        Repetition av y = kx + m. Interaktiv teori med slider, fyra övningsnivåer
+        — inklusive grafiska frågor där du avläser k och m direkt ur koordinatsystemet.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Linjär algebra</span>
+          <span class="tag">Grafer</span>
+          <span class="tag">Interaktiv</span>
+        </div>
+        <span class="card-link link-amber">Öppna →</span>
+      </div>
+    </a>
+
+  </div>
+</section>
+
 </main>
 
 <!-- FOOTER -->

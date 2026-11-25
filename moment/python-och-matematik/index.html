@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python och matematik – AI 1</title>
+<meta name="description" content="Digitalt kursmaterial för AI 1 på Teknikprogrammet vid Erik Dahlbergsgymnasiet, Jönköping.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230a0a0a'/><circle cx='16' cy='16' r='6' fill='%232f4bff'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script>
+(function(){
+  var root=document.documentElement, key='ai1-tema';
+  var saved=null; try{saved=localStorage.getItem(key)}catch(e){}
+  var dark=saved?saved==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+  if(dark) root.setAttribute('data-theme','dark');
+  window.bytTema=function(){
+    var d=root.getAttribute('data-theme')!=='dark';
+    if(d) root.setAttribute('data-theme','dark'); else root.removeAttribute('data-theme');
+    try{localStorage.setItem(key,d?'dark':'light')}catch(e){}
+  };
+})();
+</script>
+<style>
+:root{--sans:"Inter","Helvetica Neue",Arial,system-ui,sans-serif;--display:"Inter Tight","Inter","Helvetica Neue",Arial,sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --bg:#ffffff;--surface:#f5f5f5;--raised:#ffffff;--ink:#0a0a0a;--muted:#5c5c5c;--subtle:#8a8a8a;--line:#e5e5e5;--ctrl:#8a8a8a;--accent:#2f4bff;--accent-h:#1f36d6;--tint:#eef0ff;--shadow:0 1px 2px rgba(10,10,10,.06),0 8px 24px rgba(10,10,10,.06);color-scheme:light}
+:root[data-theme=dark]{--bg:#0a0a0a;--surface:#171717;--raised:#1f1f1f;--ink:#fafafa;--muted:#a3a3a3;--subtle:#6b6b6b;--line:#262626;--ctrl:#6b6b6b;--accent:#7b8cff;--accent-h:#9aa7ff;--tint:#161b3d;--shadow:0 1px 2px rgba(0,0,0,.5),0 8px 24px rgba(0,0,0,.4);color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--sans);-webkit-font-smoothing:antialiased;transition:background-color .25s,color .25s}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1120px;margin:0 auto;padding:0 32px}
+
+/* bar */
+.bar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line)}
+.bar .wrap{height:56px;display:flex;align-items:center;gap:14px}
+.mark{width:28px;height:28px;border:1.5px solid var(--ink);border-radius:6px;display:grid;place-items:center;font:600 11px var(--mono);letter-spacing:.02em}
+.brand{font-size:14px;color:var(--muted)}
+.brand b{color:var(--ink);font-weight:600}
+.brand i{font-style:normal;color:var(--line);margin:0 8px}
+.jump{margin-left:auto;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.jump::-webkit-scrollbar{display:none}
+.jump a{font:500 12px/1 var(--mono);color:var(--subtle);padding:8px 8px;border-radius:6px;transition:color .15s,background .15s}
+.jump a:hover,.jump a.on{color:var(--ink);background:var(--surface)}
+.jump a.on{color:var(--accent)}
+.nb{width:30px;height:30px;flex:none;border-radius:6px;border:1px solid var(--ctrl);background:transparent;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
+.nb:hover{background:var(--surface)}
+.nb svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+
+/* type */
+.ov{font:600 12px/16px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:10px;margin:0}
+.ov::before{content:"";width:8px;height:8px;border-radius:9999px;background:var(--accent);flex:none}
+
+/* hero */
+.hero{padding:88px 0 56px;border-bottom:1px solid var(--line)}
+.hero h1{font:600 clamp(40px,6.4vw,76px)/1.02 var(--display);letter-spacing:-.035em;margin:20px 0 0;max-width:900px;text-wrap:balance}
+.hero h1 span{color:var(--accent)}
+.lead{font-size:20px;line-height:30px;color:var(--muted);margin:22px 0 0;max-width:640px;text-wrap:pretty}
+.lead a{color:var(--ink);border-bottom:1.5px solid var(--accent);padding-bottom:1px;transition:color .15s}
+.lead a:hover{color:var(--accent)}
+.meta{display:flex;flex-wrap:wrap;gap:8px 28px;margin:28px 0 0;font:500 12px/16px var(--mono);color:var(--subtle);letter-spacing:.02em}
+
+/* contents */
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0 32px;margin:56px 0 0;padding:0;list-style:none;counter-reset:t}
+.toc li{border-top:1px solid var(--line)}
+.toc a{display:grid;grid-template-columns:36px 1fr auto;align-items:baseline;gap:4px;padding:14px 0;transition:color .15s}
+.toc .n{font:500 13px var(--mono);color:var(--accent)}
+.toc .name{font-weight:500;font-size:15px}
+.toc .c{font:500 12px var(--mono);color:var(--subtle)}
+.toc a:hover .name{color:var(--accent)}
+
+/* themes */
+.theme{display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px;padding:72px 0;border-bottom:1px solid var(--line)}
+.theme:last-child{border-bottom:0}
+.side{position:sticky;top:88px;align-self:start}
+.num{font:500 64px/1 var(--display);letter-spacing:-.04em;color:var(--accent)}
+.side h2{font:600 28px/34px var(--display);letter-spacing:-.02em;margin:18px 0 0;text-wrap:balance}
+.side p{font-size:15px;line-height:23px;color:var(--muted);margin:12px 0 0;text-wrap:pretty}
+.side .cnt{font:500 12px var(--mono);color:var(--subtle);margin-top:16px}
+.sub{font:600 12px/16px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:12px;margin:40px 0 16px}
+.sub:first-child{margin-top:0}
+.sub::after{content:"";flex:1;height:1px;background:var(--line)}
+.sub.exam{color:var(--accent)}
+
+/* cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.card{position:relative;display:flex;flex-direction:column;background:var(--surface);border:1px solid transparent;border-radius:14px;padding:20px 20px 16px;transition:background-color .2s,border-color .2s,box-shadow .2s,transform .2s}
+a.card:hover{background:var(--raised);border-color:var(--line);box-shadow:var(--shadow);transform:translateY(-2px)}
+a.card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.card-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ico{width:40px;height:40px;border-radius:10px;background:var(--bg);display:grid;place-items:center;font-size:20px}
+.kind{font:600 11px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.card h3{font:600 19px/25px var(--display);letter-spacing:-.01em;margin:18px 0 0;text-wrap:balance}
+.card p{font-size:14px;line-height:21px;color:var(--muted);margin:8px 0 0;text-wrap:pretty}
+.card-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:18px}
+.tags{display:flex;flex-wrap:wrap;gap:4px 10px;font:500 11px/16px var(--mono);color:var(--subtle)}
+.go{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:13px;white-space:nowrap;color:var(--ink);transition:color .15s}
+.go svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
+a.card:hover .go{color:var(--accent)}
+a.card:hover .go svg{transform:translateX(3px)}
+.card.exam{background:var(--tint)}
+.card.exam .kind{color:var(--accent)}
+.card.exam .ico{background:var(--raised)}
+.card.soon{background:transparent;border:1px dashed var(--line)}
+.card.soon h3,.card.soon .ico{opacity:.55}
+.card.soon p{color:var(--subtle)}
+.card.soon .kind{color:var(--subtle)}
+
+/* type page */
+.section{padding:64px 0;border-bottom:1px solid var(--line)}
+.section:last-child{border-bottom:0}
+.section-h{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:24px}
+.section-h h2{font:600 32px/38px var(--display);letter-spacing:-.02em;margin:0}
+.section-h span{font:500 12px var(--mono);color:var(--subtle)}
+
+footer{border-top:1px solid var(--line);padding:28px 0 48px;color:var(--muted);font-size:13px}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+footer .mono{font-family:var(--mono);font-size:12px;color:var(--subtle)}
+
+/* motion */
+.rise{animation:rise .7s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--d,0s)}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+@media (prefers-reduced-motion:reduce){.rise{animation:none}html{scroll-behavior:auto}a.card:hover{transform:none}}
+
+@media (max-width:860px){
+  .wrap{padding:0 20px}
+  .theme{grid-template-columns:1fr;gap:24px;padding:56px 0}
+  .side{position:static}
+  .num{font-size:44px}
+  .hero{padding:56px 0 40px}
+  .brand .long{display:none}
+}
+@media (max-width:560px){.jump{display:none}.lead{font-size:18px;line-height:27px}}
+@media print{.bar{position:static}.rise{animation:none}.card{break-inside:avoid}}
+
+/* moment cards on the landing page */
+.moments{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;padding:64px 0 88px}
+.moment{display:flex;flex-direction:column;min-height:300px;background:var(--surface);border:1px solid transparent;border-radius:16px;padding:28px 28px 22px;transition:background-color .2s,border-color .2s,box-shadow .2s,transform .2s}
+.moment:hover{background:var(--raised);border-color:var(--line);box-shadow:var(--shadow);transform:translateY(-3px)}
+.moment:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.moment .num{font-size:52px}
+.moment h2{font:600 26px/31px var(--display);letter-spacing:-.02em;margin:22px 0 0;text-wrap:balance}
+.moment p{font-size:15px;line-height:23px;color:var(--muted);margin:10px 0 0;text-wrap:pretty}
+.icons{display:flex;gap:6px;margin-top:22px}
+.icons span{width:34px;height:34px;border-radius:9px;background:var(--bg);display:grid;place-items:center;font-size:17px}
+.moment-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:22px}
+.moment-foot .cnt{font:500 12px var(--mono);color:var(--subtle)}
+.moment-foot .cnt b{color:var(--ink);font-weight:600}
+.moment-foot .cnt em{font-style:normal;color:var(--accent)}
+.moment:hover .go{color:var(--accent)}
+.moment:hover .go svg{transform:translateX(3px)}
+
+/* moment page */
+.crumb{display:inline-flex;align-items:center;gap:8px;font:500 13px var(--sans);color:var(--muted);margin-bottom:28px;transition:color .15s}
+.crumb:hover{color:var(--accent)}
+.crumb svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.moment-hero .num{font-size:88px;margin-top:20px}
+.moment-hero h1{margin-top:10px}
+.groups{padding:56px 0 24px}
+.pager{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:40px 0 88px}
+.pager a{display:block;border:1px solid var(--line);border-radius:14px;padding:18px 22px;transition:border-color .15s,background .15s}
+.pager a:hover{border-color:var(--ink);background:var(--surface)}
+.pager .k{font:600 11px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.pager .t{display:block;font:600 18px/24px var(--display);margin-top:8px}
+.pager .t i{font-style:normal;font-family:var(--mono);color:var(--accent);font-size:14px;margin-right:8px}
+.pager .next{text-align:right;grid-column:2}
+@media (max-width:860px){.moment-hero .num{font-size:64px}.moments{padding:40px 0 64px}}
+@media (max-width:560px){.pager{grid-template-columns:1fr}.pager .next{grid-column:1}}
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <a class="mark" href="../../" aria-label="Till startsidan">ED</a>
+    <a class="brand" href="../../"><span class="long">Erik Dahlbergsgymnasiet<i>/</i></span><b>AI 1</b></a>
+    <nav class="jump" aria-label="Moment"><a href="../../moment/historia/" title="AI:s historia och vem som bestämmer">01</a><a href="../../moment/agenter/" title="Agenter och miljöer">02</a><a href="../../moment/algoritmer/" title="Algoritmer och sökning">03</a><a href="../../moment/maskininlarning/" title="Maskininlärning">04</a><a href="../../moment/neurala-natverk/" title="Neurala nätverk">05</a><a href="../../moment/samhallet/" title="AI och samhället">06</a><a href="../../moment/python-och-matematik/" title="Python och matematik" class="on" aria-current="page">07</a></nav>
+    <button class="nb" onclick="bytTema()" title="Byt ljust/mörkt tema" aria-label="Byt tema"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg></button>
+  </div>
+</header>
+<section class="hero moment-hero">
+  <div class="wrap">
+    <a class="crumb rise" href="../../"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Alla moment</a>
+    <p class="ov rise">Moment 07</p>
+    <div class="num rise" style="--d:.04s" aria-hidden="true">07</div>
+    <h1 class="rise" style="--d:.08s">Python och matematik</h1>
+    <p class="lead rise" style="--d:.12s">Verktygen du behöver längs vägen: programmering i Python och repetition av matematiken.</p>
+    <div class="meta rise" style="--d:.16s"><span>2 material</span></div>
+  </div>
+</section>
+<main class="wrap">
+<div class="groups">
+  <div class="sub">Material</div>
+  <div class="grid">
+    <a class="card rise" style="--d:0.08s" href="../../python-for-ai/">
+      <div class="card-top"><span class="ico" aria-hidden="true">🐍</span><span class="kind">Övning</span></div>
+      <h3>Python för AI – kom igång</h3>
+      <p>En kort introduktion till Python – 51 uppgifter från din första print() till din första egna AI-modell: variabler, listor, villkor och loopar, programmera en dammsugaragent och en enkel modell med scikit-learn. Framstegen sparas och läraren kan följa klassen.</p>
+      <div class="card-foot"><div class="tags"><span>Python</span><span>scikit-learn</span><span>Övning</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
+    </a>
+    <a class="card rise" style="--d:0.12s" href="../../rata-linjens-ekvation/">
+      <div class="card-top"><span class="ico" aria-hidden="true">📐</span><span class="kind">Repetition</span></div>
+      <h3>Räta linjens ekvation</h3>
+      <p>Repetition av y = kx + m. Interaktiv teori med slider, fyra övningsnivåer — inklusive grafiska frågor där du avläser k och m direkt ur koordinatsystemet.</p>
+      <div class="card-foot"><div class="tags"><span>Linjär algebra</span><span>Grafer</span><span>Interaktiv</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
+    </a>
+  </div>
+</div>
+<nav class="pager" aria-label="Fler moment"><a href="../samhallet/"><span class="k">Föregående moment</span><span class="t"><i>06</i>AI och samhället</span></a></nav>
+</main>
+<footer>
+  <div class="wrap">
+    <span><b>AI 1</b> — Erik Dahlbergsgymnasiet, Jönköping · Teknikprogrammet</span>
+    <span class="mono"><a href="../../oversikt.html">Allt material</a> · Kurskod AIAAIN01</span>
+  </div>
+</footer>
+</body>
+</html>

@@ -512,6 +512,7 @@ a { color: inherit; text-decoration: none; }
   color: var(--text-muted); margin: 22px 0 10px; display: flex; align-items: center; gap: 10px; }
 .sub-head::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 .all-link { color: var(--accent); text-decoration: underline; }
+.theme-head + .sub-head { margin-top: 0; }
 @media (max-width: 700px) { .theme-nav-inner { flex-wrap: nowrap; overflow-x: auto; } }
 </style>
 
@@ -563,14 +564,13 @@ a { color: inherit; text-decoration: none; }
 
 <nav class="theme-nav" aria-label="Teman">
   <div class="theme-nav-inner">
-    <a href="#historia"><span>1</span>AI:s historia och grunder</a>
+    <a href="#historia"><span>1</span>AI:s historia och vem som bestämmer</a>
     <a href="#agenter"><span>2</span>Agenter och miljöer</a>
     <a href="#algoritmer"><span>3</span>Algoritmer och sökning</a>
     <a href="#ml"><span>4</span>Maskininlärning</a>
     <a href="#nn"><span>5</span>Neurala nätverk</a>
     <a href="#etik"><span>6</span>AI och samhället</a>
-    <a href="#datorn"><span>7</span>Datorn och data</a>
-    <a href="#verktyg"><span>8</span>Python och matematik</a>
+    <a href="#verktyg"><span>7</span>Python och matematik</a>
   </div>
 </nav>
 
@@ -581,10 +581,11 @@ a { color: inherit; text-decoration: none; }
   <div class="theme-head">
     <span class="theme-num">01</span>
     <div>
-      <h2 class="theme-title">AI:s historia och grunder</h2>
-      <p class="theme-desc">Vad är AI egentligen – och hur kom vi hit? Från Turing och Dartmouth till ChatGPT.</p>
+      <h2 class="theme-title">AI:s historia och vem som bestämmer</h2>
+      <p class="theme-desc">Vad är AI egentligen, hur kom vi hit – från Turing och den första neuronen till ChatGPT – och vem har makten över tekniken i dag?</p>
     </div>
   </div>
+  <div class="sub-head">Historia och grunder</div>
   <div class="card-grid">
 
     <a href="ar-det-ai/" class="card available color-purple">
@@ -606,6 +607,144 @@ a { color: inherit; text-decoration: none; }
           <span class="tag">Interaktiv</span>
         </div>
         <span class="card-link link-purple">Öppna →</span>
+      </div>
+    </a>
+
+    <a href="perceptron/" class="card available color-rose">
+      <div class="card-top">
+        <div class="card-icon">🧠</div>
+        <span class="card-badge badge-lesson">Lektion</span>
+      </div>
+      <div>
+        <div class="card-title">Perceptronen</div>
+      </div>
+      <div class="card-desc">
+        Den första konstgjorda neuronen — teori, interaktiv demo och bildklassificering.
+        Från Rosenblatts algoritm (1957) till vad perceptronen kan och inte kan lösa.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Teori</span>
+          <span class="tag">Interaktiv</span>
+          <span class="tag">Klassificering</span>
+        </div>
+        <span class="card-link link-rose" style="color:var(--rose);border-color:rgba(255,112,150,0.3);background:var(--rose-dim)">Öppna →</span>
+      </div>
+    </a>
+
+  </div>
+  <div class="sub-head">Datorn under huven</div>
+  <div class="card-grid">
+
+    <a href="assembler/" class="card available color-green">
+      <div class="card-top">
+        <div class="card-icon">🖥</div>
+        <span class="card-badge badge-tool">Verktyg</span>
+      </div>
+      <div>
+        <div class="card-title">Assembler-Simulator</div>
+      </div>
+      <div class="card-desc">
+        Interaktiv simulator för en 8-bitars maskinspråksdator med 16 register
+        och 256 minnesceller. Skriv, kör och felsök program i hexadecimalt maskinspråk.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Maskinspråk</span>
+          <span class="tag">CPU</span>
+          <span class="tag">Hex</span>
+        </div>
+        <span class="card-link link-green">Öppna →</span>
+      </div>
+    </a>
+
+    <a href="data-i-datorn/" class="card available color-amber">
+      <div class="card-top">
+        <div class="card-icon">🔢</div>
+        <span class="card-badge badge-tool">Verktyg</span>
+      </div>
+      <div>
+        <div class="card-title">Så lagras data</div>
+      </div>
+      <div class="card-desc">
+        Slå på bitar och se hur ettor och nollor blir tal, text, färger och bilder.
+        Binärt, hex, tvåkomplement, UTF-8 – och hur en AI ser data: tokens, embeddings och kvantisering.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Binärt</span>
+          <span class="tag">Hex</span>
+          <span class="tag">2-kompl.</span>
+        </div>
+        <span class="card-link link-amber">Öppna →</span>
+      </div>
+    </a>
+
+    <div class="card upcoming color-blue">
+      <div class="card-top">
+        <div class="card-icon">⚡</div>
+        <span class="card-badge badge-soon">Kommer snart</span>
+      </div>
+      <div>
+        <div class="card-title">Grindkrets-simulator</div>
+      </div>
+      <div class="card-desc">
+        Bygg och simulera digitala kretsar med AND, OR, NOT, XOR och NAND-grindar.
+        Visualisera sanningsvärden och kombinationslogik.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Boolesk algebra</span>
+          <span class="tag">Logik</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="sub-head">Vem bestämmer?</div>
+  <div class="card-grid">
+
+    <a href="show-me-the-money/" class="card available color-green">
+      <div class="card-top">
+        <div class="card-icon">💰</div>
+        <span class="card-badge badge-tool">Grupparbete</span>
+      </div>
+      <div>
+        <div class="card-title">Show me the Money!</div>
+      </div>
+      <div class="card-desc">
+        Vem har egentligen makten över AI? Modellsvar för sju branscher — från vård
+        och bank till försvar och skola — med aktörer, maktkartor och reflektion.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Makt</span>
+          <span class="tag">Branscher</span>
+          <span class="tag">Maktkarta</span>
+        </div>
+        <span class="card-link link-green">Öppna →</span>
+      </div>
+    </a>
+
+    <a href="https://exitticket.teed.se/shark/spela" class="card available color-blue">
+      <div class="card-top">
+        <div class="card-icon">🦈</div>
+        <span class="card-badge badge-lab">Aktivitet</span>
+      </div>
+      <div>
+        <div class="card-title">Shark Tank</div>
+      </div>
+      <div class="card-desc">
+        Grupperna pitchar sina AI-företagsidéer. Logga in med din personliga kod och
+        fördela dina 100 000 USD på de företag du tror mest på.
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Pitch</span>
+          <span class="tag">Investering</span>
+          <span class="tag">Röstning</span>
+        </div>
+        <span class="card-link link-blue">Investera →</span>
       </div>
     </a>
 
@@ -1011,32 +1150,10 @@ a { color: inherit; text-decoration: none; }
     <span class="theme-num">05</span>
     <div>
       <h2 class="theme-title">Neurala nätverk</h2>
-      <p class="theme-desc">Från den första konstgjorda neuronen till nätverk som ser cancer i ultraljudsbilder.</p>
+      <p class="theme-desc">Nätverk av konstgjorda neuroner som ser, läser och skriver – från bildanalys till språkmodeller.</p>
     </div>
   </div>
   <div class="card-grid">
-
-    <a href="perceptron/" class="card available color-rose">
-      <div class="card-top">
-        <div class="card-icon">🧠</div>
-        <span class="card-badge badge-lesson">Lektion</span>
-      </div>
-      <div>
-        <div class="card-title">Perceptronen</div>
-      </div>
-      <div class="card-desc">
-        Den första konstgjorda neuronen — teori, interaktiv demo och bildklassificering.
-        Från Rosenblatts algoritm (1957) till vad perceptronen kan och inte kan lösa.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Teori</span>
-          <span class="tag">Interaktiv</span>
-          <span class="tag">Klassificering</span>
-        </div>
-        <span class="card-link link-rose" style="color:var(--rose);border-color:rgba(255,112,150,0.3);background:var(--rose-dim)">Öppna →</span>
-      </div>
-    </a>
 
     <a href="maskinogat/" class="card available color-rose">
       <div class="card-top">
@@ -1109,7 +1226,7 @@ a { color: inherit; text-decoration: none; }
     <span class="theme-num">06</span>
     <div>
       <h2 class="theme-title">AI och samhället</h2>
-      <p class="theme-desc">Bias, makt och pengar – vem påverkas av AI, och vem bestämmer över den?</p>
+      <p class="theme-desc">Bias, rättvisa och ansvar – vem påverkas av AI, och vad händer när den gör fel?</p>
     </div>
   </div>
   <div class="card-grid">
@@ -1133,50 +1250,6 @@ a { color: inherit; text-decoration: none; }
           <span class="tag">AI Act</span>
         </div>
         <span class="card-link link-rose">Öppna →</span>
-      </div>
-    </a>
-
-    <a href="show-me-the-money/" class="card available color-green">
-      <div class="card-top">
-        <div class="card-icon">💰</div>
-        <span class="card-badge badge-tool">Grupparbete</span>
-      </div>
-      <div>
-        <div class="card-title">Show me the Money!</div>
-      </div>
-      <div class="card-desc">
-        Vem har egentligen makten över AI? Modellsvar för sju branscher — från vård
-        och bank till försvar och skola — med aktörer, maktkartor och reflektion.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Makt</span>
-          <span class="tag">Branscher</span>
-          <span class="tag">Maktkarta</span>
-        </div>
-        <span class="card-link link-green">Öppna →</span>
-      </div>
-    </a>
-
-    <a href="https://exitticket.teed.se/shark/spela" class="card available color-blue">
-      <div class="card-top">
-        <div class="card-icon">🦈</div>
-        <span class="card-badge badge-lab">Aktivitet</span>
-      </div>
-      <div>
-        <div class="card-title">Shark Tank</div>
-      </div>
-      <div class="card-desc">
-        Grupperna pitchar sina AI-företagsidéer. Logga in med din personliga kod och
-        fördela dina 100 000 USD på de företag du tror mest på.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Pitch</span>
-          <span class="tag">Investering</span>
-          <span class="tag">Röstning</span>
-        </div>
-        <span class="card-link link-blue">Investera →</span>
       </div>
     </a>
 
@@ -1204,86 +1277,9 @@ a { color: inherit; text-decoration: none; }
   </div>
 </section>
 
-<section class="theme" id="datorn">
-  <div class="theme-head">
-    <span class="theme-num">07</span>
-    <div>
-      <h2 class="theme-title">Datorn och data</h2>
-      <p class="theme-desc">Hur en dator fungerar på insidan och hur ettor och nollor blir tal, text och bilder.</p>
-    </div>
-  </div>
-  <div class="card-grid">
-
-    <a href="assembler/" class="card available color-green">
-      <div class="card-top">
-        <div class="card-icon">🖥</div>
-        <span class="card-badge badge-tool">Verktyg</span>
-      </div>
-      <div>
-        <div class="card-title">Assembler-Simulator</div>
-      </div>
-      <div class="card-desc">
-        Interaktiv simulator för en 8-bitars maskinspråksdator med 16 register
-        och 256 minnesceller. Skriv, kör och felsök program i hexadecimalt maskinspråk.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Maskinspråk</span>
-          <span class="tag">CPU</span>
-          <span class="tag">Hex</span>
-        </div>
-        <span class="card-link link-green">Öppna →</span>
-      </div>
-    </a>
-
-    <a href="data-i-datorn/" class="card available color-amber">
-      <div class="card-top">
-        <div class="card-icon">🔢</div>
-        <span class="card-badge badge-tool">Verktyg</span>
-      </div>
-      <div>
-        <div class="card-title">Så lagras data</div>
-      </div>
-      <div class="card-desc">
-        Slå på bitar och se hur ettor och nollor blir tal, text, färger och bilder.
-        Binärt, hex, tvåkomplement, UTF-8 – och hur en AI ser data: tokens, embeddings och kvantisering.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Binärt</span>
-          <span class="tag">Hex</span>
-          <span class="tag">2-kompl.</span>
-        </div>
-        <span class="card-link link-amber">Öppna →</span>
-      </div>
-    </a>
-
-    <div class="card upcoming color-blue">
-      <div class="card-top">
-        <div class="card-icon">⚡</div>
-        <span class="card-badge badge-soon">Kommer snart</span>
-      </div>
-      <div>
-        <div class="card-title">Grindkrets-simulator</div>
-      </div>
-      <div class="card-desc">
-        Bygg och simulera digitala kretsar med AND, OR, NOT, XOR och NAND-grindar.
-        Visualisera sanningsvärden och kombinationslogik.
-      </div>
-      <div class="card-footer">
-        <div class="card-tags">
-          <span class="tag">Boolesk algebra</span>
-          <span class="tag">Logik</span>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</section>
-
 <section class="theme" id="verktyg">
   <div class="theme-head">
-    <span class="theme-num">08</span>
+    <span class="theme-num">07</span>
     <div>
       <h2 class="theme-title">Python och matematik</h2>
       <p class="theme-desc">Verktygen du behöver längs vägen: programmering i Python och repetition av matematiken.</p>

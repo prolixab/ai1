@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI 1 — Allt material</title>
 <meta name="description" content="Digitalt kursmaterial för AI 1 på Teknikprogrammet vid Erik Dahlbergsgymnasiet, Jönköping.">
+<meta name="author" content="Andrew Galbraith">
+<meta name="creator" content="Andrew Galbraith">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230a0a0a'/><circle cx='16' cy='16' r='6' fill='%232f4bff'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -134,6 +136,27 @@ footer .mono{font-family:var(--mono);font-size:12px;color:var(--subtle)}
 @media (max-width:560px){.jump{display:none}.lead{font-size:18px;line-height:27px}}
 @media print{.bar{position:static}.rise{animation:none}.card{break-inside:avoid}}
 
+/* dot-pixel images */
+.px{display:block;width:100%;height:100%}
+.px svg{display:block;width:100%;height:100%;overflow:visible}
+.px circle{transform-box:fill-box;transform-origin:center;animation:pop .5s cubic-bezier(.3,1.7,.5,1) both;animation-delay:var(--d,0s);transition:fill .25s}
+.px .f{fill:var(--line)}
+.px .i{fill:var(--ink)}
+.px .a{fill:var(--accent)}
+@keyframes pop{from{transform:scale(0)}}
+@keyframes pulse{0%,100%{transform:scale(1)}40%{transform:scale(1.35)}}
+a.card:hover .px .a,a.moment:hover .px .a{animation:pulse .9s ease-in-out infinite;animation-delay:calc(var(--d,0s) - .4s)}
+a.card:hover .px .f{fill:var(--subtle)}
+.card.soon .px .i,.card.soon .px .a{fill:var(--subtle)}
+.ico{width:56px;height:56px;padding:7px;border-radius:12px}
+.moment-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.moment .glyph{width:84px;height:84px;flex:none}
+.moment:hover .px .f{fill:var(--subtle)}
+.moment-hero .head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px}
+.moment-hero .glyph{width:132px;height:132px;flex:none}
+@media (max-width:560px){.moment-hero .glyph{width:84px;height:84px}}
+@media (prefers-reduced-motion:reduce){.px circle,a.card:hover .px .a,a.moment:hover .px .a{animation:none}}
+
 /* moment cards on the landing page */
 .moments{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;padding:64px 0 88px}
 .moment{display:flex;flex-direction:column;min-height:300px;background:var(--surface);border:1px solid transparent;border-radius:16px;padding:28px 28px 22px;transition:background-color .2s,border-color .2s,box-shadow .2s,transform .2s}
@@ -191,73 +214,73 @@ footer .mono{font-family:var(--mono);font-size:12px;color:var(--subtle)}
   <div class="section-h"><h2>Verktyg &amp; Simulatorer</h2><span>8 tillgängliga</span></div>
   <div class="grid">
     <a class="card rise" style="--d:0.08s" href="https://exitticket.teed.se/shark/spela" rel="noopener">
-      <div class="card-top"><span class="ico" aria-hidden="true">🦈</span><span class="kind">Aktivitet</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="haj" data-d="0.08"></i></span><span class="kind">Aktivitet</span></div>
       <h3>Shark Tank</h3>
       <p>Grupperna pitchar sina AI-företagsidéer. Logga in med din personliga kod och fördela dina 100 000 USD på de företag du tror mest på.</p>
       <div class="card-foot"><div class="tags"><span>Pitch</span><span>Investering</span><span>Röstning</span></div><span class="go">Investera<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <a class="card rise" style="--d:0.12s" href="assembler/">
-      <div class="card-top"><span class="ico" aria-hidden="true">🖥</span><span class="kind">Verktyg</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="chip" data-d="0.12"></i></span><span class="kind">Verktyg</span></div>
       <h3>Assembler-Simulator</h3>
       <p>Interaktiv simulator för en 8-bitars maskinspråksdator med 16 register och 256 minnesceller. Skriv, kör och felsök program i hexadecimalt maskinspråk.</p>
       <div class="card-foot"><div class="tags"><span>Maskinspråk</span><span>CPU</span><span>Hex</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <a class="card rise" style="--d:0.16s" href="miljolabbet/">
-      <div class="card-top"><span class="ico" aria-hidden="true">🤖</span><span class="kind">Spel</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="rum" data-d="0.16"></i></span><span class="kind">Spel</span></div>
       <h3>Miljölabbet</h3>
       <p>Styr en städrobot i 3D. Sug upp smutsen och kör hem till laddstationen på så få drag som möjligt – och känn efter vad som gör en miljö lätt eller svår för en agent.</p>
       <div class="card-foot"><div class="tags"><span>Agenter</span><span>Miljöer</span><span>3D</span></div><span class="go">Spela<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <a class="card rise" style="--d:0.20s" href="algoritmer/">
-      <div class="card-top"><span class="ico" aria-hidden="true">🧩</span><span class="kind">Lektion</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="flode" data-d="0.20"></i></span><span class="kind">Lektion</span></div>
       <h3>Algoritmer</h3>
       <p>Vad en algoritm är och vilka fem krav den måste uppfylla. Kör sekvens, selektion och iteration, spåra pseudokod i ett flödesschema, tävla linjär mot binär sökning – och skriv regler mot en AI.</p>
       <div class="card-foot"><div class="tags"><span>Pseudokod</span><span>Ordo</span><span>Flödesschema</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <a class="card rise" style="--d:0.24s" href="defcon/">
-      <div class="card-top"><span class="ico" aria-hidden="true">📟</span><span class="kind">Spel</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="mal" data-d="0.24"></i></span><span class="kind">Spel</span></div>
       <h3>DEFCON 1</h3>
       <p>Datorn MIMER tror att ett krigsspel är på riktigt. Stoppa kärnvapenkriget i sex uppdrag genom att skriva algoritmer i pseudokod och bygga flödesscheman – byggt på verkliga falsklarm under kalla kriget.</p>
       <div class="card-foot"><div class="tags"><span>Pseudokod</span><span>Flödesschema</span><span>Kalla kriget</span></div><span class="go">Spela<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <a class="card rise" style="--d:0.28s" href="grafer/">
-      <div class="card-top"><span class="ico" aria-hidden="true">🕸️</span><span class="kind">Verktyg</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="graf" data-d="0.28"></i></span><span class="kind">Verktyg</span></div>
       <h3>Grafer och träd</h3>
       <p>Bygg egna grafer och se direkt om de är sammanhängande, har cykler eller är träd. Kör bredden först, djupet först, Dijkstra och trädgenomgångar steg för steg.</p>
       <div class="card-foot"><div class="tags"><span>Grafer</span><span>Träd</span><span>Dijkstra</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <a class="card rise" style="--d:0.32s" href="sokning/">
-      <div class="card-top"><span class="ico" aria-hidden="true">🧭</span><span class="kind">Verktyg</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="lupp" data-d="0.32"></i></span><span class="kind">Verktyg</span></div>
       <h3>Sökning</h3>
       <p>Se bredden först, djupet först, Dijkstra, girig sökning och A* arbeta steg för steg – på en karta runt Jönköping och i ett rutnät du ritar själv. Var algoritmen och gissa nästa steg.</p>
       <div class="card-foot"><div class="tags"><span>BFS</span><span>A*</span><span>Heuristik</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <div class="card soon rise" style="--d:0.36s" aria-disabled="true">
-      <div class="card-top"><span class="ico" aria-hidden="true">⚡</span><span class="kind">Kommer snart</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="grind" data-d="0.36"></i></span><span class="kind">Kommer snart</span></div>
       <h3>Grindkrets-simulator</h3>
       <p>Bygg och simulera digitala kretsar med AND, OR, NOT, XOR och NAND-grindar. Visualisera sanningsvärden och kombinationslogik.</p>
       <div class="card-foot"><div class="tags"><span>Boolesk algebra</span><span>Logik</span></div></div>
     </div>
     <a class="card rise" style="--d:0.40s" href="data-i-datorn/">
-      <div class="card-top"><span class="ico" aria-hidden="true">🔢</span><span class="kind">Verktyg</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="bitar" data-d="0.40"></i></span><span class="kind">Verktyg</span></div>
       <h3>Så lagras data</h3>
       <p>Slå på bitar och se hur ettor och nollor blir tal, text, färger och bilder. Binärt, hex, tvåkomplement, UTF-8 – och hur en AI ser data: tokens, embeddings och kvantisering.</p>
       <div class="card-foot"><div class="tags"><span>Binärt</span><span>Hex</span><span>2-kompl.</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <div class="card soon rise" style="--d:0.44s" aria-disabled="true">
-      <div class="card-top"><span class="ico" aria-hidden="true">🕸️</span><span class="kind">Kommer snart</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="natverk" data-d="0.44"></i></span><span class="kind">Kommer snart</span></div>
       <h3>Neuralt nätverk-visualiserare</h3>
       <p>Bygg och träna enkla neurala nätverk lager för lager. Se vikter, aktiveringsfunktioner och backpropagation i realtid.</p>
       <div class="card-foot"><div class="tags"><span>Deep learning</span><span>Backprop</span></div></div>
     </div>
     <div class="card soon rise" style="--d:0.48s" aria-disabled="true">
-      <div class="card-top"><span class="ico" aria-hidden="true">🎯</span><span class="kind">Kommer snart</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="kluster" data-d="0.48"></i></span><span class="kind">Kommer snart</span></div>
       <h3>K-means kluster-visualiserare</h3>
       <p>Klicka ut datapunkter och se k-means-algoritmen dela in dem i kluster steg för steg. Ändra k och se hur resultatet förändras.</p>
       <div class="card-foot"><div class="tags"><span>Klustring</span><span>Unsupervised</span></div></div>
     </div>
     <div class="card soon rise" style="--d:0.52s" aria-disabled="true">
-      <div class="card-top"><span class="ico" aria-hidden="true">📊</span><span class="kind">Kommer snart</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="staplar" data-d="0.52"></i></span><span class="kind">Kommer snart</span></div>
       <h3>Dataset-utforskare</h3>
       <p>Utforska klassiska ML-dataset (Iris, Titanic, MNIST). Skapa spridningsdiagram, histogram och korrelationsmatriser interaktivt.</p>
       <div class="card-foot"><div class="tags"><span>Data</span><span>Visualisering</span><span>Statistik</span></div></div>
@@ -268,13 +291,13 @@ footer .mono{font-family:var(--mono);font-size:12px;color:var(--subtle)}
   <div class="section-h"><h2>Presentationer</h2><span>2 tillgängliga</span></div>
   <div class="grid">
     <a class="card rise" style="--d:0.08s" href="sokalgoritmer/">
-      <div class="card-top"><span class="ico" aria-hidden="true">🧭</span><span class="kind">Presentation</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="rutt" data-d="0.08"></i></span><span class="kind">Presentation</span></div>
       <h3>Sökalgoritmer</h3>
       <p>Från sökproblem till sökträd. Steg för steg genom BFS, DFS, Dijkstra, girig sökning och A* på en karta över Jönköpingstrakten – med kontrollfrågor och reflektion.</p>
       <div class="card-foot"><div class="tags"><span>Sökning</span><span>A*</span><span>Presentation</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <a class="card rise" style="--d:0.12s" href="beslutstrad-presentation/">
-      <div class="card-top"><span class="ico" aria-hidden="true">🌳</span><span class="kind">Presentation</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="trad" data-d="0.12"></i></span><span class="kind">Presentation</span></div>
       <h3>Beslutsträd</h3>
       <p>Hur ett beslutsträd ställer frågor om data. Rötter, noder och löv, Gini-orenhet och informationsvinst, överanpassning och ett första träd i scikit-learn.</p>
       <div class="card-foot"><div class="tags"><span>Beslutsträd</span><span>Gini</span><span>Presentation</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
@@ -285,97 +308,97 @@ footer .mono{font-family:var(--mono);font-size:12px;color:var(--subtle)}
   <div class="section-h"><h2>Lektioner &amp; Teori</h2><span>12 tillgängliga</span></div>
   <div class="grid">
     <a class="card rise" style="--d:0.08s" href="show-me-the-money/">
-      <div class="card-top"><span class="ico" aria-hidden="true">💰</span><span class="kind">Grupparbete</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="mynt" data-d="0.08"></i></span><span class="kind">Grupparbete</span></div>
       <h3>Show me the Money!</h3>
       <p>Vem har egentligen makten över AI? Modellsvar för sju branscher — från vård och bank till försvar och skola — med aktörer, maktkartor och reflektion.</p>
       <div class="card-foot"><div class="tags"><span>Makt</span><span>Branscher</span><span>Maktkarta</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <a class="card exam rise" style="--d:0.12s" href="provomfattning-ai-historia/">
-      <div class="card-top"><span class="ico" aria-hidden="true">📝</span><span class="kind">Provomfattning</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="prov" data-d="0.12"></i></span><span class="kind">Provomfattning</span></div>
       <h3>Provomfattning – AI:s historia</h3>
       <p>Vad du behöver kunna till provet om AI:s historia — från Turing till ChatGPT. Tidslinje, personer, begrepp och exempelfrågor.</p>
       <div class="card-foot"><div class="tags"><span>Prov</span><span>Historia</span><span>Begrepp</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <a class="card exam rise" style="--d:0.16s" href="provomfattning-agenter-och-miljoer/">
-      <div class="card-top"><span class="ico" aria-hidden="true">📝</span><span class="kind">Provomfattning</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="prov" data-d="0.16"></i></span><span class="kind">Provomfattning</span></div>
       <h3>Provomfattning – Agenter och miljöer</h3>
       <p>Vad du behöver kunna till provet om agenter: PEAS, miljöns sex egenskaper, de fem agenttyperna och belöningsfusk. Begrepp och exempelfrågor.</p>
       <div class="card-foot"><div class="tags"><span>Prov</span><span>Agenter</span><span>PEAS</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <a class="card rise" style="--d:0.20s" href="ar-det-ai/">
-      <div class="card-top"><span class="ico" aria-hidden="true">🤖</span><span class="kind">Quiz</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="fraga" data-d="0.20"></i></span><span class="kind">Quiz</span></div>
       <h3>Är det AI?</h3>
       <p>Ta ställning till 12 datorsystem — räknas de som AI eller inte? Korten visas först, sedan svarar du en i taget och får direkt feedback.</p>
       <div class="card-foot"><div class="tags"><span>Quiz</span><span>AI-begrepp</span><span>Interaktiv</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <a class="card rise" style="--d:0.24s" href="agenter-och-miljoer/">
-      <div class="card-top"><span class="ico" aria-hidden="true">🧹</span><span class="kind">Lektion</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="robot" data-d="0.24"></i></span><span class="kind">Lektion</span></div>
       <h3>Agenter och miljöer</h3>
       <p>Vad är en agent? PEAS, miljöns egenskaper och fem agenttyper – från enkel reflex till lärande – med en dammsugarrobot du experimenterar med. Med lärarhandledning.</p>
       <div class="card-foot"><div class="tags"><span>Agenter</span><span>PEAS</span><span>Interaktiv</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <a class="card rise" style="--d:0.28s" href="rata-linjens-ekvation/">
-      <div class="card-top"><span class="ico" aria-hidden="true">📐</span><span class="kind">Repetition</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="linje" data-d="0.28"></i></span><span class="kind">Repetition</span></div>
       <h3>Räta linjens ekvation</h3>
       <p>Repetition av y = kx + m. Interaktiv teori med slider, fyra övningsnivåer — inklusive grafiska frågor där du avläser k och m direkt ur koordinatsystemet.</p>
       <div class="card-foot"><div class="tags"><span>Linjär algebra</span><span>Grafer</span><span>Interaktiv</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <a class="card rise" style="--d:0.32s" href="python-for-ai/">
-      <div class="card-top"><span class="ico" aria-hidden="true">🐍</span><span class="kind">Övning</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="prompt" data-d="0.32"></i></span><span class="kind">Övning</span></div>
       <h3>Python för AI – kom igång</h3>
       <p>En kort introduktion till Python – 51 uppgifter från din första print() till din första egna AI-modell: variabler, listor, villkor och loopar, programmera en dammsugaragent och en enkel modell med scikit-learn. Framstegen sparas och läraren kan följa klassen.</p>
       <div class="card-foot"><div class="tags"><span>Python</span><span>scikit-learn</span><span>Övning</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <div class="card soon rise" style="--d:0.36s" aria-disabled="true">
-      <div class="card-top"><span class="ico" aria-hidden="true">📖</span><span class="kind">Kommer snart</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="moln" data-d="0.36"></i></span><span class="kind">Kommer snart</span></div>
       <h3>Introduktion till maskininlärning</h3>
       <p>Supervised, unsupervised och reinforcement learning. Träna och utvärdera enkla modeller med verkliga dataset.</p>
       <div class="card-foot"><div class="tags"><span>ML</span><span>Dataset</span><span>Modeller</span></div></div>
     </div>
     <a class="card rise" style="--d:0.40s" href="perceptron/">
-      <div class="card-top"><span class="ico" aria-hidden="true">🧠</span><span class="kind">Lektion</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="neuron" data-d="0.40"></i></span><span class="kind">Lektion</span></div>
       <h3>Perceptronen</h3>
       <p>Den första konstgjorda neuronen — teori, interaktiv demo och bildklassificering. Från Rosenblatts algoritm (1957) till vad perceptronen kan och inte kan lösa.</p>
       <div class="card-foot"><div class="tags"><span>Teori</span><span>Interaktiv</span><span>Klassificering</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <div class="card soon rise" style="--d:0.44s" aria-disabled="true">
-      <div class="card-top"><span class="ico" aria-hidden="true">📈</span><span class="kind">Kommer snart</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="regr" data-d="0.44"></i></span><span class="kind">Kommer snart</span></div>
       <h3>Regression &amp; klassificering</h3>
       <p>Linjär och logistisk regression från grunden. Kostnadsfunktioner, gradientmetoden och utvärdering med precision och recall.</p>
       <div class="card-foot"><div class="tags"><span>Regression</span><span>Gradient</span><span>Utvärdering</span></div></div>
     </div>
     <a class="card rise" style="--d:0.48s" href="beslutstrad/">
-      <div class="card-top"><span class="ico" aria-hidden="true">🌳</span><span class="kind">Labb</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="trad" data-d="0.48"></i></span><span class="kind">Labb</span></div>
       <h3>Beslutsträd &amp; Random Forest</h3>
       <p>Lekplats för beslutsträd: bygg trädet själv eller låt datorn välja frågorna med Gini och entropi, se överanpassning hända, låt en random forest rösta och bygg ett träd för "Spela fotboll?".</p>
       <div class="card-foot"><div class="tags"><span>Beslutsträd</span><span>Ensemble</span><span>Gini</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <div class="card soon rise" style="--d:0.52s" aria-disabled="true">
-      <div class="card-top"><span class="ico" aria-hidden="true">💬</span><span class="kind">Kommer snart</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="bubbla" data-d="0.52"></i></span><span class="kind">Kommer snart</span></div>
       <h3>Naturlig språkbehandling</h3>
       <p>Tokenisering, ordvektorer och transformer-arkitekturen bakom moderna språkmodeller. Hur ChatGPT och liknande system egentligen fungerar.</p>
       <div class="card-foot"><div class="tags"><span>NLP</span><span>Transformer</span><span>LLM</span></div></div>
     </div>
     <a class="card rise" style="--d:0.56s" href="maskinogat/">
-      <div class="card-top"><span class="ico" aria-hidden="true">🩻</span><span class="kind">Lektion</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="oga" data-d="0.56"></i></span><span class="kind">Lektion</span></div>
       <h3>Maskinögat – AI som hittar cancer</h3>
       <p>Träna ett eget faltningsnät (CNN) som skiljer godartade från elakartade tumörer – direkt i webbläsaren. Filter, överanpassning, tröskel, förklarbar AI, genvägar och riktiga ultraljudsbilder.</p>
       <div class="card-foot"><div class="tags"><span>CNN</span><span>Computer vision</span><span>Interaktiv</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <a class="card rise" style="--d:0.60s" href="forstarkt-inlarning/">
-      <div class="card-top"><span class="ico" aria-hidden="true">🎮</span><span class="kind">Labb</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="stjarna" data-d="0.60"></i></span><span class="kind">Labb</span></div>
       <h3>Förstärkt inlärning</h3>
       <p>Se roboten Robo lära sig hitta till målet med Q-learning i ett 3D-rum, avsnitt för avsnitt. Ändra belöningarna, träna – och se vad som händer när belöningen går att fuska med.</p>
       <div class="card-foot"><div class="tags"><span>RL</span><span>Q-learning</span><span>Belöning</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <a class="card rise" style="--d:0.60s" href="bias/">
-      <div class="card-top"><span class="ico" aria-hidden="true">⚖️</span><span class="kind">Labb</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="vag" data-d="0.60"></i></span><span class="kind">Labb</span></div>
       <h3>Bias i AI</h3>
       <p>Skapa och mät bias själv: skev träningsdata, en rekryteringsrobot som hittar proxyer, rättvisemått som inte går att uppfylla samtidigt och återkopplingsloopar. Med lärarhandledning.</p>
       <div class="card-foot"><div class="tags"><span>Bias</span><span>Rättvisa</span><span>AI Act</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <div class="card soon rise" style="--d:0.60s" aria-disabled="true">
-      <div class="card-top"><span class="ico" aria-hidden="true">⚖️</span><span class="kind">Kommer snart</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="skold" data-d="0.60"></i></span><span class="kind">Kommer snart</span></div>
       <h3>AI-etik &amp; samhällspåverkan</h3>
       <p>Bias, transparens, ansvar och hållbarhet. Analys av verkliga fall och diskussion om AI:s roll i samhället.</p>
       <div class="card-foot"><div class="tags"><span>Etik</span><span>GDPR</span><span>Bias</span></div></div>
@@ -385,9 +408,29 @@ footer .mono{font-family:var(--mono);font-size:12px;color:var(--subtle)}
 </main>
 <footer>
   <div class="wrap">
-    <span><b>AI 1</b> — Erik Dahlbergsgymnasiet, Jönköping · Teknikprogrammet</span>
+    <span><b>AI 1</b> — Erik Dahlbergsgymnasiet, Jönköping · Teknikprogrammet · Skapad av Andrew Galbraith</span>
     <span class="mono"><a href="oversikt.html">Allt material</a> · Kurskod AIAAIN01</span>
   </div>
 </footer>
+<script>
+(function(){
+  var G={"fraga":["..#####..",".##...##.",".......##","......##.","....##...","....#....",".........","....+....","........."],"neuron":[".........",".........","+#.......","..##.###.","+####+++#","..##.###.","+#.......",".........","........."],"chip":["..#.#.#..",".#######.","##.....##",".#.+++.#.","##.+++.##",".#.+++.#.","##.....##",".#######.","..#.#.#.."],"bitar":[".........","##.+.##.+",".........","+.##.+.##",".........","##.+.+.##",".........","+.##.##.+","........."],"grind":[".........","..####...","++#...#..","..#....#.","..#....#+","..#....#.","++#...#..","..####...","........."],"mynt":[".........","...###...","..#...#..",".#..+..#.",".#.+++.#.",".#..+..#.","..#...#..","...###...","........."],"haj":[".........","....#....","....##...","....###..","...####..","..#####..",".........","+.+++.+++",".+++.+++."],"prov":[".#####...",".#...##..",".#.##.#..",".#.....#.",".#.###.#.",".#....+#.",".#+..+.#.",".#.++..#.",".#######."],"robot":[".........","...###...","..#...#..",".#..+..#.",".#.....#.",".#.###.#.","..#...#..","...###...","........."],"rum":["#########","#.......#","#.+...#.#","#.....#.#","#..##.#.#","#.......#","#....+..#","#.......#","#########"],"flode":["..#####..","..#...#..","..#####..","....#....","...+.+...","..+...+..","...+.+...","....#....","..#####.."],"mal":["..#####..",".#.....#.","#..###..#","#.#...#.#","#.#.+.#.#","#.#...#.#","#..###..#",".#.....#.","..#####.."],"graf":["##.....++","##....#++","..#..#...","...##....","...##....","..#..#...",".#....#..","##.....##","##.....##"],"lupp":["..###....",".#...#...","#..+..#..","#.+++.#..","#..+..#..",".#...#...","..####...",".....##..","......##."],"rutt":["#........",".+.......","..+...#..","...++....",".#...+...","......+..","...#..+..",".......+.","........#"],"trad":[".........","....+....","...#.#...","..#...#..",".+.....+.","#.#...#.#","+..#.#..+","...+.+...","........."],"stjarna":["....+....","...+++...","+++++++++",".+++++++.","..+++++..","..++.++..",".++...++.",".+.....+.","........."],"moln":["#...#....","..#...#..","#..#.....",".#...#..+","....#..+.","..#...++.",".....+..+","...+..+..",".+..+..+."],"regr":["........+",".....#.+.","......+..","...#.+.#.","....+....",".#.+..#..","..+......",".+..#....","+........"],"kluster":["##.......","###...++.",".##..+++.","......++.",".........","...##....","..####...","...##....","........."],"staplar":[".........","......+..","......+..","...#..+..","...#..+.#","#..#..+.#","#..#..+.#","#..#..+.#","#########"],"oga":[".........",".........","...###...",".##.+.##.","#..+++..#",".##.+.##.","...###...",".........","........."],"natverk":["#........","....+....","#.......#","....+....","#........","....+....","#.......#","....+....","#........"],"bubbla":["#########","#.......#","#.+.+.+.#","#.......#","####.####","...#.#...","...##....","...#.....","........."],"vag":["....#....","#########",".#..#..#.","#.#.#.#.#","+++.#.###","....#....","....#....","..#####..","........."],"skold":["#########","#.......#","#...+...#","#..+++..#","#...+...#",".#.....#.","..#...#..","...#.#...","....#...."],"prompt":[".........",".........","#........",".#.......","..#......",".#.......","#...+++++",".........","........."],"linje":["#.......+","#......+.","#.....+..","#....+...","#...+....","#..+.....","#.+......","#+.......","#########"]};
+  var NS='http://www.w3.org/2000/svg', still=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('[data-g]').forEach(function(el,n){
+    var g=G[el.getAttribute('data-g')]; if(!g) return;
+    var base=parseFloat(el.getAttribute('data-d')||'0'), svg=document.createElementNS(NS,'svg');
+    svg.setAttribute('viewBox','0 0 90 90'); svg.setAttribute('aria-hidden','true');
+    for(var y=0;y<9;y++) for(var x=0;x<9;x++){
+      var ch=g[y][x], c=document.createElementNS(NS,'circle');
+      c.setAttribute('cx',5+x*10); c.setAttribute('cy',5+y*10);
+      c.setAttribute('r',ch==='.'?1.6:3.9);
+      c.setAttribute('class',ch==='#'?'i':ch==='+'?'a':'f');
+      if(!still) c.style.setProperty('--d',(base+(x+y)*0.028+(ch==='.'?0:0.06)).toFixed(3)+'s');
+      svg.appendChild(c);
+    }
+    el.appendChild(svg);
+  });
+})();
+</script>
 </body>
 </html>

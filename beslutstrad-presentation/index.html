@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beslutsträd</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<style>
+  :root{
+    --ink:#0A0A0A; --blue:#2F4BFF; --blue-2:#7B8CFF; --blue-soft:#EEF0FF;
+    --muted:#5C5C5C; --line:#CBCBCB; --soft:#F5F5F5; --rule:#E5E5E5;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#1a1a1a;overflow:hidden}
+  body{font-family:Inter,system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+  #stage{position:absolute;left:50%;top:50%;width:1600px;height:900px;transform-origin:0 0;overflow:hidden;background:#fff}
+  .slide{position:absolute;inset:0;padding:72px 96px;background:#fff;visibility:hidden;opacity:0}
+  .slide.soft{background:var(--soft)}
+  .slide.dark{background:var(--ink);color:#fff}
+  .kicker{font:600 17px/1 Inter;letter-spacing:.18em;text-transform:uppercase;color:var(--blue)}
+  h1{font:800 132px/1 'Inter Tight';letter-spacing:-.04em;margin:28px 0 0}
+  h2{font:700 54px/1.08 'Inter Tight';letter-spacing:-.025em;margin:16px 0 0;max-width:1300px}
+  h3{font:700 30px/1.15 'Inter Tight';letter-spacing:-.01em;margin:0}
+  p{margin:0}
+  .lead{font-size:30px;line-height:1.35;color:var(--muted);max-width:640px}
+  .body{font-size:21px;line-height:1.45;color:var(--muted)}
+  .mono{font-family:'JetBrains Mono',monospace}
+  .pageno{position:absolute;right:48px;bottom:32px;font:500 14px 'JetBrains Mono';color:#9a9a9a}
+  .dark .pageno{color:#666}
+  svg text{font-family:'Inter Tight',Inter,sans-serif}
+
+  /* 1 title */
+  .s-title{display:flex;align-items:center}
+  .s-title .left{flex:1}
+  .s-title .lead{margin-top:36px}
+  .s-title svg{width:560px;height:600px;margin-right:20px}
+
+  /* 2 vardag */
+  .two{display:grid;grid-template-columns:1.25fr 1fr;gap:64px;margin-top:48px;align-items:center}
+  .defs{display:grid;gap:26px}
+  .def{display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:baseline;padding-bottom:22px;border-bottom:1px solid var(--rule)}
+  .def:last-child{border-bottom:0}
+  .def b{font:700 24px 'Inter Tight'}
+  .def span{font-size:21px;color:var(--muted);line-height:1.4}
+
+  /* 3 table */
+  .s3{display:grid;grid-template-columns:780px 1fr;gap:72px;margin-top:40px}
+  table{border-collapse:collapse;width:100%;font-size:20px}
+  th{font:600 14px Inter;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-align:left;padding:0 18px 12px;border-bottom:2px solid var(--ink)}
+  td{padding:11px 18px;border-bottom:1px solid var(--rule)}
+  td:first-child{font-family:'JetBrains Mono';color:var(--muted);width:90px}
+  td.y{color:var(--blue);font-weight:700}
+  td.n{font-weight:700}
+  .stat{font:800 64px/1 'Inter Tight';letter-spacing:-.03em}
+  .stat small{display:block;font:500 20px Inter;color:var(--muted);letter-spacing:0;margin-top:10px}
+  .ask{margin-top:36px;padding:28px 32px;background:var(--blue);color:#fff;border-radius:14px;font:700 30px/1.2 'Inter Tight'}
+  .foot{position:absolute;left:96px;bottom:32px;font-size:15px;color:#9a9a9a}
+
+  /* 4 dots */
+  .q-rows{margin-top:56px;display:grid;gap:40px}
+  .q-row{display:grid;grid-template-columns:260px repeat(3,1fr);gap:28px;align-items:center}
+  .q-row .lbl .kicker{font-size:15px}
+  .q-row .lbl h3{font-size:40px;margin-top:8px}
+  .card{background:var(--soft);border-radius:14px;padding:24px 28px}
+  .card h4{margin:0 0 18px;font:700 26px 'Inter Tight'}
+  .dots{display:flex;gap:12px;margin-bottom:16px}
+  .dot{width:36px;height:36px;border-radius:50%;border:3px solid var(--ink);background:#fff}
+  .dot.b{background:var(--blue);border-color:var(--blue)}
+  .card .cnt{font-size:19px;color:var(--muted)}
+  .card.pure{background:var(--blue-soft);box-shadow:inset 0 0 0 2px var(--blue)}
+  .caption{margin-top:44px;font-size:21px;color:var(--muted);max-width:1200px;line-height:1.45}
+  .legend{display:inline-flex;align-items:center;gap:8px;vertical-align:middle}
+  .legend i{display:inline-block;width:16px;height:16px;border-radius:50%;border:2px solid var(--ink)}
+  .legend i.b{background:var(--blue);border-color:var(--blue)}
+
+  /* 5 gini */
+  .formula{margin-top:44px;font:500 44px 'JetBrains Mono';letter-spacing:-.01em;background:#fff;border-radius:16px;padding:30px 40px;display:inline-block}
+  .formula em{font-style:normal;color:var(--blue)}
+  .gini-note{margin-top:24px}
+  .g-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:48px}
+  .g-card{background:#fff;border-radius:16px;padding:30px 32px}
+  .g-card .count{font:800 76px/1 'Inter Tight';letter-spacing:-.03em;display:block}
+  .g-card .track{height:10px;background:var(--rule);border-radius:5px;margin:22px 0 20px;overflow:hidden}
+  .g-card .bar{height:100%;background:var(--ink);border-radius:5px}
+  .g-card.win .count{color:var(--blue)}
+  .g-card.win .bar{background:var(--blue)}
+  .g-card.win{box-shadow:0 0 0 3px var(--blue)}
+  .g-card b{font:700 22px 'Inter Tight';display:block}
+  .g-card span{font-size:18px;color:var(--muted)}
+
+  /* 6 steps */
+  .steps{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:32px;margin-top:110px}
+  .steps svg{position:absolute;left:0;top:0;width:100%;height:72px;overflow:visible}
+  .step .num{width:72px;height:72px;border-radius:50%;background:#fff;border:3px solid var(--ink);display:grid;place-items:center;font:700 22px 'JetBrains Mono';position:relative;z-index:1}
+  .step:last-child .num{background:var(--blue);border-color:var(--blue);color:#fff}
+  .step p{margin-top:30px;font-size:23px;line-height:1.42}
+  .step code{font-family:'JetBrains Mono';font-size:19px;background:var(--soft);padding:2px 8px;border-radius:6px;white-space:nowrap}
+
+  /* 7 result */
+  .s7{display:grid;grid-template-columns:1fr 440px;gap:56px;margin-top:36px;align-items:center}
+  .s7 svg{width:100%}
+  .s7 h3{font-size:36px}
+  .s7 .body{margin-top:16px}
+  .s7 .ask{font-size:25px}
+
+  /* 8 statement */
+  .s8{display:flex;flex-direction:column;justify-content:center}
+  .s8 .big{font:800 96px/1.05 'Inter Tight';letter-spacing:-.035em;margin-top:36px;max-width:1300px}
+  .s8 .big span{display:inline-block;margin-right:.22em}
+  .s8 .big .hl{color:var(--blue-2)}
+
+  /* 9 depth */
+  .cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:44px}
+  .col{background:var(--soft);border-radius:16px;padding:28px 32px}
+  .col svg{width:100%;height:170px;display:block;margin-bottom:18px}
+  .col .kicker{font-size:14px;color:var(--muted)}
+  .col h3{font-size:36px;margin:8px 0 12px}
+  .col p{font-size:19px;line-height:1.45;color:var(--muted)}
+  .col.goal{background:var(--blue-soft);box-shadow:inset 0 0 0 2px var(--blue)}
+  .col.goal .kicker{color:var(--blue)}
+  .params{margin-top:36px;display:flex;gap:56px;font-size:20px;color:var(--muted)}
+  .params code{font:700 20px 'JetBrains Mono';color:var(--ink);margin-right:6px}
+
+  /* 10 two kinds */
+  .kinds{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:48px}
+  .kind{border:2px solid var(--ink);border-radius:18px;padding:38px 42px}
+  .kind.r{background:var(--ink);color:#fff}
+  .kind .cls{font:500 19px 'JetBrains Mono';color:var(--blue)}
+  .kind.r .cls{color:var(--blue-2)}
+  .kind h3{font-size:46px;margin:10px 0 14px}
+  .kind .desc{font-size:22px;line-height:1.45;color:var(--muted)}
+  .kind.r .desc{color:#bcbcbc}
+  .kind .out{display:flex;gap:12px;margin:26px 0}
+  .chip{font:700 20px 'Inter Tight';padding:10px 18px;border-radius:10px;background:var(--soft)}
+  .chip.b{background:var(--blue);color:#fff}
+  .kind.r .chip{background:#222;color:#fff;font-family:'JetBrains Mono';font-weight:500}
+  .kind ul{list-style:none;margin:0;padding:0;font-size:22px;line-height:1.9}
+  .kind li::before{content:"→";color:var(--blue);margin-right:12px;font-weight:700}
+  .kind.r li::before{color:var(--blue-2)}
+
+  /* 11 pros cons */
+  .pc{display:grid;grid-template-columns:1fr 1fr;gap:80px;margin-top:56px}
+  .pc h3{font-size:34px;margin-bottom:22px}
+  .pc .item{display:flex;align-items:center;gap:20px;padding:20px 0;border-bottom:1px solid var(--rule);font-size:24px}
+  .pc .ic{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font:700 26px Inter;color:#fff;background:var(--blue)}
+  .pc .cons .ic{background:var(--ink)}
+
+  /* 12 forest */
+  .s12{display:grid;grid-template-columns:1fr 470px;gap:56px;margin-top:40px;align-items:center}
+  .s12 svg{width:100%}
+  .s12 .body{font-size:23px}
+  .s12 .body + .body{margin-top:22px}
+
+  /* 13 code */
+  .s13{display:grid;grid-template-columns:1fr 380px;gap:48px;margin-top:40px}
+  pre{margin:0;background:var(--ink);color:#e8e8e8;border-radius:18px;padding:38px 40px;font:400 21px/1.85 'JetBrains Mono';overflow:hidden}
+  pre .ln{display:block;white-space:pre}
+  pre .k{color:#ff7ab6} pre .f{color:#9fb0ff} pre .c{color:#7a7a7a} pre .n{color:#ffd479}
+  .notes{display:grid;gap:22px;align-content:start}
+  .note{background:var(--soft);border-radius:14px;padding:24px 28px}
+  .note b{font:700 24px 'Inter Tight';display:block;margin-bottom:6px}
+  .note span{font-size:19px;color:var(--muted);line-height:1.45}
+
+  /* 14 exercises */
+  .ex{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:56px}
+  .exc{background:#fff;border-radius:18px;padding:38px 36px;min-height:420px}
+  .exc .kicker{font-size:14px}
+  .exc .big{font:800 88px/1 'Inter Tight';color:var(--blue);letter-spacing:-.04em;margin:18px 0 22px}
+  .exc h3{font-size:34px;margin-bottom:16px}
+  .exc p{font-size:20px;line-height:1.5;color:var(--muted)}
+  .exc code{font-family:'JetBrains Mono';font-size:18px;color:var(--ink)}
+
+  /* chrome */
+  #progress{position:fixed;left:0;bottom:0;height:4px;background:var(--blue);width:0;z-index:5;transition:width .4s}
+  #hint{position:fixed;right:16px;bottom:12px;color:#777;font:13px Inter;z-index:5;opacity:.8}
+  #home{position:fixed;left:16px;top:14px;z-index:6;width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#999;background:rgba(0,0,0,.35)}
+  #home:hover{color:#fff;background:rgba(0,0,0,.6)}
+  #home svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+  @media print{ #hint,#progress,#home{display:none} }
+</style>
+</head>
+<body>
+<div id="stage">
+
+<!-- 1 -->
+<section class="slide s-title">
+  <div class="left">
+    <div class="kicker a">AI · Teknikprogrammet</div>
+    <h1 class="a">Beslutsträd</h1>
+    <p class="lead a">Hur en maskin lär sig ställa rätt frågor i rätt ordning</p>
+  </div>
+  <svg viewBox="0 0 620 660" fill="none" stroke="#0A0A0A" stroke-width="5">
+    <circle class="pop" cx="312" cy="68" r="32" fill="#fff"/>
+    <path class="draw" d="M291 93 L174 239"/><path class="draw" data-d="0" d="M333 93 L448 239"/>
+    <circle class="pop" cx="156" cy="263" r="28" fill="#fff"/><circle class="pop" data-d=".1" cx="468" cy="263" r="28" fill="#fff"/>
+    <path class="draw" d="M146 289 L88 435"/><path class="draw" data-d="0" d="M166 289 L224 435"/>
+    <path class="draw" data-d="0" d="M458 289 L400 433"/><path class="draw" data-d="0" d="M478 289 L536 435"/>
+    <circle class="pop" cx="78" cy="458" r="25" fill="#0A0A0A"/><circle class="pop" data-d=".08" cx="234" cy="458" r="25" fill="#0A0A0A"/>
+    <circle class="pop" data-d=".08" cx="390" cy="458" r="27" fill="#fff"/><circle class="pop" data-d=".08" cx="546" cy="458" r="25" fill="#0A0A0A"/>
+    <path class="draw" d="M381 483 L340 591"/><path class="draw" data-d="0" d="M399 483 L440 591"/>
+    <circle class="pop" cx="332" cy="614" r="25" fill="#0A0A0A"/>
+    <circle class="pop" data-d=".25" cx="448" cy="614" r="25" fill="#2F4BFF" stroke="#2F4BFF"/>
+  </svg>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <div class="kicker a">Vardagsexempel</div>
+  <h2 class="a">Du fattar redan beslut som ett träd</h2>
+  <div class="two">
+    <svg viewBox="0 0 960 600">
+      <g class="pop"><rect x="260" y="40" width="300" height="90" rx="10" fill="#fff" stroke="#0A0A0A" stroke-width="3"/>
+        <text x="410" y="98" text-anchor="middle" font-size="36" font-weight="700">Regnar det?</text></g>
+      <text class="a" x="580" y="96" font-size="22" font-weight="700" letter-spacing="3" fill="#2F4BFF">ROTNOD</text>
+      <path class="draw" d="M410 130 L165 260" stroke="#0A0A0A" stroke-width="3"/>
+      <path class="draw" data-d="0" d="M410 130 L610 260" stroke="#0A0A0A" stroke-width="3"/>
+      <text class="a" x="260" y="190" font-size="24" fill="#5C5C5C">Ja</text>
+      <text class="a" data-d="0" x="530" y="190" font-size="24" fill="#5C5C5C">Nej</text>
+      <g class="pop"><rect x="40" y="260" width="250" height="90" rx="10" fill="#0A0A0A"/>
+        <text x="165" y="318" text-anchor="middle" font-size="34" font-weight="700" fill="#fff">Ta bussen</text></g>
+      <g class="pop" data-d=".1"><rect x="460" y="260" width="300" height="90" rx="10" fill="#fff" stroke="#0A0A0A" stroke-width="3"/>
+        <text x="610" y="318" text-anchor="middle" font-size="34" font-weight="700">Under −5 °C?</text></g>
+      <text class="a" x="165" y="392" text-anchor="middle" font-size="22" font-weight="700" letter-spacing="3" fill="#2F4BFF">LÖV</text>
+      <text class="a" data-d="0" x="775" y="314" font-size="22" font-weight="700" letter-spacing="3" fill="#2F4BFF">INRE NOD</text>
+      <path class="draw" d="M610 350 L480 475" stroke="#0A0A0A" stroke-width="3"/>
+      <path class="draw" data-d="0" d="M610 350 L740 475" stroke="#0A0A0A" stroke-width="3"/>
+      <text class="a" x="510" y="420" font-size="24" fill="#5C5C5C">Ja</text>
+      <text class="a" data-d="0" x="690" y="420" font-size="24" fill="#5C5C5C">Nej</text>
+      <g class="pop"><rect x="355" y="475" width="250" height="90" rx="10" fill="#0A0A0A"/>
+        <text x="480" y="533" text-anchor="middle" font-size="34" font-weight="700" fill="#fff">Ta bussen</text></g>
+      <g class="pop" data-d=".1"><rect x="640" y="475" width="200" height="90" rx="10" fill="#0A0A0A"/>
+        <text x="740" y="533" text-anchor="middle" font-size="34" font-weight="700" fill="#fff">Cykla</text></g>
+    </svg>
+    <div class="defs">
+      <div class="def a"><b>Rotnod</b><span>Den första frågan. Gäller alla fall.</span></div>
+      <div class="def a"><b>Inre nod</b><span>En följdfråga som delar gruppen vidare.</span></div>
+      <div class="def a"><b>Gren</b><span>Ett svar på frågan, här Ja eller Nej.</span></div>
+      <div class="def a"><b>Löv</b><span>Slutet på vägen: trädets beslut.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <div class="kicker a">Exempel</div>
+  <h2 class="a">Spelar vi fotboll på rasten?</h2>
+  <div class="s3">
+    <table>
+      <thead class="a"><tr><th>Dag</th><th>Väder</th><th>Blåsigt</th><th>Spelar vi?</th></tr></thead>
+      <tbody>
+        <tr class="a" data-d=".06"><td>1</td><td>Sol</td><td>Nej</td><td class="y">Ja</td></tr>
+        <tr class="a" data-d=".06"><td>2</td><td>Sol</td><td>Ja</td><td class="y">Ja</td></tr>
+        <tr class="a" data-d=".06"><td>3</td><td>Moln</td><td>Nej</td><td class="y">Ja</td></tr>
+        <tr class="a" data-d=".06"><td>4</td><td>Moln</td><td>Ja</td><td class="n">Nej</td></tr>
+        <tr class="a" data-d=".06"><td>5</td><td>Regn</td><td>Nej</td><td class="n">Nej</td></tr>
+        <tr class="a" data-d=".06"><td>6</td><td>Regn</td><td>Ja</td><td class="n">Nej</td></tr>
+        <tr class="a" data-d=".06"><td>7</td><td>Sol</td><td>Nej</td><td class="y">Ja</td></tr>
+        <tr class="a" data-d=".06"><td>8</td><td>Moln</td><td>Nej</td><td class="y">Ja</td></tr>
+        <tr class="a" data-d=".06"><td>9</td><td>Regn</td><td>Nej</td><td class="n">Nej</td></tr>
+        <tr class="a" data-d=".06"><td>10</td><td>Moln</td><td>Ja</td><td class="n">Nej</td></tr>
+      </tbody>
+    </table>
+    <div>
+      <div class="stat a">10 dagar<small>5 ja, 5 nej</small></div>
+      <p class="body a" style="margin-top:32px"><b style="color:#0A0A0A">Väder</b> och <b style="color:#0A0A0A">Blåsigt</b> är frågorna trädet kan ställa. <b style="color:#0A0A0A">Spelar vi?</b> är svaret vi vill att det ska förutsäga.</p>
+      <div class="ask a" data-d=".5">Vilken fråga skulle du ställa först?</div>
+    </div>
+  </div>
+  <div class="foot">Påhittad data för övningen.</div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <div class="kicker a">Hur trädet väljer</div>
+  <h2 class="a">Den bästa frågan ger de renaste grupperna</h2>
+  <div class="q-rows">
+    <div class="q-row">
+      <div class="lbl a"><div class="kicker">Fråga A</div><h3>Väder?</h3></div>
+      <div class="card pure a"><h4>Sol</h4><div class="dots"><i class="dot b pop"></i><i class="dot b pop" data-d=".07"></i><i class="dot b pop" data-d=".07"></i></div><div class="cnt">3 ja · 0 nej</div></div>
+      <div class="card a"><h4>Moln</h4><div class="dots"><i class="dot b pop"></i><i class="dot b pop" data-d=".07"></i><i class="dot pop" data-d=".07"></i><i class="dot pop" data-d=".07"></i></div><div class="cnt">2 ja · 2 nej</div></div>
+      <div class="card pure a"><h4>Regn</h4><div class="dots"><i class="dot pop"></i><i class="dot pop" data-d=".07"></i><i class="dot pop" data-d=".07"></i></div><div class="cnt">0 ja · 3 nej</div></div>
+    </div>
+    <div class="q-row">
+      <div class="lbl a"><div class="kicker">Fråga B</div><h3>Blåsigt?</h3></div>
+      <div class="card a"><h4>Ja</h4><div class="dots"><i class="dot b pop"></i><i class="dot pop" data-d=".07"></i><i class="dot pop" data-d=".07"></i><i class="dot pop" data-d=".07"></i></div><div class="cnt">1 ja · 3 nej</div></div>
+      <div class="card a"><h4>Nej</h4><div class="dots"><i class="dot b pop"></i><i class="dot b pop" data-d=".07"></i><i class="dot b pop" data-d=".07"></i><i class="dot b pop" data-d=".07"></i><i class="dot pop" data-d=".07"></i><i class="dot pop" data-d=".07"></i></div><div class="cnt">4 ja · 2 nej</div></div>
+      <div></div>
+    </div>
+  </div>
+  <p class="caption a"><span class="legend"><i class="b"></i></span> = vi spelar &nbsp;·&nbsp; <span class="legend"><i></i></span> = vi spelar inte. Väder ger två helt rena grupper (Sol och Regn). Blåsigt ger bara blandade.</p>
+</section>
+
+<!-- 5 -->
+<section class="slide soft">
+  <div class="kicker a">Att mäta renhet</div>
+  <h2 class="a">Orenhet mäts med Gini</h2>
+  <div class="formula a">Gini = 1 − (<em>andel ja</em>)² − (andel nej)²</div>
+  <p class="body gini-note a"><b style="color:#0A0A0A">0</b> betyder helt ren grupp. <b style="color:#0A0A0A">0,5</b> betyder hälften av varje, alltså så blandat det kan bli.</p>
+  <div class="g-cards">
+    <div class="g-card a"><span class="count" data-to="0.50">0,50</span><div class="track"><div class="bar" data-w="100"></div></div><b>Före första frågan</b><span>5 ja och 5 nej</span></div>
+    <div class="g-card win a"><span class="count" data-to="0.20">0,20</span><div class="track"><div class="bar" data-w="40"></div></div><b>Efter Väder?</b><span>Lägst, så Väder vinner</span></div>
+    <div class="g-card a"><span class="count" data-to="0.42">0,42</span><div class="track"><div class="bar" data-w="84"></div></div><b>Efter Blåsigt?</b><span>Fortfarande blandat</span></div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <div class="kicker a">Algoritmen</div>
+  <h2 class="a">Så bygger datorn trädet</h2>
+  <div class="steps">
+    <svg preserveAspectRatio="none" viewBox="0 0 1408 72"><path class="draw" data-dur="1.4" d="M36 36 L1150 36" stroke="#0A0A0A" stroke-width="3" fill="none"/></svg>
+    <div class="step a" data-d=".1"><div class="num">01</div><p>Börja med all träningsdata i roten.</p></div>
+    <div class="step a"><div class="num">02</div><p>Testa varje möjlig fråga. För tal testas gränsvärden, som <code>temp &lt; 12 °C</code>.</p></div>
+    <div class="step a"><div class="num">03</div><p>Välj frågan som sänker orenheten mest.</p></div>
+    <div class="step a"><div class="num">04</div><p>Upprepa samma sak i varje ny gren.</p></div>
+    <div class="step a"><div class="num">05</div><p>Stanna när gruppen är ren eller trädet når sitt maxdjup.</p></div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <div class="kicker a">Resultatet</div>
+  <h2 class="a">Det färdiga trädet för fotbollsdatan</h2>
+  <div class="s7">
+    <svg viewBox="0 0 1000 530">
+      <g class="pop"><rect x="360" y="18" width="280" height="82" rx="10" fill="#fff" stroke="#0A0A0A" stroke-width="3"/>
+        <text x="500" y="72" text-anchor="middle" font-size="34" font-weight="700">Väder?</text></g>
+      <path class="draw" d="M500 100 L135 220" stroke="#0A0A0A" stroke-width="3"/>
+      <path class="draw" data-d="0" d="M500 100 L500 220" stroke="#0A0A0A" stroke-width="3"/>
+      <path class="draw" data-d="0" d="M500 100 L865 220" stroke="#0A0A0A" stroke-width="3"/>
+      <text class="a" x="275" y="148" font-size="24" fill="#5C5C5C">Sol</text>
+      <text class="a" data-d="0" x="514" y="170" font-size="24" fill="#5C5C5C">Moln</text>
+      <text class="a" data-d="0" x="690" y="148" font-size="24" fill="#5C5C5C">Regn</text>
+      <g class="pop"><rect x="35" y="220" width="200" height="82" rx="10" fill="#2F4BFF"/>
+        <text x="135" y="273" text-anchor="middle" font-size="32" font-weight="700" fill="#fff">Spela</text></g>
+      <g class="pop" data-d=".1"><rect x="370" y="220" width="260" height="82" rx="10" fill="#fff" stroke="#0A0A0A" stroke-width="3"/>
+        <text x="500" y="273" text-anchor="middle" font-size="32" font-weight="700">Blåsigt?</text></g>
+      <g class="pop" data-d=".1"><rect x="745" y="220" width="240" height="82" rx="10" fill="#0A0A0A"/>
+        <text x="865" y="273" text-anchor="middle" font-size="32" font-weight="700" fill="#fff">Spela inte</text></g>
+      <path class="draw" d="M500 302 L345 430" stroke="#0A0A0A" stroke-width="3"/>
+      <path class="draw" data-d="0" d="M500 302 L655 430" stroke="#0A0A0A" stroke-width="3"/>
+      <text class="a" x="380" y="372" font-size="24" fill="#5C5C5C">Ja</text>
+      <text class="a" data-d="0" x="585" y="372" font-size="24" fill="#5C5C5C">Nej</text>
+      <g class="pop"><rect x="225" y="430" width="240" height="82" rx="10" fill="#0A0A0A"/>
+        <text x="345" y="483" text-anchor="middle" font-size="32" font-weight="700" fill="#fff">Spela inte</text></g>
+      <g class="pop" data-d=".1"><rect x="555" y="430" width="200" height="82" rx="10" fill="#2F4BFF"/>
+        <text x="655" y="483" text-anchor="middle" font-size="32" font-weight="700" fill="#fff">Spela</text></g>
+    </svg>
+    <div>
+      <h3 class="a">Två frågor räcker</h3>
+      <p class="body a">Trädet sorterar alla tio dagar rätt. Bara de molniga dagarna behöver en följdfråga.</p>
+      <div class="ask a" data-d=".5">En ny dag: moln och ingen vind. Följ grenarna. Vad blir svaret?</div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide dark s8">
+  <div class="kicker a">Överanpassning</div>
+  <div class="big" id="s8big">Ett träd som minns allt har inte <span class="hl">lärt sig</span> något.</div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <div class="kicker a">Överanpassning</div>
+  <h2 class="a">Hitta lagom djup</h2>
+  <div class="cols3">
+    <div class="col a"><svg data-tree="1" viewBox="0 0 400 170"></svg><div class="kicker">Underanpassat</div><h3>För grunt</h3><p>För få frågor. Trädet missar mönstret och gör fel både på träningsdata och ny data.</p></div>
+    <div class="col goal a"><svg data-tree="2" data-blue="1" viewBox="0 0 400 170"></svg><div class="kicker">Målet</div><h3>Lagom</h3><p>Trädet fångar mönstret men inte slumpen. Det fungerar bra på data det aldrig sett.</p></div>
+    <div class="col a"><svg data-tree="4" viewBox="0 0 400 170"></svg><div class="kicker">Överanpassat</div><h3>För djupt</h3><p>Nästan ett löv per rad. Perfekt på träningsdata, dåligt på ny data.</p></div>
+  </div>
+  <div class="params">
+    <div class="a"><code>max_depth</code> hur många frågor i rad trädet får ställa</div>
+    <div class="a"><code>min_samples_leaf</code> hur många rader varje löv minst måste ha</div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <div class="kicker a">Två sorters träd</div>
+  <h2 class="a">Svaret kan vara en kategori eller ett tal</h2>
+  <div class="kinds">
+    <div class="kind a">
+      <div class="cls">DecisionTreeClassifier</div>
+      <h3>Klassificering</h3>
+      <p class="desc">Lövet ger en kategori, den vanligaste bland raderna i lövet.</p>
+      <div class="out"><span class="chip b pop">Ja</span><span class="chip pop">Nej</span><span class="chip pop">Iris setosa</span></div>
+      <ul><li>Spelar vi fotboll? Ja eller nej</li><li>Är mejlet skräppost?</li><li>Vilken art är blomman?</li></ul>
+    </div>
+    <div class="kind r a">
+      <div class="cls">DecisionTreeRegressor</div>
+      <h3>Regression</h3>
+      <p class="desc">Lövet ger ett tal, medelvärdet av raderna i lövet.</p>
+      <div class="out"><span class="chip pop">3 450 000 kr</span><span class="chip pop">14,6</span><span class="chip pop">42 min</span></div>
+      <ul><li>Vad kostar huset?</li><li>Hur många spelar på rasten?</li><li>Hur lång tid tar resan?</li></ul>
+    </div>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <div class="kicker a">För och emot</div>
+  <h2 class="a">Styrkor och svagheter</h2>
+  <div class="pc">
+    <div class="pros">
+      <h3 class="a">Styrkor</h3>
+      <div class="item a"><span class="ic">+</span>Lätt att förstå och förklara för andra</div>
+      <div class="item a"><span class="ic">+</span>Klarar både tal och kategorier</div>
+      <div class="item a"><span class="ic">+</span>Kräver lite förberedelse av datan</div>
+      <div class="item a"><span class="ic">+</span>Snabbt att träna och använda</div>
+    </div>
+    <div class="cons">
+      <h3 class="a">Svagheter</h3>
+      <div class="item a"><span class="ic">−</span>Överanpassas lätt</div>
+      <div class="item a"><span class="ic">−</span>Liten ändring i datan kan ge ett helt annat träd</div>
+      <div class="item a"><span class="ic">−</span>Delar bara i raka ja/nej-steg</div>
+      <div class="item a"><span class="ic">−</span>Ett ensamt träd är sällan bäst på svåra problem</div>
+    </div>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="slide soft">
+  <div class="kicker a">Nästa steg</div>
+  <h2 class="a">Random forest: många träd röstar</h2>
+  <div class="s12">
+    <svg id="forest" viewBox="0 0 1000 400"></svg>
+    <div>
+      <p class="body a">Varje träd tränas på ett slumpat urval av rader och frågor.</p>
+      <p class="body a">Träden gör olika fel. När de röstar tar felen ut varandra, och skogen blir stabilare än ett enskilt träd.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <div class="kicker a">I praktiken</div>
+  <h2 class="a">Ett beslutsträd i Python</h2>
+  <div class="s13">
+<pre class="a"><span class="ln type"><span class="k">from</span> sklearn.tree <span class="k">import</span> DecisionTreeClassifier, plot_tree</span><span class="ln type"><span class="k">from</span> sklearn.model_selection <span class="k">import</span> train_test_split</span><span class="ln type"> </span><span class="ln type"><span class="c"># X = frågorna (kolumner), y = svaret</span></span><span class="ln type">X_tr, X_te, y_tr, y_te = <span class="f">train_test_split</span>(X, y, test_size=<span class="n">0.2</span>)</span><span class="ln type">modell = <span class="f">DecisionTreeClassifier</span>(max_depth=<span class="n">3</span>)</span><span class="ln type">modell.<span class="f">fit</span>(X_tr, y_tr)</span><span class="ln type"><span class="f">print</span>(modell.<span class="f">score</span>(X_te, y_te))  <span class="c"># andel rätt</span></span><span class="ln type"><span class="f">plot_tree</span>(modell, feature_names=X.columns, filled=<span class="k">True</span>)</span></pre>
+    <div class="notes">
+      <div class="note a"><b>Dela datan</b><span>80 % träning, 20 % test.</span></div>
+      <div class="note a"><b>Begränsa djupet</b><span><code class="mono">max_depth=3</code> håller trädet lagom.</span></div>
+      <div class="note a"><b>Mät på ny data</b><span><code class="mono">score</code> ger andel rätt på testdatan.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 14 -->
+<section class="slide soft">
+  <div class="kicker a">Övning</div>
+  <h2 class="a">Nu är det din tur</h2>
+  <div class="ex">
+    <div class="exc a"><div class="kicker">1 · För hand</div><div class="big">1</div><h3>Räkna själv</h3><p>Räkna Gini för Väder och Blåsigt i fotbollsdatan. Kontrollera att Väder vinner och rita trädet.</p></div>
+    <div class="exc a"><div class="kicker">2 · I Python</div><div class="big">2</div><h3>Träna ett träd</h3><p>Ladda Iris-datan med <code>load_iris</code> från <code>sklearn.datasets</code>. Träna med <code>max_depth</code> 1, 3 och 10.</p></div>
+    <div class="exc a"><div class="kicker">3 · Diskutera</div><div class="big">3</div><h3>Jämför</h3><p>Vid vilket djup blir testresultatet sämre? Varför? Vilket träd kan du förklara för en kompis?</p></div>
+  </div>
+</section>
+
+</div>
+<a id="home" href="../" title="Till kurssidan AI 1" aria-label="Till kurssidan AI 1"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7M6 9.5V20h12V9.5"/></svg></a>
+<div id="progress"></div>
+<div id="hint">← → för att bläddra · F för helskärm</div>
+
+<script>
+(() => {
+  const NS = 'http://www.w3.org/2000/svg';
+  const stage = document.getElementById('stage');
+  const slides = [...stage.querySelectorAll('.slide')];
+
+  /* ---------- generated diagrams ---------- */
+  // Full binary tree of given depth, drawn level by level
+  document.querySelectorAll('svg[data-tree]').forEach(svg => {
+    const depth = +svg.dataset.tree, blue = svg.dataset.blue;
+    const W = 400, H = 170, pad = 16;
+    const r = depth > 3 ? 8 : 11;
+    const gapY = (H - 2 * pad) / Math.max(depth, 1);
+    const fast = depth > 3;
+    let out = '';
+    const pos = (lvl, i) => [pad + (W - 2 * pad) * (i + .5) / 2 ** lvl, pad + lvl * gapY];
+    for (let lvl = 0; lvl <= depth; lvl++) {
+      const n = 2 ** lvl;
+      if (lvl > 0) for (let i = 0; i < n; i++) {
+        const [x, y] = pos(lvl, i), [px, py] = pos(lvl - 1, i >> 1);
+        out += `<path class="draw" data-d="${i ? 0 : (fast ? .08 : .25)}" data-dur="${fast ? .25 : .4}" d="M${px} ${py} L${x} ${y}" stroke="#0A0A0A" stroke-width="${fast ? 2 : 3}"/>`;
+      }
+      for (let i = 0; i < n; i++) {
+        const [x, y] = pos(lvl, i);
+        const leaf = lvl === depth;
+        const fill = leaf ? (blue && i % 2 === 0 ? '#2F4BFF' : '#0A0A0A') : '#fff';
+        out += `<circle class="pop" data-d="${i ? (fast ? .005 : .06) : (fast ? .15 : .3)}" cx="${x}" cy="${y}" r="${r}" fill="${fill}" stroke="${fill === '#2F4BFF' ? '#2F4BFF' : '#0A0A0A'}" stroke-width="${fast ? 2 : 3}"/>`;
+      }
+    }
+    svg.innerHTML = out;
+  });
+
+  // Random forest
+  (() => {
+    const svg = document.getElementById('forest');
+    const votes = ['Ja', 'Ja', 'Nej', 'Ja', 'Ja'];
+    let trees = '', labels = '', lines = '';
+    votes.forEach((v, i) => {
+      const cx = 80 + i * 210;
+      trees += `<g class="pop" data-d="${i ? .1 : 0}">
+        <path d="M${cx - 9} ${70} L${cx - 40} ${127} M${cx + 9} ${70} L${cx + 40} ${127}" stroke="#0A0A0A" stroke-width="3"/>
+        <circle cx="${cx}" cy="55" r="16" fill="#fff" stroke="#0A0A0A" stroke-width="3"/>
+        <circle cx="${cx - 40}" cy="127" r="14" fill="#0A0A0A"/><circle cx="${cx + 40}" cy="127" r="14" fill="#0A0A0A"/></g>`;
+      labels += `<text class="a" data-d="${i ? .08 : .2}" x="${cx}" y="195" text-anchor="middle" font-size="26" font-weight="700" fill="${v === 'Ja' ? '#2F4BFF' : '#0A0A0A'}">${v}</text>`;
+      lines += `<path class="draw" data-d="${i ? 0 : .3}" d="M${cx} 212 L500 285" stroke="#5C5C5C" stroke-width="1.5" fill="none"/>`;
+    });
+    svg.innerHTML = trees + labels + lines +
+      `<g class="pop" data-d=".5"><rect x="322" y="285" width="356" height="82" rx="10" fill="#2F4BFF"/>
+       <text x="500" y="337" text-anchor="middle" font-size="30" font-weight="700" fill="#fff">Svar: Ja, 4 mot 1</text></g>`;
+  })();
+
+  // Statement slide: one span per word
+  (() => {
+    const el = document.getElementById('s8big');
+    const parts = [];
+    el.childNodes.forEach(n => {
+      if (n.nodeType === 3) n.textContent.trim().split(/\s+/).filter(Boolean).forEach(w => parts.push(`<span class="a" data-d=".09">${w}</span>`));
+      else parts.push(`<span class="a hl" data-d=".25">${n.textContent}</span>`);
+    });
+    el.innerHTML = parts.join('');
+  })();
+
+  slides.forEach((s, i) => {
+    const p = document.createElement('div');
+    p.className = 'pageno'; p.textContent = String(i + 1).padStart(2, '0') + ' / ' + slides.length;
+    s.appendChild(p);
+  });
+
+  /* ---------- scaling ---------- */
+  function fit() {
+    const k = Math.min(innerWidth / 1600, innerHeight / 900);
+    stage.style.transform = `scale(${k}) translate(-50%,-50%)`;
+  }
+  addEventListener('resize', fit); fit();
+
+  /* ---------- animation ---------- */
+  const hasGsap = !!window.gsap;
+  const timelines = [];
+
+  function buildTimeline(slide) {
+    const tl = gsap.timeline({ paused: true });
+    const els = slide.querySelectorAll('.a, .draw, .pop, .count, .bar, .type');
+    let prev = null;
+    els.forEach((el, i) => {
+      const t = el.classList;
+      let gap;
+      if (el.dataset.d !== undefined) gap = +el.dataset.d;
+      else if (!prev) gap = 0;
+      else if (prev.classList.contains('draw')) gap = .38;
+      else if (t.contains('draw')) gap = .28;
+      else if (t.contains('type')) gap = .02;
+      else gap = .14;
+      const at = i === 0 ? .05 : `<+=${gap}`;
+      if (t.contains('draw')) {
+        const len = el.getTotalLength();
+        tl.fromTo(el, { strokeDasharray: len, strokeDashoffset: len, opacity: 0 },
+          { strokeDashoffset: 0, opacity: 1, duration: +(el.dataset.dur || .45), ease: 'power2.inOut' }, at);
+      } else if (t.contains('pop')) {
+        tl.from(el, { scale: 0, opacity: 0, transformOrigin: '50% 50%', duration: .45, ease: 'back.out(2.2)' }, at);
+      } else if (t.contains('count')) {
+        const to = +el.dataset.to, o = { v: 0 };
+        const fmt = () => el.textContent = o.v.toFixed(2).replace('.', ',');
+        tl.fromTo(o, { v: 0 }, { v: to, duration: 1.1, ease: 'power2.out', onUpdate: fmt, onStart: fmt }, at);
+      } else if (t.contains('bar')) {
+        gsap.set(el, { width: el.dataset.w + '%' });
+        tl.from(el, { scaleX: 0, transformOrigin: 'left center', duration: 1.1, ease: 'power2.out' }, '<');
+      } else if (t.contains('type')) {
+        const n = Math.max(el.textContent.length, 1);
+        tl.fromTo(el, { clipPath: 'inset(0 100% 0 0)' },
+          { clipPath: 'inset(0 0% 0 0)', duration: Math.min(n * .018, .9), ease: `steps(${n})` }, at);
+      } else {
+        tl.from(el, { y: 26, opacity: 0, duration: .6, ease: 'power3.out' }, at);
+      }
+      prev = el;
+    });
+    // jump to end so nothing stays hidden until played
+    tl.progress(1);
+    return tl;
+  }
+
+  let cur = -1, busy = null;
+  function go(n, instant) {
+    n = Math.max(0, Math.min(slides.length - 1, n));
+    if (n === cur) return;
+    const dir = n > cur ? 1 : -1, prevEl = slides[cur], next = slides[n];
+    if (!hasGsap) {
+      slides.forEach(s => { s.style.visibility = 'hidden'; s.style.opacity = 0; });
+      next.style.visibility = 'visible'; next.style.opacity = 1;
+    } else {
+      if (prevEl) {
+        gsap.killTweensOf(prevEl);
+        gsap.to(prevEl, { autoAlpha: 0, x: -dir * 80, duration: .45, ease: 'power2.in' });
+      }
+      gsap.killTweensOf(next);
+      gsap.fromTo(next, { autoAlpha: 0, x: instant ? 0 : dir * 80 },
+        { autoAlpha: 1, x: 0, duration: instant ? .3 : .55, delay: prevEl ? .2 : 0, ease: 'power3.out' });
+      const tl = timelines[n];
+      tl.pause(0);
+      busy = tl;
+      gsap.delayedCall(prevEl ? .3 : .1, () => tl.play(0));
+    }
+    cur = n;
+    history.replaceState(null, '', '#' + (n + 1));
+    document.getElementById('progress').style.width = ((n + 1) / slides.length * 100) + '%';
+  }
+
+  function forward() {
+    // first press finishes a running build, second press advances
+    if (busy && busy.isActive()) { busy.progress(1); return; }
+    go(cur + 1);
+  }
+
+  if (hasGsap) {
+    slides.forEach(s => timelines.push(buildTimeline(s)));
+    // Safety net: some embedded/background views don't fire requestAnimationFrame
+    // until the page gets input. Fall back to a timer-driven ticker in that case.
+    setTimeout(() => { if (gsap.ticker.frame < 5) setInterval(() => gsap.ticker.tick(), 16); }, 600);
+  }
+
+  addEventListener('keydown', e => {
+    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); forward(); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); go(cur - 1); }
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(slides.length - 1);
+    else if (e.key.toLowerCase() === 'f') {
+      document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+    }
+  });
+  addEventListener('click', e => e.target.closest('a') || (e.clientX < innerWidth * .25 ? go(cur - 1) : forward()));
+  let tx = null;
+  addEventListener('touchstart', e => tx = e.touches[0].clientX, { passive: true });
+  addEventListener('touchend', e => {
+    if (tx === null) return; const dx = e.changedTouches[0].clientX - tx; tx = null;
+    if (Math.abs(dx) > 40) dx < 0 ? forward() : go(cur - 1);
+  });
+  setTimeout(() => document.getElementById('hint').style.opacity = 0, 5000);
+
+  addEventListener('hashchange', () => { const h = parseInt(location.hash.slice(1)) - 1; if (!isNaN(h)) go(h); });
+  const start = parseInt(location.hash.slice(1)) - 1;
+  (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => go(isNaN(start) ? 0 : start, true));
+})();
+</script>
+</body>
+</html>

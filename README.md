@@ -18,6 +18,8 @@ Digitalt kursmaterial för **AI 1** på Teknikprogrammet vid Erik Dahlbergsgymna
 ├── bias/
 │   ├── index.html      ← Bias i AI (skev data, proxyer, rättvisemått, återkopplingsloopar)
 │   └── larare.html     ← Lärarhandledning till Bias i AI
+├── provomfattning-agenter-och-miljoer/
+│   └── index.html      ← Provomfattning: Agenter och miljöer (PEAS, miljöns egenskaper, agenttyper)
 ├── sokning/
 │   └── index.html      ← Sökning (BFS, DFS, Dijkstra, girig sökning, A*)
 ├── sokalgoritmer/

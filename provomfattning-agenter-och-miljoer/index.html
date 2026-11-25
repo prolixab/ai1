@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Provomfattning – Agenter och miljöer</title>
+<meta name="description" content="Provomfattning för AI 1: Agenter och miljöer – agent, PEAS, miljöns egenskaper, agenttyper och belöningsfusk.">
+<style>
+:root{
+  --bg:#f7f6f2;--surface:#ffffff;--text:#1c1f24;--muted:#5b626d;--line:#e3e1da;
+  --accent:#2f5bd3;--accent-soft:#e8eefc;--row:#faf9f6;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#15171b;--surface:#1d2025;--text:#e7e9ec;--muted:#9aa2ad;--line:#30343b;
+    --accent:#8fb0ff;--accent-soft:#223052;--row:#212429;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15171b;--surface:#1d2025;--text:#e7e9ec;--muted:#9aa2ad;--line:#30343b;
+  --accent:#8fb0ff;--accent-soft:#223052;--row:#212429;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:17px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--surface);border-bottom:1px solid var(--line)}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px}
+header .wrap{padding-top:40px;padding-bottom:28px}
+.kicker{color:var(--accent);font-weight:600;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase}
+h1{font-size:clamp(1.8rem,5vw,2.6rem);line-height:1.15;margin:.3em 0 .3em}
+.lead{color:var(--muted);margin:0;max-width:60ch}
+nav.toc{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+nav.toc .wrap{display:flex;gap:6px;overflow-x:auto;padding-top:10px;padding-bottom:10px}
+nav.toc a{flex:none;text-decoration:none;color:var(--text);font-size:.9rem;padding:5px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface)}
+nav.toc a:hover{border-color:var(--accent);color:var(--accent)}
+main .wrap{padding-top:12px;padding-bottom:64px}
+section{margin-top:44px;scroll-margin-top:64px}
+h2{font-size:1.5rem;margin:0 0 .5em}
+h3{font-size:1.05rem;margin:1.6em 0 .5em}
+p,li{max-width:70ch}
+a{color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.note{background:var(--accent-soft);border-radius:10px;padding:12px 16px;margin-top:16px}
+.table{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+th,td{text-align:left;vertical-align:top;padding:10px 14px;border-bottom:1px solid var(--line)}
+th{font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--row)}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600;white-space:nowrap}
+.formula{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1.05rem;text-align:center;padding:14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;margin:12px 0;overflow-x:auto}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.cols .card ul{margin:.4em 0 0;padding-left:1.2em}
+table.env td{text-align:center;white-space:nowrap}
+table.env td:first-child{text-align:left}
+table.env th:not(:first-child){text-align:center}
+.hard{color:var(--accent);font-weight:600}
+ol li,ul li{margin:.25em 0}
+footer{color:var(--muted);font-size:.85rem;border-top:1px solid var(--line);padding:20px 0 40px}
+@media print{nav.toc{display:none}body{background:#fff;color:#000}.table,.card{break-inside:avoid}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="kicker">AI 1 · Provomfattning</div>
+    <h1>Agenter och miljöer</h1>
+    <p class="lead">Provet omfattar materialet <strong>Agenter och miljöer</strong>: vad en agent är, hur man beskriver en uppgift med PEAS, miljöns sex egenskaper, de fem agenttyperna, prestandamått och belöningsfusk samt dagens AI-agenter.</p>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Innehåll">
+  <div class="wrap">
+    <a href="#provet">Om provet</a>
+    <a href="#agent">Agenten</a>
+    <a href="#peas">PEAS</a>
+    <a href="#miljo">Miljöns egenskaper</a>
+    <a href="#typer">Agenttyper</a>
+    <a href="#matt">Belöningsfusk</a>
+    <a href="#idag">Dagens AI-agenter</a>
+    <a href="#begrepp">Ordlista</a>
+    <a href="#fragor">Exempelfrågor</a>
+  </div>
+</nav>
+
+<main><div class="wrap">
+
+<section id="provet">
+  <h2>Om provet</h2>
+  <div class="card">
+    <p style="margin-top:0">Du ska kunna:</p>
+    <ul>
+      <li>förklara vad en agent är, med begreppen sensor, ställdon, percept, agentprogram och miljö</li>
+      <li>förklara vad som menas med en rationell agent – och vad det <em>inte</em> betyder</li>
+      <li>beskriva en uppgift med PEAS</li>
+      <li>klassificera en miljö efter de sex egenskaperna och motivera dina val</li>
+      <li>beskriva de fem agenttyperna och vad som skiljer dem åt</li>
+      <li>förklara belöningsfusk och varför valet av prestandamått är viktigt</li>
+      <li>tillämpa begreppen på dagens AI-agenter som bygger på språkmodeller</li>
+    </ul>
+  </div>
+  <p class="note"><strong>Tips:</strong> gå igenom <a href="../agenter-och-miljoer/">Agenter och miljöer</a> igen och gör <a href="../agenter-och-miljoer/#k8">självtestet i kapitel 8</a>. Klassificera alla miljöerna i <a href="../agenter-och-miljoer/#k3">kapitel 3</a> och läs förklaringarna. På provet räcker det inte att välja – du ska kunna <strong>motivera</strong>.</p>
+</section>
+
+<section id="agent">
+  <h2>Agenten</h2>
+  <p>En <strong>agent</strong> är något som <strong>uppfattar</strong> sin omgivning med <strong>sensorer</strong> och <strong>påverkar</strong> den med <strong>ställdon</strong> (aktuatorer). Mellan dem sitter <strong>agentprogrammet</strong>, som bestämmer vilken handling som ska utföras. Allt utanför agenten är <strong>miljön</strong>.</p>
+  <div class="formula">uppfatta → bestämma → handla → miljön ändras → uppfatta igen …</div>
+  <p>Kunna förklara loopen med tvårumsvärlden (rutorna A och B): roboten uppfattar till exempel <em>[A, Smutsig]</em> och väljer <em>Sug</em>. Kunna avgöra om något är en agent – har det sensorer, kan det påverka något och väljer det mellan handlingar?</p>
+  <h3>Rationell agent</h3>
+  <p>En rationell agent väljer för varje percept den handling som <strong>förväntas</strong> ge bäst resultat enligt ett <strong>prestandamått</strong>, utifrån det den har uppfattat och det den vet om världen. Rationell betyder <strong>inte allvetande</strong> och inte att agenten aldrig gör fel – den gör det bästa den kan med den information den har.</p>
+</section>
+
+<section id="peas">
+  <h2>PEAS – beskriv uppgiften</h2>
+  <p>Kunna vad bokstäverna står för och ge PEAS för en agent du inte har sett förut.</p>
+  <div class="table"><table>
+    <thead><tr><th>Bokstav</th><th>Betydelse</th><th>Fråga</th></tr></thead>
+    <tbody>
+      <tr><td>P – Performance</td><td>Prestandamått</td><td>Hur mäter vi om agenten gör ett bra jobb?</td></tr>
+      <tr><td>E – Environment</td><td>Miljö</td><td>Var verkar agenten, och vad finns där?</td></tr>
+      <tr><td>A – Actuators</td><td>Ställdon</td><td>Hur kan agenten påverka miljön?</td></tr>
+      <tr><td>S – Sensors</td><td>Sensorer</td><td>Hur får agenten information?</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Exempel: självkörande taxi</h3>
+  <div class="table"><table>
+    <tbody>
+      <tr><td>Prestandamått</td><td>Säker resa utan olyckor, kort restid och nöjd kund</td></tr>
+      <tr><td>Miljö</td><td>Vägar, trafik, fotgängare, väder och väglag</td></tr>
+      <tr><td>Ställdon</td><td>Ratt, gas och broms, blinkers och tuta</td></tr>
+      <tr><td>Sensorer</td><td>Kameror och lidar, GPS och hastighetsmätare</td></tr>
+    </tbody>
+  </table></div>
+  <p>Öva också på spamfiltret, kundtjänst-chattboten och rekommendationsalgoritmen. Fundera på <strong>vems</strong> intressen prestandamåttet tjänar – tittartid är bra för appen, men är det bra för dig?</p>
+</section>
+
+<section id="miljo">
+  <h2>Miljöns sex egenskaper</h2>
+  <p>Kunna alla sex paren, förklara dem med egna ord och ge ett exempel på varje sida. I varje par är det <strong>vänstra alternativet det lättare</strong> för agenten.</p>
+  <div class="table"><table>
+    <thead><tr><th>Lättare</th><th>Svårare</th><th>Frågan att ställa</th></tr></thead>
+    <tbody>
+      <tr><td>Fullt observerbar</td><td>Delvis observerbar</td><td>Ser sensorerna allt som är viktigt för beslutet? (Schack – ja. Poker – nej, korten är dolda.)</td></tr>
+      <tr><td>Deterministisk</td><td>Stokastisk</td><td>Bestäms nästa läge helt av nuläget och handlingen, eller finns slump? (Tärningar, hjul som slirar.)</td></tr>
+      <tr><td>Episodisk</td><td>Sekventiell</td><td>Är varje beslut fristående, eller påverkar det framtiden? (En röntgenbild i taget – ett drag i schack.)</td></tr>
+      <tr><td>Statisk</td><td>Dynamisk</td><td>Står världen still medan agenten tänker? (Ett korsord väntar – trafiken gör det inte.)</td></tr>
+      <tr><td>Diskret</td><td>Kontinuerlig</td><td>Ett begränsat antal lägen och handlingar, eller flytande värden som hastighet och vinkel?</td></tr>
+      <tr><td>En agent</td><td>Flera agenter</td><td>Finns det motspelare eller medspelare vars handlingar påverkar resultatet?</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Miljöerna från materialet</h3>
+  <p>Svårare alternativ är <span class="hard">markerade</span>. <em>(d)</em> betyder diskutabelt – båda svaren går att motivera, och det är motiveringen som räknas.</p>
+  <div class="table"><table class="env">
+    <thead><tr><th>Miljö</th><th>Observerbar</th><th>Slump</th><th>Episodisk</th><th>Statisk</th><th>Diskret</th><th>Agenter</th></tr></thead>
+    <tbody>
+      <tr><td>Korsord</td><td>Fullt</td><td>Determ.</td><td class="hard">Sekv.</td><td>Statisk</td><td>Diskret</td><td>En</td></tr>
+      <tr><td>Schack (utan klocka)</td><td>Fullt</td><td>Determ.</td><td class="hard">Sekv.</td><td>Statisk</td><td>Diskret</td><td class="hard">Flera</td></tr>
+      <tr><td>Poker</td><td class="hard">Delvis</td><td class="hard">Stok.</td><td class="hard">Sekv.</td><td>Statisk</td><td>Diskret</td><td class="hard">Flera</td></tr>
+      <tr><td>Självkörande taxi</td><td class="hard">Delvis</td><td class="hard">Stok.</td><td class="hard">Sekv.</td><td class="hard">Dynamisk</td><td class="hard">Kont.</td><td class="hard">Flera</td></tr>
+      <tr><td>Röntgenbilder</td><td>Fullt (d)</td><td>Determ.</td><td>Episodisk</td><td>Statisk</td><td class="hard">Kont. (d)</td><td>En</td></tr>
+      <tr><td>Dammsugare i ett hem</td><td class="hard">Delvis</td><td class="hard">Stok.</td><td class="hard">Sekv.</td><td class="hard">Dynamisk</td><td class="hard">Kont.</td><td class="hard">Flera (d)</td></tr>
+      <tr><td>Tetris</td><td>Fullt</td><td class="hard">Stok.</td><td class="hard">Sekv.</td><td class="hard">Dynamisk</td><td>Diskret</td><td>En</td></tr>
+      <tr><td>Kundtjänst-chattbot</td><td class="hard">Delvis</td><td class="hard">Stok.</td><td class="hard">Sekv. (d)</td><td>Statisk (d)</td><td>Diskret</td><td class="hard">Flera</td></tr>
+    </tbody>
+  </table></div>
+  <p>Typfällor: <strong>schack</strong> räknas som deterministiskt trots motståndaren – motståndarens drag är strategiska, inte slumpmässiga. <strong>Röntgenbilder</strong> är typexemplet på en episodisk miljö. <strong>Taxin</strong> är svår på alla sex punkterna, och det är därför verklig AI är svår.</p>
+</section>
+
+<section id="typer">
+  <h2>De fem agenttyperna</h2>
+  <p>Kunna beskriva varje typ, vad den har som den föregående saknar, och i vilken miljö den fungerar bra eller dåligt.</p>
+  <div class="table"><table>
+    <thead><tr><th>Agenttyp</th><th>Hur den fungerar</th><th>Styrka / svaghet</th></tr></thead>
+    <tbody>
+      <tr><td>Enkel reflex</td><td>OM–SÅ-regler som bara reagerar på perceptet <em>just nu</em>. Inget minne.</td><td>Snabb och enkel, men fastnar i loopar när miljön är delvis observerbar – samma percept ger alltid samma handling.</td></tr>
+      <tr><td>Modellbaserad</td><td>Har ett <strong>inre tillstånd</strong> – en modell av världen byggd av tidigare percept (t.ex. en karta över var den har varit).</td><td>Klarar delvis observerbara miljöer, men tar omvägar eftersom den inte planerar.</td></tr>
+      <tr><td>Målbaserad</td><td>Har ett <strong>mål</strong> och <strong>söker</strong> efter en följd av handlingar som leder dit (t.ex. med bredden-först-sökning).</td><td>Effektiv när den ser allt. Ett mål är ja/nej – den kan inte väga olika lösningar mot varandra.</td></tr>
+      <tr><td>Nyttobaserad</td><td>Har en <strong>nyttofunktion</strong> som säger <em>hur bra</em> ett läge är.</td><td>Kan göra <strong>avvägningar</strong>, t.ex. åka hem och ladda innan batteriet tar slut.</td></tr>
+      <tr><td>Lärande</td><td>Får inga regler, bara en <strong>belöning</strong>. Lär sig av erfarenhet genom att prova om och om igen (episoder), t.ex. med Q-inlärning.</td><td>Kan hitta lösningar ingen har programmerat, men behöver många försök och kan lära sig fel saker om belöningen är dåligt vald.</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Utforska eller utnyttja:</strong> en lärande agent måste välja mellan att prova nytt och att göra det den redan vet fungerar. Utforskar den för lite hittar den aldrig bättre lösningar; utforskar den för mycket använder den aldrig det den har lärt sig.</p>
+  <p class="note"><strong>Huvudpoängen:</strong> ingen agent är bäst i alla miljöer. Vilken agent som passar beror på miljön.</p>
+</section>
+
+<section id="matt">
+  <h2>Prestandamått och belöningsfusk</h2>
+  <p>En agent gör det vi <strong>mäter</strong> – inte det vi <strong>menar</strong>. <strong>Belöningsfusk</strong> (<em>reward hacking</em> eller <em>specification gaming</em>) är när agenten hittar ett sätt att få hög poäng som vi inte hade tänkt oss. Agenten är inte ”elak” – den är rationell utifrån måttet. Felet ligger i måttet.</p>
+  <div class="formula">Tumregel: mät det du vill ha i miljön – inte hur du tror att agenten ska bete sig.</div>
+  <p>Kunna förklara minst ett av exemplen:</p>
+  <ul>
+    <li><strong>Dammsugaren</strong> som belönas per sugning tömmer påsen och suger upp samma smuts igen – många poäng, men lägenheten blir inte renare.</li>
+    <li><strong>Båtracet</strong>: AI:n åkte runt i en cirkel och träffade samma poängmål om och om igen, utan att gå i mål.</li>
+    <li><strong>Tetris</strong>: AI:n som skulle undvika att förlora pausade spelet för alltid.</li>
+    <li><strong>Sociala medier</strong> som optimerar för tittartid kan visa allt mer upprörande innehåll.</li>
+  </ul>
+</section>
+
+<section id="idag">
+  <h2>Dagens AI-agenter</h2>
+  <p>En modern AI-agent är ofta en stor språkmodell som får använda <strong>verktyg</strong> – söka på webben, läsa en kalender, skicka mejl, köra kod. Språkmodellen är agentprogrammet, och den arbetar i samma loop som dammsugaren.</p>
+  <div class="cols">
+    <div class="card">
+      <strong>PEAS för en AI-assistent</strong>
+      <ul>
+        <li><strong>P:</strong> uppgiften blir rätt löst, snabbt, utan att göra något användaren inte vill</li>
+        <li><strong>E:</strong> användaren, kalendrar, bokningssystem, andra människor</li>
+        <li><strong>A:</strong> verktygsanrop (boka, skicka) och textsvar</li>
+        <li><strong>S:</strong> användarens text och verktygens svar</li>
+      </ul>
+    </div>
+    <div class="card">
+      <strong>Miljön</strong>
+      <ul>
+        <li>delvis observerbar, stokastisk, sekventiell, dynamisk, flera agenter</li>
+        <li>liknar mest en <strong>målbaserad agent med en modell</strong> – den planerar i flera steg</li>
+        <li>oåterkalleliga handlingar (boka, skicka) bör bekräftas av en människa</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="begrepp">
+  <h2>Ordlista</h2>
+  <div class="table"><table>
+    <thead><tr><th>Begrepp</th><th>Förklaring</th></tr></thead>
+    <tbody>
+      <tr><td>Agent</td><td>Något som uppfattar sin miljö med sensorer och påverkar den med ställdon</td></tr>
+      <tr><td>Percept</td><td>Det agenten uppfattar med sina sensorer vid ett visst tillfälle</td></tr>
+      <tr><td>Sensor</td><td>Det agenten får information genom (kamera, mikrofon, text in)</td></tr>
+      <tr><td>Ställdon (aktuator)</td><td>Det agenten påverkar miljön med (hjul, motor, textsvar, verktygsanrop)</td></tr>
+      <tr><td>Agentprogram</td><td>Det som bestämmer vilken handling agenten väljer för ett percept</td></tr>
+      <tr><td>Miljö</td><td>Allt utanför agenten som den uppfattar och påverkar</td></tr>
+      <tr><td>Prestandamått</td><td>Hur vi mäter om agenten gör ett bra jobb</td></tr>
+      <tr><td>Rationell agent</td><td>Väljer den handling som förväntas ge bäst resultat utifrån det den vet</td></tr>
+      <tr><td>Inre tillstånd</td><td>Agentens modell av världen, även av det den inte ser just nu</td></tr>
+      <tr><td>Mål</td><td>Ett önskat läge – antingen uppnått eller inte</td></tr>
+      <tr><td>Nyttofunktion</td><td>Ett mått på hur bra ett läge är, som gör avvägningar möjliga</td></tr>
+      <tr><td>Belöning</td><td>Signal som en lärande agent försöker maximera</td></tr>
+      <tr><td>Episod</td><td>Ett försök från start till slut, t.ex. för en lärande agent</td></tr>
+      <tr><td>Belöningsfusk</td><td>Agenten får hög poäng på ett sätt som inte ger det vi egentligen ville</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="fragor">
+  <h2>Exempel på frågor</h2>
+  <h3>Faktafrågor</h3>
+  <ul>
+    <li>Vad är ett percept? Ge ett exempel.</li>
+    <li>Vad står bokstäverna i PEAS för?</li>
+    <li>Vad betyder det att en agent är rationell? Betyder det att den aldrig gör fel?</li>
+    <li>Vad har en modellbaserad agent som en enkel reflexagent saknar?</li>
+    <li>Vad är skillnaden mellan ett mål och en nyttofunktion?</li>
+    <li>Vad betyder ”utforska eller utnyttja”?</li>
+  </ul>
+  <h3>Tillämpning</h3>
+  <ul>
+    <li>Beskriv en agent med PEAS (t.ex. en robotgräsklippare, ett spamfilter eller en drönare som levererar paket).</li>
+    <li>Klassificera en miljö efter alla sex egenskaperna och motivera varje val.</li>
+    <li>En enkel reflexagent fastnar i en loop. Förklara varför, och vilken agenttyp som skulle klara uppgiften bättre.</li>
+    <li>Ge ett exempel på ett prestandamått som kan leda till belöningsfusk, och föreslå ett bättre.</li>
+  </ul>
+  <h3>Resonerande frågor</h3>
+  <ol>
+    <li>Varför finns det ingen agent som är bäst i alla miljöer?</li>
+    <li>Är en människa en rationell agent? Vad är i så fall vårt prestandamått?</li>
+    <li>En AI-agent gör något skadligt för att den följde sitt prestandamått. Vem bär ansvaret?</li>
+    <li>Vilka handlingar borde en AI-assistent fråga om innan den utför dem – och varför?</li>
+  </ol>
+</section>
+
+</div></main>
+
+<footer><div class="wrap">AI 1 · Erik Dahlbergsgymnasiet · Andrew Galbraith</div></footer>
+</body>
+</html>

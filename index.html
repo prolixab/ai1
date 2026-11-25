@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI 1 — Kursmaterial</title>
 <meta name="description" content="Digitalt kursmaterial för AI 1 på Teknikprogrammet vid Erik Dahlbergsgymnasiet, Jönköping.">
+<meta name="author" content="Andrew Galbraith">
+<meta name="creator" content="Andrew Galbraith">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230a0a0a'/><circle cx='16' cy='16' r='6' fill='%232f4bff'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -134,6 +136,27 @@ footer .mono{font-family:var(--mono);font-size:12px;color:var(--subtle)}
 @media (max-width:560px){.jump{display:none}.lead{font-size:18px;line-height:27px}}
 @media print{.bar{position:static}.rise{animation:none}.card{break-inside:avoid}}
 
+/* dot-pixel images */
+.px{display:block;width:100%;height:100%}
+.px svg{display:block;width:100%;height:100%;overflow:visible}
+.px circle{transform-box:fill-box;transform-origin:center;animation:pop .5s cubic-bezier(.3,1.7,.5,1) both;animation-delay:var(--d,0s);transition:fill .25s}
+.px .f{fill:var(--line)}
+.px .i{fill:var(--ink)}
+.px .a{fill:var(--accent)}
+@keyframes pop{from{transform:scale(0)}}
+@keyframes pulse{0%,100%{transform:scale(1)}40%{transform:scale(1.35)}}
+a.card:hover .px .a,a.moment:hover .px .a{animation:pulse .9s ease-in-out infinite;animation-delay:calc(var(--d,0s) - .4s)}
+a.card:hover .px .f{fill:var(--subtle)}
+.card.soon .px .i,.card.soon .px .a{fill:var(--subtle)}
+.ico{width:56px;height:56px;padding:7px;border-radius:12px}
+.moment-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.moment .glyph{width:84px;height:84px;flex:none}
+.moment:hover .px .f{fill:var(--subtle)}
+.moment-hero .head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px}
+.moment-hero .glyph{width:132px;height:132px;flex:none}
+@media (max-width:560px){.moment-hero .glyph{width:84px;height:84px}}
+@media (prefers-reduced-motion:reduce){.px circle,a.card:hover .px .a,a.moment:hover .px .a{animation:none}}
+
 /* moment cards on the landing page */
 .moments{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;padding:64px 0 88px}
 .moment{display:flex;flex-direction:column;min-height:300px;background:var(--surface);border:1px solid transparent;border-radius:16px;padding:28px 28px 22px;transition:background-color .2s,border-color .2s,box-shadow .2s,transform .2s}
@@ -189,61 +212,74 @@ footer .mono{font-family:var(--mono);font-size:12px;color:var(--subtle)}
 <main class="wrap">
 <div class="moments">
   <a class="moment rise" style="--d:0.25s" href="moment/historia/">
-    <div class="num">01</div>
+    <div class="moment-top"><div class="num">01</div><i class="px glyph" data-g="neuron" data-d="0.31"></i></div>
     <h2>AI:s historia och vem som bestämmer</h2>
     <p>Vad är AI egentligen, hur kom vi hit – från Turing och den första neuronen till ChatGPT – och vem har makten över tekniken i dag?</p>
-    <div class="icons" aria-hidden="true"><span>🤖</span><span>🧠</span><span>🖥</span><span>🔢</span><span>💰</span></div>
     <div class="moment-foot"><span class="cnt"><b>7</b> material · <em>provomfattning</em></span><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
   </a>
   <a class="moment rise" style="--d:0.30s" href="moment/agenter/">
-    <div class="num">02</div>
+    <div class="moment-top"><div class="num">02</div><i class="px glyph" data-g="robot" data-d="0.37"></i></div>
     <h2>Agenter och miljöer</h2>
     <p>Vad gör något till en agent, hur beskriver man uppgiften med PEAS och varför är vissa miljöer så mycket svårare än andra?</p>
-    <div class="icons" aria-hidden="true"><span>🧹</span><span>🤖</span><span>📝</span></div>
     <div class="moment-foot"><span class="cnt"><b>3</b> material · <em>provomfattning</em></span><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
   </a>
   <a class="moment rise" style="--d:0.35s" href="moment/algoritmer/">
-    <div class="num">03</div>
+    <div class="moment-top"><div class="num">03</div><i class="px glyph" data-g="trad" data-d="0.43"></i></div>
     <h2>Algoritmer och sökning</h2>
     <p>Vad en algoritm är, grafer och träd, hur en agent söker sig fram till målet med BFS, DFS, Dijkstra och A* – och beslutsträd.</p>
-    <div class="icons" aria-hidden="true"><span>🧩</span><span>📟</span><span>🕸️</span><span>🧭</span><span>🌳</span></div>
     <div class="moment-foot"><span class="cnt"><b>7</b> material</span><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
   </a>
   <a class="moment rise" style="--d:0.40s" href="moment/maskininlarning/">
-    <div class="num">04</div>
+    <div class="moment-top"><div class="num">04</div><i class="px glyph" data-g="regr" data-d="0.49"></i></div>
     <h2>Maskininlärning</h2>
     <p>System som lär sig av data i stället för att följa regler: förstärkt inlärning, regression, klustring och mycket mer.</p>
-    <div class="icons" aria-hidden="true"><span>🎮</span></div>
     <div class="moment-foot"><span class="cnt"><b>1</b> material</span><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
   </a>
   <a class="moment rise" style="--d:0.45s" href="moment/neurala-natverk/">
-    <div class="num">05</div>
+    <div class="moment-top"><div class="num">05</div><i class="px glyph" data-g="natverk" data-d="0.55"></i></div>
     <h2>Neurala nätverk</h2>
     <p>Nätverk av konstgjorda neuroner som ser, läser och skriver – från bildanalys till språkmodeller.</p>
-    <div class="icons" aria-hidden="true"><span>🩻</span></div>
     <div class="moment-foot"><span class="cnt"><b>1</b> material</span><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
   </a>
   <a class="moment rise" style="--d:0.50s" href="moment/samhallet/">
-    <div class="num">06</div>
+    <div class="moment-top"><div class="num">06</div><i class="px glyph" data-g="vag" data-d="0.61"></i></div>
     <h2>AI och samhället</h2>
     <p>Bias, rättvisa och ansvar – vem påverkas av AI, och vad händer när den gör fel?</p>
-    <div class="icons" aria-hidden="true"><span>⚖️</span></div>
     <div class="moment-foot"><span class="cnt"><b>1</b> material</span><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
   </a>
   <a class="moment rise" style="--d:0.55s" href="moment/python-och-matematik/">
-    <div class="num">07</div>
+    <div class="moment-top"><div class="num">07</div><i class="px glyph" data-g="prompt" data-d="0.67"></i></div>
     <h2>Python och matematik</h2>
     <p>Verktygen du behöver längs vägen: programmering i Python och repetition av matematiken.</p>
-    <div class="icons" aria-hidden="true"><span>🐍</span><span>📐</span></div>
     <div class="moment-foot"><span class="cnt"><b>2</b> material</span><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
   </a>
 </div>
 </main>
 <footer>
   <div class="wrap">
-    <span><b>AI 1</b> — Erik Dahlbergsgymnasiet, Jönköping · Teknikprogrammet</span>
+    <span><b>AI 1</b> — Erik Dahlbergsgymnasiet, Jönköping · Teknikprogrammet · Skapad av Andrew Galbraith</span>
     <span class="mono"><a href="oversikt.html">Allt material</a> · Kurskod AIAAIN01</span>
   </div>
 </footer>
+<script>
+(function(){
+  var G={"fraga":["..#####..",".##...##.",".......##","......##.","....##...","....#....",".........","....+....","........."],"neuron":[".........",".........","+#.......","..##.###.","+####+++#","..##.###.","+#.......",".........","........."],"chip":["..#.#.#..",".#######.","##.....##",".#.+++.#.","##.+++.##",".#.+++.#.","##.....##",".#######.","..#.#.#.."],"bitar":[".........","##.+.##.+",".........","+.##.+.##",".........","##.+.+.##",".........","+.##.##.+","........."],"grind":[".........","..####...","++#...#..","..#....#.","..#....#+","..#....#.","++#...#..","..####...","........."],"mynt":[".........","...###...","..#...#..",".#..+..#.",".#.+++.#.",".#..+..#.","..#...#..","...###...","........."],"haj":[".........","....#....","....##...","....###..","...####..","..#####..",".........","+.+++.+++",".+++.+++."],"prov":[".#####...",".#...##..",".#.##.#..",".#.....#.",".#.###.#.",".#....+#.",".#+..+.#.",".#.++..#.",".#######."],"robot":[".........","...###...","..#...#..",".#..+..#.",".#.....#.",".#.###.#.","..#...#..","...###...","........."],"rum":["#########","#.......#","#.+...#.#","#.....#.#","#..##.#.#","#.......#","#....+..#","#.......#","#########"],"flode":["..#####..","..#...#..","..#####..","....#....","...+.+...","..+...+..","...+.+...","....#....","..#####.."],"mal":["..#####..",".#.....#.","#..###..#","#.#...#.#","#.#.+.#.#","#.#...#.#","#..###..#",".#.....#.","..#####.."],"graf":["##.....++","##....#++","..#..#...","...##....","...##....","..#..#...",".#....#..","##.....##","##.....##"],"lupp":["..###....",".#...#...","#..+..#..","#.+++.#..","#..+..#..",".#...#...","..####...",".....##..","......##."],"rutt":["#........",".+.......","..+...#..","...++....",".#...+...","......+..","...#..+..",".......+.","........#"],"trad":[".........","....+....","...#.#...","..#...#..",".+.....+.","#.#...#.#","+..#.#..+","...+.+...","........."],"stjarna":["....+....","...+++...","+++++++++",".+++++++.","..+++++..","..++.++..",".++...++.",".+.....+.","........."],"moln":["#...#....","..#...#..","#..#.....",".#...#..+","....#..+.","..#...++.",".....+..+","...+..+..",".+..+..+."],"regr":["........+",".....#.+.","......+..","...#.+.#.","....+....",".#.+..#..","..+......",".+..#....","+........"],"kluster":["##.......","###...++.",".##..+++.","......++.",".........","...##....","..####...","...##....","........."],"staplar":[".........","......+..","......+..","...#..+..","...#..+.#","#..#..+.#","#..#..+.#","#..#..+.#","#########"],"oga":[".........",".........","...###...",".##.+.##.","#..+++..#",".##.+.##.","...###...",".........","........."],"natverk":["#........","....+....","#.......#","....+....","#........","....+....","#.......#","....+....","#........"],"bubbla":["#########","#.......#","#.+.+.+.#","#.......#","####.####","...#.#...","...##....","...#.....","........."],"vag":["....#....","#########",".#..#..#.","#.#.#.#.#","+++.#.###","....#....","....#....","..#####..","........."],"skold":["#########","#.......#","#...+...#","#..+++..#","#...+...#",".#.....#.","..#...#..","...#.#...","....#...."],"prompt":[".........",".........","#........",".#.......","..#......",".#.......","#...+++++",".........","........."],"linje":["#.......+","#......+.","#.....+..","#....+...","#...+....","#..+.....","#.+......","#+.......","#########"]};
+  var NS='http://www.w3.org/2000/svg', still=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('[data-g]').forEach(function(el,n){
+    var g=G[el.getAttribute('data-g')]; if(!g) return;
+    var base=parseFloat(el.getAttribute('data-d')||'0'), svg=document.createElementNS(NS,'svg');
+    svg.setAttribute('viewBox','0 0 90 90'); svg.setAttribute('aria-hidden','true');
+    for(var y=0;y<9;y++) for(var x=0;x<9;x++){
+      var ch=g[y][x], c=document.createElementNS(NS,'circle');
+      c.setAttribute('cx',5+x*10); c.setAttribute('cy',5+y*10);
+      c.setAttribute('r',ch==='.'?1.6:3.9);
+      c.setAttribute('class',ch==='#'?'i':ch==='+'?'a':'f');
+      if(!still) c.style.setProperty('--d',(base+(x+y)*0.028+(ch==='.'?0:0.06)).toFixed(3)+'s');
+      svg.appendChild(c);
+    }
+    el.appendChild(svg);
+  });
+})();
+</script>
 </body>
 </html>

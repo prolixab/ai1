@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI:s historia och vem som bestämmer – AI 1</title>
 <meta name="description" content="Digitalt kursmaterial för AI 1 på Teknikprogrammet vid Erik Dahlbergsgymnasiet, Jönköping.">
+<meta name="author" content="Andrew Galbraith">
+<meta name="creator" content="Andrew Galbraith">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230a0a0a'/><circle cx='16' cy='16' r='6' fill='%232f4bff'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -134,6 +136,27 @@ footer .mono{font-family:var(--mono);font-size:12px;color:var(--subtle)}
 @media (max-width:560px){.jump{display:none}.lead{font-size:18px;line-height:27px}}
 @media print{.bar{position:static}.rise{animation:none}.card{break-inside:avoid}}
 
+/* dot-pixel images */
+.px{display:block;width:100%;height:100%}
+.px svg{display:block;width:100%;height:100%;overflow:visible}
+.px circle{transform-box:fill-box;transform-origin:center;animation:pop .5s cubic-bezier(.3,1.7,.5,1) both;animation-delay:var(--d,0s);transition:fill .25s}
+.px .f{fill:var(--line)}
+.px .i{fill:var(--ink)}
+.px .a{fill:var(--accent)}
+@keyframes pop{from{transform:scale(0)}}
+@keyframes pulse{0%,100%{transform:scale(1)}40%{transform:scale(1.35)}}
+a.card:hover .px .a,a.moment:hover .px .a{animation:pulse .9s ease-in-out infinite;animation-delay:calc(var(--d,0s) - .4s)}
+a.card:hover .px .f{fill:var(--subtle)}
+.card.soon .px .i,.card.soon .px .a{fill:var(--subtle)}
+.ico{width:56px;height:56px;padding:7px;border-radius:12px}
+.moment-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.moment .glyph{width:84px;height:84px;flex:none}
+.moment:hover .px .f{fill:var(--subtle)}
+.moment-hero .head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px}
+.moment-hero .glyph{width:132px;height:132px;flex:none}
+@media (max-width:560px){.moment-hero .glyph{width:84px;height:84px}}
+@media (prefers-reduced-motion:reduce){.px circle,a.card:hover .px .a,a.moment:hover .px .a{animation:none}}
+
 /* moment cards on the landing page */
 .moments{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;padding:64px 0 88px}
 .moment{display:flex;flex-direction:column;min-height:300px;background:var(--surface);border:1px solid transparent;border-radius:16px;padding:28px 28px 22px;transition:background-color .2s,border-color .2s,box-shadow .2s,transform .2s}
@@ -182,8 +205,10 @@ footer .mono{font-family:var(--mono);font-size:12px;color:var(--subtle)}
   <div class="wrap">
     <a class="crumb rise" href="../../"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Alla moment</a>
     <p class="ov rise">Moment 01</p>
+    <div class="head"><div>
     <div class="num rise" style="--d:.04s" aria-hidden="true">01</div>
     <h1 class="rise" style="--d:.08s">AI:s historia och vem som bestämmer</h1>
+    </div><i class="px glyph" data-g="neuron" data-d=".15"></i></div>
     <p class="lead rise" style="--d:.12s">Vad är AI egentligen, hur kom vi hit – från Turing och den första neuronen till ChatGPT – och vem har makten över tekniken i dag?</p>
     <div class="meta rise" style="--d:.16s"><span>7 material · 1 på väg · provomfattning</span></div>
   </div>
@@ -193,13 +218,13 @@ footer .mono{font-family:var(--mono);font-size:12px;color:var(--subtle)}
   <div class="sub">Historia och grunder</div>
   <div class="grid">
     <a class="card rise" style="--d:0.08s" href="../../ar-det-ai/">
-      <div class="card-top"><span class="ico" aria-hidden="true">🤖</span><span class="kind">Quiz</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="fraga" data-d="0.08"></i></span><span class="kind">Quiz</span></div>
       <h3>Är det AI?</h3>
       <p>Ta ställning till 12 datorsystem — räknas de som AI eller inte? Korten visas först, sedan svarar du en i taget och får direkt feedback.</p>
       <div class="card-foot"><div class="tags"><span>Quiz</span><span>AI-begrepp</span><span>Interaktiv</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <a class="card rise" style="--d:0.12s" href="../../perceptron/">
-      <div class="card-top"><span class="ico" aria-hidden="true">🧠</span><span class="kind">Lektion</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="neuron" data-d="0.12"></i></span><span class="kind">Lektion</span></div>
       <h3>Perceptronen</h3>
       <p>Den första konstgjorda neuronen — teori, interaktiv demo och bildklassificering. Från Rosenblatts algoritm (1957) till vad perceptronen kan och inte kan lösa.</p>
       <div class="card-foot"><div class="tags"><span>Teori</span><span>Interaktiv</span><span>Klassificering</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
@@ -208,19 +233,19 @@ footer .mono{font-family:var(--mono);font-size:12px;color:var(--subtle)}
   <div class="sub">Datorn under huven</div>
   <div class="grid">
     <a class="card rise" style="--d:0.16s" href="../../assembler/">
-      <div class="card-top"><span class="ico" aria-hidden="true">🖥</span><span class="kind">Verktyg</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="chip" data-d="0.16"></i></span><span class="kind">Verktyg</span></div>
       <h3>Assembler-Simulator</h3>
       <p>Interaktiv simulator för en 8-bitars maskinspråksdator med 16 register och 256 minnesceller. Skriv, kör och felsök program i hexadecimalt maskinspråk.</p>
       <div class="card-foot"><div class="tags"><span>Maskinspråk</span><span>CPU</span><span>Hex</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <a class="card rise" style="--d:0.20s" href="../../data-i-datorn/">
-      <div class="card-top"><span class="ico" aria-hidden="true">🔢</span><span class="kind">Verktyg</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="bitar" data-d="0.20"></i></span><span class="kind">Verktyg</span></div>
       <h3>Så lagras data</h3>
       <p>Slå på bitar och se hur ettor och nollor blir tal, text, färger och bilder. Binärt, hex, tvåkomplement, UTF-8 – och hur en AI ser data: tokens, embeddings och kvantisering.</p>
       <div class="card-foot"><div class="tags"><span>Binärt</span><span>Hex</span><span>2-kompl.</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <div class="card soon rise" style="--d:0.24s" aria-disabled="true">
-      <div class="card-top"><span class="ico" aria-hidden="true">⚡</span><span class="kind">Kommer snart</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="grind" data-d="0.24"></i></span><span class="kind">Kommer snart</span></div>
       <h3>Grindkrets-simulator</h3>
       <p>Bygg och simulera digitala kretsar med AND, OR, NOT, XOR och NAND-grindar. Visualisera sanningsvärden och kombinationslogik.</p>
       <div class="card-foot"><div class="tags"><span>Boolesk algebra</span><span>Logik</span></div></div>
@@ -229,13 +254,13 @@ footer .mono{font-family:var(--mono);font-size:12px;color:var(--subtle)}
   <div class="sub">Vem bestämmer?</div>
   <div class="grid">
     <a class="card rise" style="--d:0.28s" href="../../show-me-the-money/">
-      <div class="card-top"><span class="ico" aria-hidden="true">💰</span><span class="kind">Grupparbete</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="mynt" data-d="0.28"></i></span><span class="kind">Grupparbete</span></div>
       <h3>Show me the Money!</h3>
       <p>Vem har egentligen makten över AI? Modellsvar för sju branscher — från vård och bank till försvar och skola — med aktörer, maktkartor och reflektion.</p>
       <div class="card-foot"><div class="tags"><span>Makt</span><span>Branscher</span><span>Maktkarta</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     </a>
     <a class="card rise" style="--d:0.32s" href="https://exitticket.teed.se/shark/spela" rel="noopener">
-      <div class="card-top"><span class="ico" aria-hidden="true">🦈</span><span class="kind">Aktivitet</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="haj" data-d="0.32"></i></span><span class="kind">Aktivitet</span></div>
       <h3>Shark Tank</h3>
       <p>Grupperna pitchar sina AI-företagsidéer. Logga in med din personliga kod och fördela dina 100 000 USD på de företag du tror mest på.</p>
       <div class="card-foot"><div class="tags"><span>Pitch</span><span>Investering</span><span>Röstning</span></div><span class="go">Investera<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
@@ -244,7 +269,7 @@ footer .mono{font-family:var(--mono);font-size:12px;color:var(--subtle)}
   <div class="sub exam">Inför provet</div>
   <div class="grid">
     <a class="card exam rise" style="--d:0.36s" href="../../provomfattning-ai-historia/">
-      <div class="card-top"><span class="ico" aria-hidden="true">📝</span><span class="kind">Provomfattning</span></div>
+      <div class="card-top"><span class="ico"><i class="px" data-g="prov" data-d="0.36"></i></span><span class="kind">Provomfattning</span></div>
       <h3>Provomfattning – AI:s historia</h3>
       <p>Vad du behöver kunna till provet om AI:s historia — från Turing till ChatGPT. Tidslinje, personer, begrepp och exempelfrågor.</p>
       <div class="card-foot"><div class="tags"><span>Prov</span><span>Historia</span><span>Begrepp</span></div><span class="go">Öppna<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
@@ -255,9 +280,29 @@ footer .mono{font-family:var(--mono);font-size:12px;color:var(--subtle)}
 </main>
 <footer>
   <div class="wrap">
-    <span><b>AI 1</b> — Erik Dahlbergsgymnasiet, Jönköping · Teknikprogrammet</span>
+    <span><b>AI 1</b> — Erik Dahlbergsgymnasiet, Jönköping · Teknikprogrammet · Skapad av Andrew Galbraith</span>
     <span class="mono"><a href="../../oversikt.html">Allt material</a> · Kurskod AIAAIN01</span>
   </div>
 </footer>
+<script>
+(function(){
+  var G={"fraga":["..#####..",".##...##.",".......##","......##.","....##...","....#....",".........","....+....","........."],"neuron":[".........",".........","+#.......","..##.###.","+####+++#","..##.###.","+#.......",".........","........."],"chip":["..#.#.#..",".#######.","##.....##",".#.+++.#.","##.+++.##",".#.+++.#.","##.....##",".#######.","..#.#.#.."],"bitar":[".........","##.+.##.+",".........","+.##.+.##",".........","##.+.+.##",".........","+.##.##.+","........."],"grind":[".........","..####...","++#...#..","..#....#.","..#....#+","..#....#.","++#...#..","..####...","........."],"mynt":[".........","...###...","..#...#..",".#..+..#.",".#.+++.#.",".#..+..#.","..#...#..","...###...","........."],"haj":[".........","....#....","....##...","....###..","...####..","..#####..",".........","+.+++.+++",".+++.+++."],"prov":[".#####...",".#...##..",".#.##.#..",".#.....#.",".#.###.#.",".#....+#.",".#+..+.#.",".#.++..#.",".#######."],"robot":[".........","...###...","..#...#..",".#..+..#.",".#.....#.",".#.###.#.","..#...#..","...###...","........."],"rum":["#########","#.......#","#.+...#.#","#.....#.#","#..##.#.#","#.......#","#....+..#","#.......#","#########"],"flode":["..#####..","..#...#..","..#####..","....#....","...+.+...","..+...+..","...+.+...","....#....","..#####.."],"mal":["..#####..",".#.....#.","#..###..#","#.#...#.#","#.#.+.#.#","#.#...#.#","#..###..#",".#.....#.","..#####.."],"graf":["##.....++","##....#++","..#..#...","...##....","...##....","..#..#...",".#....#..","##.....##","##.....##"],"lupp":["..###....",".#...#...","#..+..#..","#.+++.#..","#..+..#..",".#...#...","..####...",".....##..","......##."],"rutt":["#........",".+.......","..+...#..","...++....",".#...+...","......+..","...#..+..",".......+.","........#"],"trad":[".........","....+....","...#.#...","..#...#..",".+.....+.","#.#...#.#","+..#.#..+","...+.+...","........."],"stjarna":["....+....","...+++...","+++++++++",".+++++++.","..+++++..","..++.++..",".++...++.",".+.....+.","........."],"moln":["#...#....","..#...#..","#..#.....",".#...#..+","....#..+.","..#...++.",".....+..+","...+..+..",".+..+..+."],"regr":["........+",".....#.+.","......+..","...#.+.#.","....+....",".#.+..#..","..+......",".+..#....","+........"],"kluster":["##.......","###...++.",".##..+++.","......++.",".........","...##....","..####...","...##....","........."],"staplar":[".........","......+..","......+..","...#..+..","...#..+.#","#..#..+.#","#..#..+.#","#..#..+.#","#########"],"oga":[".........",".........","...###...",".##.+.##.","#..+++..#",".##.+.##.","...###...",".........","........."],"natverk":["#........","....+....","#.......#","....+....","#........","....+....","#.......#","....+....","#........"],"bubbla":["#########","#.......#","#.+.+.+.#","#.......#","####.####","...#.#...","...##....","...#.....","........."],"vag":["....#....","#########",".#..#..#.","#.#.#.#.#","+++.#.###","....#....","....#....","..#####..","........."],"skold":["#########","#.......#","#...+...#","#..+++..#","#...+...#",".#.....#.","..#...#..","...#.#...","....#...."],"prompt":[".........",".........","#........",".#.......","..#......",".#.......","#...+++++",".........","........."],"linje":["#.......+","#......+.","#.....+..","#....+...","#...+....","#..+.....","#.+......","#+.......","#########"]};
+  var NS='http://www.w3.org/2000/svg', still=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('[data-g]').forEach(function(el,n){
+    var g=G[el.getAttribute('data-g')]; if(!g) return;
+    var base=parseFloat(el.getAttribute('data-d')||'0'), svg=document.createElementNS(NS,'svg');
+    svg.setAttribute('viewBox','0 0 90 90'); svg.setAttribute('aria-hidden','true');
+    for(var y=0;y<9;y++) for(var x=0;x<9;x++){
+      var ch=g[y][x], c=document.createElementNS(NS,'circle');
+      c.setAttribute('cx',5+x*10); c.setAttribute('cy',5+y*10);
+      c.setAttribute('r',ch==='.'?1.6:3.9);
+      c.setAttribute('class',ch==='#'?'i':ch==='+'?'a':'f');
+      if(!still) c.style.setProperty('--d',(base+(x+y)*0.028+(ch==='.'?0:0.06)).toFixed(3)+'s');
+      svg.appendChild(c);
+    }
+    el.appendChild(svg);
+  });
+})();
+</script>
 </body>
 </html>
